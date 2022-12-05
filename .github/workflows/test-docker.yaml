@@ -21,8 +21,8 @@ jobs:
       - name: Copy coverage
         run: |
           # copy file
-          mv ./src/tests/.coverage .
-          mv ./src/tests/coverage.xml .
+          mv ./tests/.coverage .
+          mv ./tests/coverage.xml .
 
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v2
