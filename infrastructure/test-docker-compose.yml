@@ -12,8 +12,8 @@ services:
 
   api:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: infrastructure/Dockerfile
       args:
         TESTING: 1
     environment:
@@ -25,9 +25,10 @@ services:
       bash -c "pytest --cov=./src
       && coverage report -m
       && coverage xml
-      && cp .coverage ./src/tests/
-      && cp coverage.xml ./src/tests/"
+      && cp .coverage ./tests/
+      && cp coverage.xml ./tests/"
     depends_on:
       - postgres_db
     volumes:
-      - ./src/:/app/src
+      - ../src/:/app/src
+      - ../tests/:/app/tests
