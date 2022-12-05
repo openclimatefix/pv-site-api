@@ -1,8 +1,6 @@
 FROM python:3.10-slim
 
 # copy files requirements
-RUN cd ..
-RUN ls
 COPY ./requirements.txt /app/requirements.txt
 
 # install requirements
