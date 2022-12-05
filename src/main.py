@@ -5,6 +5,8 @@ from pydantic_models import Forecast, Forecast_Metadata, PV_Site_Metadata, One_P
 
 app = FastAPI()
 
+version = '0.0.1'
+
 @app.get("/")
 async def get_api_information():
     """### Get basic information about the Nowcasting API
