@@ -1,5 +1,6 @@
 # import packages
 from pydantic import Field, BaseModel
+from datetime import datetime
 
 # initiate the classes
 
@@ -49,6 +50,7 @@ class Site_Forecast_Values(BaseModel):
 #client gets a forecast for their site
 class Forecast(BaseModel):
   forecast_uuid: str = Field(..., description="The forecast id")
+  forecast_metadata_uuid: str = Field(..., description="The forecast metadata uuid")
   forecast_values: str = Field(..., description="List of target times and generation")
 
 # client gets information about the forecast: which site, which forecast version, when it was made
@@ -57,7 +59,7 @@ class Forecast_Metadata(BaseModel):
   """Forecast with site information"""
   forecast_metadata_uuid: str = Field(..., description="The forecast id")
   site_uuid: str = Field(..., description="The site id")
-  forecast_creation_time: str = Field(..., description="Time forecast was created")
+  forecast_creation_datetime: datetime = Field(..., description="Time forecast was created")
   forecast_version: str = Field(..., description="Forecast version")
   
 # get_sites
