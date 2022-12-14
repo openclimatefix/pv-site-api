@@ -61,45 +61,40 @@ async def root():
 async def get_sites(site_uuid: str):
     # simple 2. (fake just return a list of one site using 'fake_site_uuid'
     pv_site = PV_Site_Metadata(
-        uuid=site_uuid,
-        site_name="fake site name", 
-        latitude= 50,
-        longitude= 0,
-        capacity_kw= 1 
+        uuid=site_uuid, site_name="fake site name", latitude=50, longitude=0, capacity_kw=1
     )
     pv_site_list = PV_Sites(
-        site_list= [pv_site],
+        site_list=[pv_site],
     )
 
     return pv_site_list
 
 
 # # post_pv_actual: sends data to us, and we save to database
-@app.post("/sites/pv_actual/{site_id}", response_model=One_PV_Actual)
-async def post_pv_actual(site_uuid:str, datetime_utc:str, actual_generation_kw:float):
+@app.post("/sites/pv_actual/{site_id}")
+async def post_pv_actual(
+    site_uuid: str,
+    pv_actual: One_PV_Actual,
+):
     # simple 4. (fake = just return what is put in)
 
-    fake_pv_input_iteration = One_PV_Actual(
-        site_uuid=site_uuid, 
-        datetime_utc=datetime_utc, 
-        actual_generation_kw=actual_generation_kw
-    )
-    
-    return fake_pv_input_iteration
+    print(f"Got {pv_actual.dict()} for site {site_uuid}")
+    print("Not doing anything with it (yet!)")
 
 
 # put_site_info: client can update a site
 @app.put("/sites/pv_actual/{site_id}/info", response_model=PV_Site_Metadata)
-async def put_site_info(site_uuid:str, site_name:str, latitude:int, longitude: int, capacity_kw: float  ):
+async def put_site_info(
+    site_uuid: str, site_name: str, latitude: int, longitude: int, capacity_kw: float
+):
     # simple 5.  (fake = just return whats put). Need to update input model
     pv_site_metadata = PV_Site_Metadata(
         uuid=site_uuid,
-        site_name= site_name,
-        latitude= latitude, 
-        longitude= longitude,
-        capacity_kw= capacity_kw
+        site_name=site_name,
+        latitude=latitude,
+        longitude=longitude,
+        capacity_kw=capacity_kw,
     )
-  
 
     return pv_site_metadata
 
@@ -110,13 +105,12 @@ async def get_pv_actual(site_uuid: str):
     # complicated 3. (fake need to make fake pv data, similar to 'get_pv_forecast'.
     # Making list of 'One_PV_Actual')
 
-    #make fake iteration of one pv value
+    # make fake iteration of one pv value
     fake_iteration = One_PV_Actual(
-    site_uuid= site_uuid,
-    datetime_utc= str(now),
-    actual_generation_kw=make_fake_intensity(datetime_utc=now)
-   )
-  
+        site_uuid=site_uuid,
+        datetime_utc=str(now),
+        actual_generation_kw=make_fake_intensity(datetime_utc=now),
+    )
 
     return fake_iteration
 
@@ -166,9 +160,6 @@ async def get_forecast_metadata(forecast_metadata_uuid: str):
 @app.get("/api_status", response_model=PVSiteAPIStatus)
 async def get_status():
     # simple 1.
-    pv_api_status = PVSiteAPIStatus(
-         status = "ok",
-         message = "this is a fake ok status"
-    )
-       
+    pv_api_status = PVSiteAPIStatus(status="ok", message="this is a fake ok status")
+
     return pv_api_status

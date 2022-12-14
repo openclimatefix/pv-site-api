@@ -35,7 +35,7 @@ class One_PV_Actual(BaseModel):
     """Site data for one site"""
 
     site_uuid: str = Field(..., description="The site id")
-    datetime_utc: str = Field(..., description="Date of data input")
+    datetime_utc: datetime = Field(..., description="Date of data input")
     actual_generation_kw: float = Field(..., description="The site's capacity in kw", ge=0)
 
 
