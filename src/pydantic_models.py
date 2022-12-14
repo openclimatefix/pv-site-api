@@ -81,4 +81,4 @@ class Forecast_Metadata(BaseModel):
 # get_sites
 # this gives the sites available to the client and uses the PV_Site_Metadata from above
 class PV_Sites(BaseModel):
-    site_list: str = Field(..., description="List of all sites with their metadata")
+    site_list: List[PV_Site_Metadata] = Field(..., description="List of all sites with their metadata")
