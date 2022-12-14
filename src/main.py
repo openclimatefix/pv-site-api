@@ -22,6 +22,8 @@ version = "0.0.6"
 
 fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 
+now = pd.Timestamp(datetime.now(timezone.utc)).ceil("5T")
+
 
 @app.get("/")
 async def get_api_information():
@@ -73,17 +75,33 @@ async def get_sites(site_uuid: str):
 
 
 # # post_pv_actual: sends data to us, and we save to database
-@app.post("/sites/pv_actual/{site_id}")
-async def post_pv_actual(one_pv_actual: One_PV_Actual):
+@app.post("/sites/pv_actual/{site_id}", response_model=One_PV_Actual)
+async def post_pv_actual(site_uuid:str, datetime_utc:str, actual_generation_kw:float):
     # simple 4. (fake = just return what is put in)
-    return {"one_pv_actual": One_PV_Actual}
+
+    fake_pv_input_iteration = One_PV_Actual(
+        site_uuid=site_uuid, 
+        datetime_utc=datetime_utc, 
+        actual_generation_kw=actual_generation_kw
+    )
+    
+    return fake_pv_input_iteration
 
 
 # put_site_info: client can update a site
-@app.put("/sites/pv_actual/{site_id}/info")
-async def put_site_info(site_metadata: PV_Site_Metadata):
+@app.put("/sites/pv_actual/{site_id}/info", response_model=PV_Site_Metadata)
+async def put_site_info(site_uuid:str, site_name:str, latitude:int, longitude: int, capacity_kw: float  ):
     # simple 5.  (fake = just return whats put). Need to update input model
-    return {"site_metadata": PV_Site_Metadata}
+    pv_site_metadata = PV_Site_Metadata(
+        uuid=site_uuid,
+        site_name= site_name,
+        latitude= latitude, 
+        longitude= longitude,
+        capacity_kw= capacity_kw
+    )
+  
+
+    return pv_site_metadata
 
 
 # get_pv_actual: the client can read pv data from the past
@@ -91,9 +109,6 @@ async def put_site_info(site_metadata: PV_Site_Metadata):
 async def get_pv_actual(site_uuid: str):
     # complicated 3. (fake need to make fake pv data, similar to 'get_pv_forecast'.
     # Making list of 'One_PV_Actual')
-
-    #timestamp
-    now = pd.Timestamp(datetime.now(timezone.utc)).ceil("5T")
 
     #make fake iteration of one pv value
     fake_iteration = One_PV_Actual(
@@ -112,7 +127,6 @@ async def get_pv_forecast(site_uuid: str):
     # this makes a fake value. Real api would load it from the database
 
     # timestamps
-    now = pd.Timestamp(datetime.now(timezone.utc)).ceil("5T")
     datetimes = [now + pd.Timedelta(f"{i*5}T") for i in range(0, 24)]
 
     # make fake forecast values
