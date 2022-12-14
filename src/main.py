@@ -18,7 +18,7 @@ import pandas as pd
 
 app = FastAPI()
 
-version = "0.0.6"
+version = "0.0.1"
 
 fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 
@@ -37,7 +37,7 @@ async def get_api_information():
 
     return {
         "title": "Site Specific PV API",
-        "version": "0.1.0",
+        "version": version,
         "documentation": "",
     }
 
@@ -58,10 +58,10 @@ async def root():
 
 # get_sites: Clients get the site id that are available to them
 @app.get("/sites/site_list", response_model=PV_Sites)
-async def get_sites(site_uuid: str):
+async def get_sites():
     # simple 2. (fake just return a list of one site using 'fake_site_uuid'
     pv_site = PV_Site_Metadata(
-        uuid=site_uuid, site_name="fake site name", latitude=50, longitude=0, capacity_kw=1
+        uuid=fake_site_uuid, site_name="fake site name", latitude=50, longitude=0, capacity_kw=1
     )
     pv_site_list = PV_Sites(
         site_list=[pv_site],
