@@ -126,7 +126,12 @@ async def get_forecast_metadata(forecast_metadata_uuid: str):
 
 
 # get_status: get the status of the system
-@app.get("/api_status")
-async def get_status(api_status: PVSiteAPIStatus):
+@app.get("/api_status", response_model=PVSiteAPIStatus)
+async def get_status():
     # simple 1.
-    return {"api_status": PVSiteAPIStatus}
+    pv_api_status = PVSiteAPIStatus(
+         status = "ok",
+         message = "this is a fake ok status"
+    )
+       
+    return pv_api_status
