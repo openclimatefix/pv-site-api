@@ -55,10 +55,21 @@ async def root():
 # Could look at 'get_forecast_metadata' to see when this forecast is made
 
 # get_sites: Clients get the site id that are available to them
-@app.get("/sites/site_list")
-async def get_sites(pv_sites: PV_Sites):
+@app.get("/sites/site_list", response_model=PV_Sites)
+async def get_sites(site_uuid: str):
     # simple 2. (fake just return a list of one site using 'fake_site_uuid'
-    return {"pv_sites": PV_Sites}
+    pv_site = PV_Site_Metadata(
+        uuid=site_uuid,
+        site_name="fake site name", 
+        latitude= 50,
+        longitude= 0,
+        capacity_kw= 1 
+    )
+    pv_site_list = PV_Sites(
+        site_list= [pv_site],
+    )
+
+    return pv_site_list
 
 
 # # post_pv_actual: sends data to us, and we save to database
@@ -76,11 +87,23 @@ async def put_site_info(site_metadata: PV_Site_Metadata):
 
 
 # get_pv_actual: the client can read pv data from the past
-@app.get("/sites/pv_actual/{site_id}")
-async def get_pv_actual(one_pv_actual: One_PV_Actual):
+@app.get("/sites/pv_actual/{site_id}", response_model=One_PV_Actual)
+async def get_pv_actual(site_uuid: str):
     # complicated 3. (fake need to make fake pv data, similar to 'get_pv_forecast'.
     # Making list of 'One_PV_Actual')
-    return {"one_pv_actual": One_PV_Actual}
+
+    #timestamp
+    now = pd.Timestamp(datetime.now(timezone.utc)).ceil("5T")
+
+    #make fake iteration of one pv value
+    fake_iteration = One_PV_Actual(
+    site_uuid= site_uuid,
+    datetime_utc= str(now),
+    actual_generation_kw=make_fake_intensity(datetime_utc=now)
+   )
+  
+
+    return fake_iteration
 
 
 # get_forecast: Client gets the forecast for their site
