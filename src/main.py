@@ -24,6 +24,7 @@ version = "0.0.1"
 fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 
 
+
 @app.get("/")
 async def get_api_information():
     """### Get basic information about the Nowcasting API
