@@ -24,7 +24,6 @@ version = "0.0.1"
 fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 
 
-
 @app.get("/")
 async def get_api_information():
     """### Get basic information about the Nowcasting API
@@ -38,13 +37,8 @@ async def get_api_information():
     return {
         "title": "Site Specific PV API",
         "version": version,
-        "documentation": "",
+        "documentation": "This is the site_specific_PV_API under construction",
     }
-
-
-@app.get("/")
-async def root():
-    return {"message": "This is the site_specific_PV_API under construction"}
 
 
 # name the api
@@ -71,7 +65,7 @@ async def get_sites():
 
 
 # # post_pv_actual: sends data to us, and we save to database
-@app.post("/sites/pv_actual/{site_id}")
+@app.post("/sites/pv_actual/{site_uuid}")
 async def post_pv_actual(
     site_uuid: str,
     pv_actual: Multiple_PV_Actual,
