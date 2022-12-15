@@ -7,7 +7,7 @@ from pydantic_models import (
     Forecast,
     Forecast_Metadata,
     PV_Site_Metadata,
-    One_Day_PV_Actual,
+    Multiple_PV_Actual,
     Multiple_PV_Actual,
     PV_Sites,
     PVSiteAPIStatus,
@@ -73,7 +73,7 @@ async def get_sites():
 @app.post("/sites/pv_actual/{site_id}")
 async def post_pv_actual(
     site_uuid: str,
-    pv_actual: One_Day_PV_Actual,
+    pv_actual: Multiple_PV_Actual,
 ):
     # simple 4. (fake = just return what is put in)
 
@@ -91,7 +91,7 @@ async def put_site_info(site_info: PV_Site_Metadata):
 
 
 # get_pv_actual: the client can read pv data from the past
-@app.get("/sites/pv_actual/{site_id}", response_model=One_Day_PV_Actual)
+@app.get("/sites/pv_actual/{site_uuid}", response_model=Multiple_PV_Actual)
 async def get_pv_actual(site_uuid: str):
     # complicated 3. (fake need to make fake pv data, similar to 'get_pv_forecast'.
     # Making list of 'One_PV_Actual')
@@ -107,7 +107,7 @@ async def get_pv_actual(site_uuid: str):
         pv_actual_values.append(pv_actual_value)
 
     # make fake iteration of pv values for one day at a specific site
-    fake_pv_actual_iteration = One_Day_PV_Actual(
+    fake_pv_actual_iteration = Multiple_PV_Actual(
         site_uuid=site_uuid,
         pv_actual_values = pv_actual_values
     )

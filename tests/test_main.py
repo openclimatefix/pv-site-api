@@ -2,7 +2,7 @@
 from fastapi.testclient import TestClient
 from main import app
 from main import version
-from pydantic_models import PVSiteAPIStatus, Forecast_Metadata, Forecast, One_PV_Actual, PV_Sites
+from pydantic_models import PVSiteAPIStatus, Forecast_Metadata, Forecast, PV_Sites, Multiple_PV_Actual
 
 client = TestClient(app)
 
@@ -41,12 +41,14 @@ def test_get_forecast():
     assert len(forecast.forecast_values) > 0
 
 
-# def test_pv_actual():
-#
-#     response = client.get("sites/pv_actual/fff-fff-fff")
-#     assert response.status_code == 200
-# TODO
-#
+def test_pv_actual():
+
+    response = client.get("sites/pv_actual/fff-fff-fff")
+    assert response.status_code == 200
+
+    pv_actuals = Multiple_PV_Actual(**response.json())
+    assert len(pv_actuals.pv_actual_values) > 0
+
 
 def test_get_site_list():
     response = client.get("sites/site_list")

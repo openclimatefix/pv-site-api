@@ -38,21 +38,14 @@ class PV_Actual_Value(BaseModel):
     datetime_utc: datetime = Field(..., description="Time of data input")
     actual_generation_kw: float = Field(..., description="Expected generation in kw", ge=0)
 
-class One_Day_PV_Actual(BaseModel):
+
+class Multiple_PV_Actual(BaseModel):
     """Site data for one site"""
 
     site_uuid: str = Field(..., description="The site id")
     pv_actual_values: List[PV_Actual_Value] = Field(
          ..., description="List of  datetimes and generation"
      )
-
-
-# get client pv data history for multiple dates
-class Multiple_PV_Actual(BaseModel):
-    """Actual PV history for one site (multiple inputs)"""
-
-    site_uuid: str = Field(..., description="The uuid for the sites")
-    actual_values: str = Field(..., description="Actual values for multiple sites")
 
 
 # this wasn't in the write-up, but I think there is a ForecastValues class in the other API and thought this would work
