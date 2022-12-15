@@ -84,16 +84,14 @@ async def post_pv_actual(
 
 # put_site_info: client can update a site
 @app.put("/sites/pv_actual/{site_id}/info", response_model=PV_Site_Metadata)
-async def put_site_info(
-    site_uuid: str, site_name: str, latitude: int, longitude: int, capacity_kw: float
-):
+async def put_site_info(site_uuid:str, site_name:str, latitude:int, longitude: int, capacity_kw: float):
     # simple 5.  (fake = just return whats put). Need to update input model
     pv_site_metadata = PV_Site_Metadata(
-        uuid=site_uuid,
-        site_name=site_name,
-        latitude=latitude,
-        longitude=longitude,
-        capacity_kw=capacity_kw,
+        uuid= site_uuid,
+        site_name= site_name,
+        latitude= latitude, 
+        longitude= longitude,
+        capacity_kw= capacity_kw
     )
 
     return pv_site_metadata
