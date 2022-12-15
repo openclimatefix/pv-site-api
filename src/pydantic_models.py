@@ -31,12 +31,20 @@ class PV_Site_Metadata(BaseModel):
 # posting data too the database
 # what parameters do we need from the user? this will probably be a user model of some sort hooked up to auth0
 # *** should client have the ability to delete data from the database? ***
-class One_PV_Actual(BaseModel):
+class PV_Actual_Value(BaseModel):
+    """PV Actual Value list"""
+
+    # forecast_uuid: str = Field(..., description="The forecast id")
+    datetime_utc: datetime = Field(..., description="Time of data input")
+    actual_generation_kw: float = Field(..., description="Expected generation in kw", ge=0)
+
+class One_Day_PV_Actual(BaseModel):
     """Site data for one site"""
 
     site_uuid: str = Field(..., description="The site id")
-    datetime_utc: datetime = Field(..., description="Date of data input")
-    actual_generation_kw: float = Field(..., description="The site's capacity in kw", ge=0)
+    pv_actual_values: List[PV_Actual_Value] = Field(
+         ..., description="List of  datetimes and generation"
+     )
 
 
 # get client pv data history for multiple dates
