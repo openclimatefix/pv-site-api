@@ -77,7 +77,7 @@ async def post_pv_actual(
 
 
 # put_site_info: client can update a site
-@app.put("/sites/pv_actual/{site_id}/info")
+@app.put("/sites/pv_actual/{site_uuid}/info")
 async def put_site_info(site_info: PV_Site_Metadata):
     # simple 5.  (fake = just return whats put). Need to update input model
   

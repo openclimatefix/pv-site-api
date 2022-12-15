@@ -2,7 +2,7 @@
 from fastapi.testclient import TestClient
 from main import app
 from main import version
-from pydantic_models import PVSiteAPIStatus, Forecast_Metadata, Forecast, PV_Sites, Multiple_PV_Actual, PV_Actual_Value
+from pydantic_models import PVSiteAPIStatus, Forecast_Metadata, Forecast, PV_Sites, Multiple_PV_Actual, PV_Actual_Value, PV_Site_Metadata
 import json
 from datetime import datetime, timezone
 import pandas as pd
@@ -79,5 +79,16 @@ def test_get_site_list():
 
     pv_sites = PV_Sites(**response.json())
     assert len(pv_sites.site_list) > 0
+
+
+def test_put_site():
+
+    pv_site = PV_Site_Metadata(
+        uuid='ffff-fff', site_name="fake site name", latitude=50, longitude=0, capacity_kw=1
+    )
+
+    response = client.put("sites/pv_actual/ffff-ffff/info", json=pv_site.dict())
+    assert response.status_code == 200
+
 
 
