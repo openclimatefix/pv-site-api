@@ -1,0 +1,2 @@
+/infrastructure/terraform/terraform.tfvars
+*.pyc
