@@ -62,7 +62,7 @@ async def get_sites():
     )
 
     return pv_site_list
-
+ 
 
 # # post_pv_actual: sends data to us, and we save to database
 @app.post("/sites/pv_actual/{site_uuid}")
