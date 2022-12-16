@@ -21,6 +21,9 @@ class PV_Site_Metadata(BaseModel):
 
     uuid: str = Field(..., description="The site ids")
     site_name: str = Field(..., decription="The PV site name")
+    region: str = Field(..., decription="The region of the PV site")
+    dno: str = Field(..., decription="The distribution network operator of the PV site")
+    gsp: str = Field(..., decription="The grid supply point of the PV site")
     latitude: float = Field(..., description="The site's latitude", ge=-90, le=90)
     longitude: float = Field(..., description="The site's longitude", ge=-180, le=180)
     capacity_kw: float = Field(..., description="The site's capacity in kw", ge=0)

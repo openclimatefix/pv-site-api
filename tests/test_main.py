@@ -84,7 +84,7 @@ def test_get_site_list():
 def test_put_site():
 
     pv_site = PV_Site_Metadata(
-        uuid='ffff-fff', site_name="fake site name", latitude=50, longitude=0, capacity_kw=1
+        uuid='ffff-fff', site_name="fake site name", region="sunny region", dno="super power", gsp="energy supply", latitude=50, longitude=0, capacity_kw=1
     )
 
     response = client.put("sites/pv_actual/ffff-ffff/info", json=pv_site.dict())

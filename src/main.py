@@ -55,7 +55,7 @@ async def get_api_information():
 async def get_sites():
     # simple 2. (fake just return a list of one site using 'fake_site_uuid'
     pv_site = PV_Site_Metadata(
-        uuid=fake_site_uuid, site_name="fake site name", latitude=50, longitude=0, capacity_kw=1
+        uuid=fake_site_uuid, site_name="fake site name", region="sunny region", dno="super power", gsp="energy supply", latitude=50, longitude=0, capacity_kw=1
     )
     pv_site_list = PV_Sites(
         site_list=[pv_site],
