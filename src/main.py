@@ -5,7 +5,6 @@ from uuid import uuid4
 from pydantic import Field, BaseModel
 from pydantic_models import (
     Forecast,
-    ForecastMetadata,
     PVSiteMetadata,
     MultiplePVActual,
     PVSites,
@@ -50,12 +49,23 @@ async def get_api_information():
 # get_sites: Clients get the site id that are available to them
 
 @app.get("/sites/site_list", response_model=PVSites)
-async def get_sites():
+async def get_sites(client_uuid: str):
     """ 
-    ### This route returns a list of PV Sites for the user with metadata for each site. 
+    ### This route returns a list of the user's PV Sites with metadata for each site. 
     """
     pv_site = PVSiteMetadata(
-        uuid=fake_site_uuid, site_name="your site's name", region="the site's region", dno="the site's dno", gsp="the site's gsp", latitude=50, longitude=0, capacity_kw=1
+        site_uuid=fake_site_uuid, 
+        client_uuid = client_uuid,
+        client_site_id = "the site id used by the user",
+        client_site_name="the site name", 
+        region="the site's region", 
+        dno="the site's dno", 
+        gsp="the site's gsp", 
+        latitude=50, 
+        longitude=0, 
+        installed_capacity_kw=1,
+        created_utc=datetime.now(timezone.utc),
+        updated_utc=datetime.now(timezone.utc)
     )
     pv_site_list = PVSites(
         site_list=[pv_site],
@@ -71,18 +81,17 @@ async def post_pv_actual(
     pv_actual: MultiplePVActual,
 ):
     """ 
-    ### This route is used to input the actual PV generation for one client PV site. 
-    In an ideal world, users will upload PV generation data 
-    in regular 5 - 15 minutes throughout the day.  
+    ### This route is used to input the actual PV generation for one user PV site. 
+    Users will upload actual PV generation readings at regular intervals throughout a given day.  
+    Currently this route does not return anything. 
     """
-
     print(f"Got {pv_actual.dict()} for site {site_uuid}")
     print("Not doing anything with it (yet!)")
 
 
 # put_site_info: client can update a site
 @app.put("/sites/pv_actual/{site_uuid}/info")
-async def put_site_info(site_info: PVSiteMetadata):
+async def put_site_info(site_info: PVSiteMetadata, site_uu):
     """ 
     ### This route allows a user to update site information for a single site. 
 
@@ -97,7 +106,7 @@ async def put_site_info(site_info: PVSiteMetadata):
 async def get_pv_actual(site_uuid: str):
     """ 
     ### This route returns PV readings from a single PV site. 
-    Currently the routes set to provide a reading every hour for the previous 24-hour period. 
+    Currently the route is set to provide a reading every hour for the previous 24-hour period. 
     To test the route, you can input any number for the site_uuid (ex. 567)
     to generate a list of datetimes and actual kw generation for that site.
     """
@@ -127,11 +136,11 @@ async def get_pv_forecast(site_uuid: str):
     """ 
     ### This route is where you might say the magic happens; it returns the PV forecast for a user's PV Site.
     
-    The forecast is attached to the site_uuid and provides a list of forecast values with a 
+    The forecast is attached to the **site_uuid** and provides a list of forecast values with a 
     **target_date_time_utc** and **expected_generation_kw** reading every half-hour 8-hours into the future. 
 
     You can currently input any number for **site_uuid** (ex. 567), 
-    and the route returns an sample forecast. 
+    and the route returns a sample forecast. 
     
     """
     # timestamps
@@ -142,38 +151,41 @@ async def get_pv_forecast(site_uuid: str):
     forecast_values = []
     for d in datetimes:
         forecast_value = SiteForecastValues(
-            target_datetime_utc=d, expected_generation_kw=make_fake_intensity(datetime_utc=d)
+            target_datetime_utc=d, 
+            expected_generation_kw=make_fake_intensity(datetime_utc=d)
         )
         forecast_values.append(forecast_value)
 
     # join together to make forecast object
     fake_forecast = Forecast(
         forecast_uuid=str(uuid4()),
-        forecast_metadata_uuid=str(uuid4()),
-        forecast_values=forecast_values,
         site_uuid=site_uuid,
+        forecast_creation_datetime=datetime.now(timezone.utc),
+        forecast_version="0.0.1",
+        forecast_values=forecast_values,
     )
 
     return fake_forecast
 
 
 # get_forecast_metadata: Get when the forecast is made, what site is, forecast version
-@app.get("/sites/pv_forecast/metadata/{forecast_metadata_uuid}", response_model=ForecastMetadata)
-async def get_forecast_metadata(forecast_metadata_uuid: str):
-    """ 
+# @app.get("/sites/pv_forecast/metadata/{forecast_metadata_uuid}", response_model=ForecastMetadata)
+# async def get_forecast_metadata(forecast_metadata_uuid: str):
+#     """ 
     
-    """
-    fake_forecast_metadata = ForecastMetadata(
-        forecast_metadata_uuid=forecast_metadata_uuid,
-        site_uuid=fake_site_uuid,
-        forecast_creation_datetime=datetime.now(timezone.utc),
-        forecast_version="0.0.1",
-    )
+#     """
+#     fake_forecast_metadata = ForecastMetadata(
+#         forecast_metadata_uuid=forecast_metadata_uuid,
+#         site_uuid=fake_site_uuid,
+#         forecast_creation_datetime=datetime.now(timezone.utc),
+#         forecast_version="0.0.1",
+#     )
 
-    return fake_forecast_metadata
+#     return fake_forecast_metadata
 
 
 # get_status: get the status of the system
+
 @app.get("/api_status", response_model=PVSiteAPIStatus)
 async def get_status():
     """ This route gets the status of the system. It's mostly used by OCF to 

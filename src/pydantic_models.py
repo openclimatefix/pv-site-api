@@ -20,14 +20,20 @@ class PVSiteAPIStatus(BaseModel):
 class PVSiteMetadata(BaseModel):
     """Site metadata"""
 
-    uuid: str = Field(..., description="The site ids")
-    site_name: str = Field(..., decription="The PV site name")
+    site_uuid: str = Field(..., description="The unique internal ID designated to the site.")
+    client_uuid: str = Field(..., description="The unique internal ID of the user providing the site data.")
+    client_site_id: str = Field(..., description="The site ID as given by the providing user.")
+    client_site_name: str = Field(..., decription="The name of the site as given by the providing uuser.")
     region: Optional[str] = Field(None, decription="The region of the PV site")
-    dno: Optional[str]= Field(None, decription="The distribution network operator of the PV site")
-    gsp: Optional[str]= Field(None, decription="The grid supply point of the PV site")
+    dno: Optional[str]= Field(None, decription="The distribution network operator of the PV site.")
+    gsp: Optional[str]= Field(None, decription="The grid supply point of the PV site.")
+    orientation: Optional[float] = Field(None, description="The rotation of the panel in degrees. 180° points south")
+    tilt:  Optional[float] = Field(None, description="The tile of the panel in degrees. 90° indicates the panel is vertical.")
     latitude: float = Field(..., description="The site's latitude", ge=-90, le=90)
     longitude: float = Field(..., description="The site's longitude", ge=-180, le=180)
-    capacity_kw: float = Field(..., description="The site's capacity in kw", ge=0)
+    installed_capacity_kw: float = Field(..., description="The site's capacity in kw", ge=0)
+    created_utc: datetime = Field(..., description="Datetime the site was entered into the system.")
+    updated_utc: datetime = Field(..., description="Datetime of latest site information update.")
 
 
 # post_pv_actual
@@ -38,7 +44,6 @@ class PVSiteMetadata(BaseModel):
 class PVActualValue(BaseModel):
     """PV Actual Value list"""
 
-    # forecast_uuid: str = Field(..., description="The forecast id")
     datetime_utc: datetime = Field(..., description="Time of data input")
     actual_generation_kw: float = Field(..., description="Expected generation in kw", ge=0)
 
@@ -56,7 +61,7 @@ class MultiplePVActual(BaseModel):
 class SiteForecastValues(BaseModel):
     """Forecast value list"""
 
-    # forecast_uuid: str = Field(..., description="The forecast id")
+    # forecast_value_uuid: str = Field(..., description="ID for this specific forecast value")
     target_datetime_utc: datetime = Field(..., description="Target time for forecast")
     expected_generation_kw: float = Field(..., description="Expected generation in kw", ge=0)
 
@@ -65,8 +70,9 @@ class SiteForecastValues(BaseModel):
 # client gets a forecast for their site
 class Forecast(BaseModel):
     forecast_uuid: str = Field(..., description="The forecast id")
-    forecast_metadata_uuid: str = Field(..., description="The forecast metadata uuid")
     site_uuid: str = Field(..., description="The site id")
+    forecast_creation_datetime: datetime = Field(..., description="The time that the forecast was created.")
+    forecast_version: str = Field(..., description="Forecast version")
     forecast_values: List[SiteForecastValues] = Field(
          ..., description="List of target times and generation"
      )
@@ -74,13 +80,13 @@ class Forecast(BaseModel):
 
 # client gets information about the forecast: which site, which forecast version, when it was made
 # parameters: site_uuid
-class ForecastMetadata(BaseModel):
-    """Forecast with site information"""
+# class ForecastMetadata(BaseModel):
+#     """Forecast with site information"""
 
-    forecast_metadata_uuid: str = Field(..., description="The forecast id")
-    site_uuid: str = Field(..., description="The site id")
-    forecast_creation_datetime: datetime = Field(..., description="Time forecast was created")
-    forecast_version: str = Field(..., description="Forecast version")
+#     forecast_metadata_uuid: str = Field(..., description="The forecast id")
+#     site_uuid: str = Field(..., description="The site id")
+#     forecast_creation_datetime: datetime = Field(..., description="Time forecast was created")
+#     forecast_version: str = Field(..., description="Forecast version")
 
 
 # get_sites
