@@ -16,7 +16,7 @@ class PVSiteAPIStatus(BaseModel):
 # get_sites
 # these are the sites available to the client given their login
 # schema will retuurn a list of sites
-class PV_Site_Metadata(BaseModel):
+class PVSiteMetadata(BaseModel):
     """Site metadata"""
 
     uuid: str = Field(..., description="The site ids")
@@ -34,7 +34,7 @@ class PV_Site_Metadata(BaseModel):
 # posting data too the database
 # what parameters do we need from the user? this will probably be a user model of some sort hooked up to auth0
 # *** should client have the ability to delete data from the database? ***
-class PV_Actual_Value(BaseModel):
+class PVActualValue(BaseModel):
     """PV Actual Value list"""
 
     # forecast_uuid: str = Field(..., description="The forecast id")
@@ -42,7 +42,7 @@ class PV_Actual_Value(BaseModel):
     actual_generation_kw: float = Field(..., description="Expected generation in kw", ge=0)
 
 
-class Multiple_PV_Actual(BaseModel):
+class MultiplePVActual(BaseModel):
     """Site data for one site"""
 
     site_uuid: str = Field(..., description="The site id")
@@ -52,7 +52,7 @@ class Multiple_PV_Actual(BaseModel):
 
 
 # this wasn't in the write-up, but I think there is a ForecastValues class in the other API and thought this would work
-class Site_Forecast_Values(BaseModel):
+class SiteForecastValues(BaseModel):
     """Forecast value list"""
 
     # forecast_uuid: str = Field(..., description="The forecast id")
@@ -73,7 +73,7 @@ class Forecast(BaseModel):
 
 # client gets information about the forecast: which site, which forecast version, when it was made
 # parameters: site_uuid
-class Forecast_Metadata(BaseModel):
+class ForecastMetadata(BaseModel):
     """Forecast with site information"""
 
     forecast_metadata_uuid: str = Field(..., description="The forecast id")
@@ -84,5 +84,5 @@ class Forecast_Metadata(BaseModel):
 
 # get_sites
 # this gives the sites available to the client and uses the PV_Site_Metadata from above
-class PV_Sites(BaseModel):
+class PVSites(BaseModel):
     site_list: List[PV_Site_Metadata] = Field(..., description="List of all sites with their metadata")

@@ -5,14 +5,13 @@ from uuid import uuid4
 from pydantic import Field, BaseModel
 from pydantic_models import (
     Forecast,
-    Forecast_Metadata,
-    PV_Site_Metadata,
-    Multiple_PV_Actual,
-    Multiple_PV_Actual,
-    PV_Sites,
+    ForecastMetadata,
+    PVSiteMetadata,
+    MultiplePVActual,
+    PVSites,
     PVSiteAPIStatus,
-    Site_Forecast_Values,
-    PV_Actual_Value
+    SiteForecastValues,
+    PVActualValue
 )
 from utils import make_fake_intensity
 import pandas as pd
@@ -51,13 +50,13 @@ async def get_api_information():
 # Could look at 'get_forecast_metadata' to see when this forecast is made
 
 # get_sites: Clients get the site id that are available to them
-@app.get("/sites/site_list", response_model=PV_Sites)
+@app.get("/sites/site_list", response_model=PVSites)
 async def get_sites():
     # simple 2. (fake just return a list of one site using 'fake_site_uuid'
-    pv_site = PV_Site_Metadata(
+    pv_site = PVSiteMetadata(
         uuid=fake_site_uuid, site_name="fake site name", region="sunny region", dno="super power", gsp="energy supply", latitude=50, longitude=0, capacity_kw=1
     )
-    pv_site_list = PV_Sites(
+    pv_site_list = PVSites(
         site_list=[pv_site],
     )
 
@@ -68,7 +67,7 @@ async def get_sites():
 @app.post("/sites/pv_actual/{site_uuid}")
 async def post_pv_actual(
     site_uuid: str,
-    pv_actual: Multiple_PV_Actual,
+    pv_actual: MultiplePVActual,
 ):
     # simple 4. (fake = just return what is put in)
 
@@ -78,7 +77,7 @@ async def post_pv_actual(
 
 # put_site_info: client can update a site
 @app.put("/sites/pv_actual/{site_uuid}/info")
-async def put_site_info(site_info: PV_Site_Metadata):
+async def put_site_info(site_info: PVSiteMetadata):
     # simple 5.  (fake = just return whats put). Need to update input model
   
     print(f"Successfully updated {site_info.dict()} for site {site_info.site_name}")
@@ -86,7 +85,7 @@ async def put_site_info(site_info: PV_Site_Metadata):
 
 
 # get_pv_actual: the client can read pv data from the past
-@app.get("/sites/pv_actual/{site_uuid}", response_model=Multiple_PV_Actual)
+@app.get("/sites/pv_actual/{site_uuid}", response_model=MultiplePVActual)
 async def get_pv_actual(site_uuid: str):
     # complicated 3. (fake need to make fake pv data, similar to 'get_pv_forecast'.
     # Making list of 'One_PV_Actual')
@@ -95,14 +94,14 @@ async def get_pv_actual(site_uuid: str):
     
     pv_actual_values = []
     for d in datetimes:
-        pv_actual_value = PV_Actual_Value(
+        pv_actual_value = PVActualValue(
             datetime_utc=d, 
             actual_generation_kw=make_fake_intensity(datetime_utc=d)
         )
         pv_actual_values.append(pv_actual_value)
 
     # make fake iteration of pv values for one day at a specific site
-    fake_pv_actual_iteration = Multiple_PV_Actual(
+    fake_pv_actual_iteration = MultiplePVActual(
         site_uuid=site_uuid,
         pv_actual_values = pv_actual_values
     )
@@ -122,7 +121,7 @@ async def get_pv_forecast(site_uuid: str):
     # make fake forecast values
     forecast_values = []
     for d in datetimes:
-        forecast_value = Site_Forecast_Values(
+        forecast_value = SiteForecastValues(
             target_datetime_utc=d, expected_generation_kw=make_fake_intensity(datetime_utc=d)
         )
         forecast_values.append(forecast_value)
@@ -139,10 +138,10 @@ async def get_pv_forecast(site_uuid: str):
 
 
 # get_forecast_metadata: Get when the forecast is made, what site is, forecast version
-@app.get("/sites/pv_forecast/metadata/{forecast_metadata_uuid}", response_model=Forecast_Metadata)
+@app.get("/sites/pv_forecast/metadata/{forecast_metadata_uuid}", response_model=ForecastMetadata)
 async def get_forecast_metadata(forecast_metadata_uuid: str):
 
-    fake_forecast_metadata = Forecast_Metadata(
+    fake_forecast_metadata = ForecastMetadata(
         forecast_metadata_uuid=forecast_metadata_uuid,
         site_uuid=fake_site_uuid,
         forecast_creation_datetime=datetime.now(timezone.utc),
