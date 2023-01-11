@@ -8,9 +8,10 @@ from typing import List, Optional
 # get_status
 class PVSiteAPIStatus(BaseModel):
     """PVSiteAPI Status"""
-
+    status_uuid: str = Field(..., description="Status description")
     status: str = Field(..., description="Status description")
     message: str = Field(..., description="Status Message")
+    created_utc: datetime = Field(..., description="Time of status creation")
 
 
 # get_sites
@@ -46,7 +47,7 @@ class MultiplePVActual(BaseModel):
     """Site data for one site"""
 
     site_uuid: str = Field(..., description="The site id")
-    pv_actual_values: List[PV_Actual_Value] = Field(
+    pv_actual_values: List[PVActualValue] = Field(
          ..., description="List of  datetimes and generation"
      )
 
@@ -66,7 +67,7 @@ class Forecast(BaseModel):
     forecast_uuid: str = Field(..., description="The forecast id")
     forecast_metadata_uuid: str = Field(..., description="The forecast metadata uuid")
     site_uuid: str = Field(..., description="The site id")
-    forecast_values: List[Site_Forecast_Values] = Field(
+    forecast_values: List[SiteForecastValues] = Field(
          ..., description="List of target times and generation"
      )
 
@@ -85,4 +86,4 @@ class ForecastMetadata(BaseModel):
 # get_sites
 # this gives the sites available to the client and uses the PV_Site_Metadata from above
 class PVSites(BaseModel):
-    site_list: List[PV_Site_Metadata] = Field(..., description="List of all sites with their metadata")
+    site_list: List[PVSiteMetadata] = Field(..., description="List of all sites with their metadata")
