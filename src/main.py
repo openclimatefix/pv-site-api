@@ -71,7 +71,9 @@ async def post_pv_actual(
     pv_actual: MultiplePVActual,
 ):
     """ 
-    ### This route is used to input the actual PV generation for one client PV site in 5 - 15 minute intervals. 
+    ### This route is used to input the actual PV generation for one client PV site. 
+    In an ideal world, users will upload PV generation data 
+    in regular 5 - 15 minutes throughout the day.  
     """
 
     print(f"Got {pv_actual.dict()} for site {site_uuid}")
@@ -123,10 +125,13 @@ async def get_pv_actual(site_uuid: str):
 @app.get("/sites/pv_forecast/{site_uuid}", response_model=Forecast)
 async def get_pv_forecast(site_uuid: str):
     """ 
-    ### This route is where you might say the magic happens. This route returns the PV forecast for a user's PV Site.
+    ### This route is where you might say the magic happens; it returns the PV forecast for a user's PV Site.
     
     The forecast is attached to the site_uuid and provides a list of forecast values with a 
     **target_date_time_utc** and **expected_generation_kw** reading every half-hour 8-hours into the future. 
+
+    You can currently input any number for **site_uuid** (ex. 567), 
+    and the route returns an sample forecast. 
     
     """
     # timestamps
@@ -171,7 +176,8 @@ async def get_forecast_metadata(forecast_metadata_uuid: str):
 # get_status: get the status of the system
 @app.get("/api_status", response_model=PVSiteAPIStatus)
 async def get_status():
-    """ This route gets the status of the system."""
+    """ This route gets the status of the system. It's mostly used by OCF to 
+    make sure things are running smoothly."""
    
     pv_api_status = PVSiteAPIStatus(status="ok", message="The API is up and running")
 
