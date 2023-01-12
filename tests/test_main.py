@@ -2,7 +2,7 @@
 from fastapi.testclient import TestClient
 from main import app
 from main import version
-from pydantic_models import PVSiteAPIStatus, Forecast_Metadata, Forecast, PV_Sites, Multiple_PV_Actual, PV_Actual_Value, PV_Site_Metadata
+from pydantic_models import PVSiteAPIStatus, Forecast, PVSites, MultiplePVActual, PVActualValue, PVSiteMetadata
 import json
 from datetime import datetime, timezone
 import pandas as pd
@@ -24,15 +24,7 @@ def test_get_status():
 
     returned_status = PVSiteAPIStatus(**response.json())
     assert returned_status.status == 'ok'
-    assert returned_status.message == 'this is a fake ok status'
-
-
-def test_get_forecast_metadata():
-
-    response = client.get("sites/pv_forecast/metadata/ffff-ffff")
-    assert response.status_code == 200
-
-    _ = Forecast_Metadata(**response.json())
+    assert returned_status.message == 'The API is up and running'
 
 
 def test_get_forecast():
@@ -49,19 +41,19 @@ def test_pv_actual():
     response = client.get("sites/pv_actual/fff-fff-fff")
     assert response.status_code == 200
 
-    pv_actuals = Multiple_PV_Actual(**response.json())
+    pv_actuals = MultiplePVActual(**response.json())
     assert len(pv_actuals.pv_actual_values) > 0
 
 
 def test_post_pv_actual():
 
-    pv_actual_value = PV_Actual_Value(
+    pv_actual_value = PVActualValue(
         datetime_utc=datetime.now(timezone.utc),
         actual_generation_kw=73.3
     )
 
     # make fake iteration of pv values for one day at a specific site
-    fake_pv_actual_iteration = Multiple_PV_Actual(
+    fake_pv_actual_iteration = MultiplePVActual(
         site_uuid='fff-fff',
         pv_actual_values=[pv_actual_value]
     )
@@ -74,17 +66,32 @@ def test_post_pv_actual():
 
 
 def test_get_site_list():
+
     response = client.get("sites/site_list")
     assert response.status_code == 200
-
-    pv_sites = PV_Sites(**response.json())
+    
+    pv_sites = PVSites(**response.json())
     assert len(pv_sites.site_list) > 0
-
+    
+    
 
 def test_put_site():
 
-    pv_site = PV_Site_Metadata(
-        uuid='ffff-fff', site_name="fake site name", region="sunny region", dno="super power", gsp="energy supply", latitude=50, longitude=0, capacity_kw=1
+    pv_site = PVSiteMetadata(
+        site_uuid='ffff-ffff', 
+        client_uuid = 'eeee-eeee',
+        client_site_id = "the site id used by the user",
+        client_site_name="the site name", 
+        region="the site's region", 
+        dno="the site's dno", 
+        gsp="the site's gsp", 
+        orientation= 180, 
+        tilt = 90, 
+        latitude=50, 
+        longitude=0, 
+        installed_capacity_kw=1,
+        created_utc=datetime.now(timezone.utc),
+        updated_utc=datetime.now(timezone.utc),
     )
 
     response = client.put("sites/pv_actual/ffff-ffff/info", json=pv_site.dict())

@@ -1,3 +1,4 @@
+"""Pydantic models for PV Site API"""
 # import packages
 from pydantic import Field, BaseModel
 from datetime import datetime
@@ -8,10 +9,8 @@ from typing import List, Optional
 # get_status
 class PVSiteAPIStatus(BaseModel):
     """PVSiteAPI Status"""
-    status_uuid: str = Field(..., description="Status description")
     status: str = Field(..., description="Status description")
     message: str = Field(..., description="Status Message")
-    created_utc: datetime = Field(..., description="Time of status creation")
 
 
 # get_sites
@@ -69,6 +68,7 @@ class SiteForecastValues(BaseModel):
 # get_forecast
 # client gets a forecast for their site
 class Forecast(BaseModel):
+    """PV Forecast"""
     forecast_uuid: str = Field(..., description="The forecast id")
     site_uuid: str = Field(..., description="The site id")
     forecast_creation_datetime: datetime = Field(..., description="The time that the forecast was created.")
@@ -78,18 +78,8 @@ class Forecast(BaseModel):
      )
 
 
-# client gets information about the forecast: which site, which forecast version, when it was made
-# parameters: site_uuid
-# class ForecastMetadata(BaseModel):
-#     """Forecast with site information"""
-
-#     forecast_metadata_uuid: str = Field(..., description="The forecast id")
-#     site_uuid: str = Field(..., description="The site id")
-#     forecast_creation_datetime: datetime = Field(..., description="Time forecast was created")
-#     forecast_version: str = Field(..., description="Forecast version")
-
-
 # get_sites
 # this gives the sites available to the client and uses the PV_Site_Metadata from above
 class PVSites(BaseModel):
+    """PV Sites"""
     site_list: List[PVSiteMetadata] = Field(..., description="List of all sites with their metadata")

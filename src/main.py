@@ -1,3 +1,4 @@
+"""Main API Routes"""
 from fastapi import FastAPI
 import logging
 from datetime import datetime, timezone
@@ -25,7 +26,8 @@ fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 
 @app.get("/")
 async def get_api_information():
-    """###  This route returns basic information about the Nowcasting PV Site API. 
+    """
+    ###  This route returns basic information about the Nowcasting PV Site API. 
 
     """
 
@@ -41,7 +43,6 @@ async def get_api_information():
 # name the api
 # test that the routes are there on swagger
 # Following on from #1 now will be good to set out models
-
 # User story
 # get list of sites using 'get_sites'
 # for each site get the forecast using 'get_forecast'
@@ -64,8 +65,8 @@ async def get_sites(client_uuid: str):
         latitude=50, 
         longitude=0, 
         installed_capacity_kw=1,
-        created_utc=datetime.now(timezone.utc),
-        updated_utc=datetime.now(timezone.utc)
+        created_utc="datetime.now(timezone.utc)",
+        updated_utc="datetime.now(timezone.utc)"
     )
     pv_site_list = PVSites(
         site_list=[pv_site],
@@ -74,7 +75,7 @@ async def get_sites(client_uuid: str):
     return pv_site_list
  
 
-# # post_pv_actual: sends data to us, and we save to database
+# post_pv_actual: sends data to us, and we save to database
 @app.post("/sites/pv_actual/{site_uuid}")
 async def post_pv_actual(
     site_uuid: str,
@@ -92,6 +93,7 @@ async def post_pv_actual(
 # put_site_info: client can update a site
 @app.put("/sites/pv_actual/{site_uuid}/info")
 async def put_site_info(site_info: PVSiteMetadata, site_uu):
+
     """ 
     ### This route allows a user to update site information for a single site. 
 
@@ -104,6 +106,7 @@ async def put_site_info(site_info: PVSiteMetadata, site_uu):
 # get_pv_actual: the client can read pv data from the past
 @app.get("/sites/pv_actual/{site_uuid}", response_model=MultiplePVActual)
 async def get_pv_actual(site_uuid: str):
+
     """ 
     ### This route returns PV readings from a single PV site. 
     Currently the route is set to provide a reading every hour for the previous 24-hour period. 
@@ -133,6 +136,7 @@ async def get_pv_actual(site_uuid: str):
 # get_forecast: Client gets the forecast for their site
 @app.get("/sites/pv_forecast/{site_uuid}", response_model=Forecast)
 async def get_pv_forecast(site_uuid: str):
+
     """ 
     ### This route is where you might say the magic happens; it returns the PV forecast for a user's PV Site.
     
@@ -167,30 +171,18 @@ async def get_pv_forecast(site_uuid: str):
 
     return fake_forecast
 
-
-# get_forecast_metadata: Get when the forecast is made, what site is, forecast version
-# @app.get("/sites/pv_forecast/metadata/{forecast_metadata_uuid}", response_model=ForecastMetadata)
-# async def get_forecast_metadata(forecast_metadata_uuid: str):
-#     """ 
-    
-#     """
-#     fake_forecast_metadata = ForecastMetadata(
-#         forecast_metadata_uuid=forecast_metadata_uuid,
-#         site_uuid=fake_site_uuid,
-#         forecast_creation_datetime=datetime.now(timezone.utc),
-#         forecast_version="0.0.1",
-#     )
-
-#     return fake_forecast_metadata
-
-
 # get_status: get the status of the system
-
 @app.get("/api_status", response_model=PVSiteAPIStatus)
 async def get_status():
-    """ This route gets the status of the system. It's mostly used by OCF to 
-    make sure things are running smoothly."""
+
+    """ 
+    This route gets the status of the system. It's mostly used by OCF to 
+    make sure things are running smoothly.
+    """
    
-    pv_api_status = PVSiteAPIStatus(status="ok", message="The API is up and running")
+    pv_api_status = PVSiteAPIStatus(
+        status="ok", 
+        message="The API is up and running", 
+        )
 
     return pv_api_status
