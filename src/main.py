@@ -2,10 +2,8 @@
 import logging
 from datetime import datetime, timezone
 from uuid import uuid4
-
 import pandas as pd
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
 
 from pydantic_models import (
     Forecast,
@@ -85,9 +83,11 @@ async def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
 ):
-    """### This route is used to input the actual PV generation for one user PV site.
+    """### This route is used to input the actual
+    PV generation for one user PV site.
 
-    Users will upload actual PV generation readings at regular intervals throughout a given day.
+    Users will upload actual PV generation
+    readings at regular intervals throughout a given day.
     Currently this route does not return anything.
     """
     print(f"Got {pv_actual.dict()} for site {site_uuid}")
@@ -111,7 +111,8 @@ async def put_site_info(site_info: PVSiteMetadata):
 async def get_pv_actual(site_uuid: str):
     """### This route returns PV readings from a single PV site.
 
-    Currently the route is set to provide a reading every hour for the previous 24-hour period.
+    Currently the route is set to provide a reading
+    every hour for the previous 24-hour period.
     To test the route, you can input any number for the site_uuid (ex. 567)
     to generate a list of datetimes and actual kw generation for that site.
     """
@@ -137,10 +138,13 @@ async def get_pv_actual(site_uuid: str):
 @app.get("/sites/pv_forecast/{site_uuid}", response_model=Forecast)
 async def get_pv_forecast(site_uuid: str):
     """
-    ### This route is where you might say the magic happens; it returns the PV forecast for a user's PV Site.
+    ### This route is where you might say the magic happens;
+    it returns the PV forecast for a user's PV Site.
 
-    The forecast is attached to the **site_uuid** and provides a list of forecast values with a
-    **target_date_time_utc** and **expected_generation_kw** reading every half-hour 8-hours into the future.
+    The forecast is attached to the **site_uuid** and
+    provides a list of forecast values with a
+    **target_date_time_utc** and **expected_generation_kw**
+    reading every half-hour 8-hours into the future.
 
     You can currently input any number for **site_uuid** (ex. 567),
     and the route returns a sample forecast.
@@ -154,7 +158,8 @@ async def get_pv_forecast(site_uuid: str):
     forecast_values = []
     for d in datetimes:
         forecast_value = SiteForecastValues(
-            target_datetime_utc=d, expected_generation_kw=make_fake_intensity(datetime_utc=d)
+            target_datetime_utc=d,
+            expected_generation_kw=make_fake_intensity(datetime_utc=d)
         )
         forecast_values.append(forecast_value)
 
@@ -174,7 +179,6 @@ async def get_pv_forecast(site_uuid: str):
 @app.get("/api_status", response_model=PVSiteAPIStatus)
 async def get_status():
     """This route gets the status of the system.
-
     It's mostly used by OCF to
     make sure things are running smoothly.
     """

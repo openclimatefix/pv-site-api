@@ -5,8 +5,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-# initiate the classes
 
+# initiate the classes
 # get_status
 class PVSiteAPIStatus(BaseModel):
     """PVSiteAPI Status"""
@@ -21,9 +21,9 @@ class PVSiteAPIStatus(BaseModel):
 class PVSiteMetadata(BaseModel):
     """Site metadata"""
 
-    site_uuid: str = Field(..., description="The unique internal ID designated to the site.")
+    site_uuid: str = Field(..., description="Unique internal ID for site.")
     client_uuid: str = Field(
-        ..., description="The unique internal ID of the user providing the site data."
+        ..., description="Unique internal ID for user providing the site data."
     )
     client_site_id: str = Field(..., description="The site ID as given by the providing user.")
     client_site_name: str = Field(
@@ -48,13 +48,13 @@ class PVSiteMetadata(BaseModel):
 # post_pv_actual
 # get_pv_actual_date
 # posting data too the database
-# what parameters do we need from the user? this will probably be a user model of some sort hooked up to auth0
+# what parameters do we need from the user?
 # *** should client have the ability to delete data from the database? ***
 class PVActualValue(BaseModel):
     """PV Actual Value list"""
 
     datetime_utc: datetime = Field(..., description="Time of data input")
-    actual_generation_kw: float = Field(..., description="Expected generation in kw", ge=0)
+    actual_generation_kw: float = Field(..., description="Actual kw generation", ge=0)
 
 
 class MultiplePVActual(BaseModel):
@@ -66,7 +66,6 @@ class MultiplePVActual(BaseModel):
     )
 
 
-# this wasn't in the write-up, but I think there is a ForecastValues class in the other API and thought this would work
 class SiteForecastValues(BaseModel):
     """Forecast value list"""
 
