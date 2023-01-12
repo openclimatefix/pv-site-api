@@ -24,6 +24,7 @@ title = "Nowcasting PV Site API"
 version = "0.0.8"
 
 fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
+fake_client_uuid = "c97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 
 
 @app.get("/")
@@ -53,13 +54,13 @@ async def get_api_information():
 
 
 @app.get("/sites/site_list", response_model=PVSites)
-async def get_sites(client_uuid: str):
+async def get_sites():
     """
     ### This route returns a list of the user's PV Sites with metadata for each site.
     """
     pv_site = PVSiteMetadata(
         site_uuid=fake_site_uuid,
-        client_uuid=client_uuid,
+        client_uuid=fake_client_uuid,
         client_site_id="the site id used by the user",
         client_site_name="the site name",
         region="the site's region",
@@ -68,8 +69,8 @@ async def get_sites(client_uuid: str):
         latitude=50,
         longitude=0,
         installed_capacity_kw=1,
-        created_utc="datetime.now(timezone.utc)",
-        updated_utc="datetime.now(timezone.utc)",
+        created_utc=datetime.now(timezone.utc),
+        updated_utc=datetime.now(timezone.utc),
     )
     pv_site_list = PVSites(
         site_list=[pv_site],
@@ -101,7 +102,7 @@ async def put_site_info(site_info: PVSiteMetadata):
 
     """
 
-    print(f"Successfully updated {site_info.dict()} for site {site_info.site_name}")
+    print(f"Successfully updated {site_info.dict()} for site {site_info.client_site_name}")
     print("Not doing anything with it (yet!)")
 
 

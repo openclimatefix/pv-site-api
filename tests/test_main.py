@@ -74,7 +74,7 @@ def test_post_pv_actual():
 def test_get_site_list():
 
     response = client.get("sites/site_list")
-    assert response.status_code == 200
+    assert response.status_code == 200, response.text
 
     pv_sites = PVSites(**response.json())
     assert len(pv_sites.site_list) > 0
@@ -95,9 +95,13 @@ def test_put_site():
         latitude=50,
         longitude=0,
         installed_capacity_kw=1,
-        created_utc=datetime.now(timezone.utc),
-        updated_utc=datetime.now(timezone.utc),
+        created_utc=datetime.now(timezone.utc).isoformat(),
+        updated_utc=datetime.now(timezone.utc).isoformat(),
     )
 
-    response = client.put("sites/pv_actual/ffff-ffff/info", json=pv_site.dict())
-    assert response.status_code == 200
+    pv_site_dict = json.loads(pv_site.json())
+
+    print(pv_site_dict)
+
+    response = client.put("sites/pv_actual/ffff-ffff/info", json=pv_site_dict)
+    assert response.status_code == 200, response.text
