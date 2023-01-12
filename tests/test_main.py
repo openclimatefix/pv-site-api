@@ -1,7 +1,9 @@
 """ Test for main app """
 import json
 from datetime import datetime, timezone
+
 from fastapi.testclient import TestClient
+
 from main import app, version
 from pydantic_models import (
     Forecast,
