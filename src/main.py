@@ -20,7 +20,7 @@ from utils import make_fake_intensity
 app = FastAPI()
 
 title = "Nowcasting PV Site API"
-version = "0.0.8"
+version = "0.0.9"
 
 fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 fake_client_uuid = "c97f68cd-50e0-49bb-a850-108d4a9f7b7e"
