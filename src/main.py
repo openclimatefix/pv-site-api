@@ -83,8 +83,7 @@ async def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
 ):
-    """### This route is used to input the actual
-    PV generation for one user PV site.
+    """### This route is used to input actual PV generation.
 
     Users will upload actual PV generation
     readings at regular intervals throughout a given day.
@@ -138,9 +137,9 @@ async def get_pv_actual(site_uuid: str):
 @app.get("/sites/pv_forecast/{site_uuid}", response_model=Forecast)
 async def get_pv_forecast(site_uuid: str):
     """
-    ### This route is where you might say the magic happens;
-    it returns the PV forecast for a user's PV Site.
+    ### This route is where you might say the magic happens.
 
+    The user receives a forecast for their PV site.
     The forecast is attached to the **site_uuid** and
     provides a list of forecast values with a
     **target_date_time_utc** and **expected_generation_kw**
@@ -179,6 +178,7 @@ async def get_pv_forecast(site_uuid: str):
 @app.get("/api_status", response_model=PVSiteAPIStatus)
 async def get_status():
     """This route gets the status of the system.
+
     It's mostly used by OCF to
     make sure things are running smoothly.
     """
