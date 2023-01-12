@@ -73,16 +73,13 @@ async def get_sites(client_uuid: str):
     )
 
     return pv_site_list
- 
+
 
 # post_pv_actual: sends data to us, and we save to database
 @app.post("/sites/pv_actual/{site_uuid}")
-async def post_pv_actual(
-    site_uuid: str,
-    pv_actual: MultiplePVActual,
-):
-    """ 
-    ### This route is used to input the actual PV generation for one user PV site. 
+async def post_pv_actual(site_uuid: str,pv_actual: MultiplePVActual,):
+    """ ### This route is used to input the actual PV generation for one user PV site.
+     
     Users will upload actual PV generation readings at regular intervals throughout a given day.  
     Currently this route does not return anything. 
     """
@@ -92,8 +89,7 @@ async def post_pv_actual(
 
 # put_site_info: client can update a site
 @app.put("/sites/pv_actual/{site_uuid}/info")
-async def put_site_info(site_info: PVSiteMetadata, site_uu):
-
+async def put_site_info(site_info: PVSiteMetadata):
     """ 
     ### This route allows a user to update site information for a single site. 
 
@@ -106,9 +102,8 @@ async def put_site_info(site_info: PVSiteMetadata, site_uu):
 # get_pv_actual: the client can read pv data from the past
 @app.get("/sites/pv_actual/{site_uuid}", response_model=MultiplePVActual)
 async def get_pv_actual(site_uuid: str):
+    """ ### This route returns PV readings from a single PV site. 
 
-    """ 
-    ### This route returns PV readings from a single PV site. 
     Currently the route is set to provide a reading every hour for the previous 24-hour period. 
     To test the route, you can input any number for the site_uuid (ex. 567)
     to generate a list of datetimes and actual kw generation for that site.
@@ -136,7 +131,6 @@ async def get_pv_actual(site_uuid: str):
 # get_forecast: Client gets the forecast for their site
 @app.get("/sites/pv_forecast/{site_uuid}", response_model=Forecast)
 async def get_pv_forecast(site_uuid: str):
-
     """ 
     ### This route is where you might say the magic happens; it returns the PV forecast for a user's PV Site.
     
@@ -174,12 +168,11 @@ async def get_pv_forecast(site_uuid: str):
 # get_status: get the status of the system
 @app.get("/api_status", response_model=PVSiteAPIStatus)
 async def get_status():
-
-    """ 
-    This route gets the status of the system. It's mostly used by OCF to 
+    """ This route gets the status of the system. 
+    
+    It's mostly used by OCF to 
     make sure things are running smoothly.
     """
-   
     pv_api_status = PVSiteAPIStatus(
         status="ok", 
         message="The API is up and running", 
