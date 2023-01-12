@@ -1,9 +1,8 @@
 """ make fake intensity"""
-from typing import List
 from datetime import datetime
+from typing import List
 
 import numpy as np
-
 
 TOTAL_MINUTES_IN_ONE_DAY = 24 * 60
 
