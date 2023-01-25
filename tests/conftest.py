@@ -118,7 +118,7 @@ def fake():
 
 @pytest.fixture()
 def client_sql(db_session):
-
+    """ Make fake client sql """
     client = ClientSQL(client_name='test_client')
     db_session.add(client)
     db_session.commit()
