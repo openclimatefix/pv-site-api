@@ -1,3 +1,4 @@
+""" Methods to make fake data """
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -12,7 +13,8 @@ fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 fake_client_uuid = "c97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 
 
-async def make_fake_site():
+async def make_fake_site() -> PVSiteMetadata:
+    """ Make a fake site """
     pv_site = PVSiteMetadata(
         site_uuid=fake_site_uuid,
         client_uuid=fake_client_uuid,
@@ -33,7 +35,8 @@ async def make_fake_site():
     return pv_site_list
 
 
-async def make_fake_pv_generation(site_uuid):
+async def make_fake_pv_generation(site_uuid) -> MultiplePVActual:
+    """ Make fake pv generations"""
     previous_day = pd.Timestamp((datetime.now(timezone.utc)) - (pd.Timedelta(hours=24))).ceil("5T")
     datetimes = [previous_day + pd.Timedelta(hours=(i * 1)) for i in range(0, 24)]
     pv_actual_values = []
@@ -49,7 +52,8 @@ async def make_fake_pv_generation(site_uuid):
     return fake_pv_actual_iteration
 
 
-async def make_fake_forecast(site_uuid):
+async def make_fake_forecast(site_uuid) -> Forecast:
+    """ Make fake forecast """
     now = pd.Timestamp(datetime.now(timezone.utc)).ceil("5T")
     datetimes = [now + pd.Timedelta(f"{i * 30}T") for i in range(0, 16)]
     # make fake forecast values
@@ -71,7 +75,8 @@ async def make_fake_forecast(site_uuid):
     return fake_forecast
 
 
-async def make_fake_status():
+async def make_fake_status() -> PVSiteAPIStatus:
+    """ Make fake status object """
     pv_api_status = PVSiteAPIStatus(
         status="ok",
         message="The API is up and running",
