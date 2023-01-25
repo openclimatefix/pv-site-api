@@ -5,13 +5,13 @@ from uuid import uuid4
 import pandas as pd
 
 from pydantic_models import (
+    Forecast,
+    MultiplePVActual,
+    PVActualValue,
+    PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
-    PVActualValue,
-    MultiplePVActual,
     SiteForecastValues,
-    Forecast,
-    PVSiteAPIStatus,
 )
 from utils import make_fake_intensity
 

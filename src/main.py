@@ -4,14 +4,8 @@ import os
 
 from fastapi import FastAPI
 
-from fake import make_fake_site, make_fake_pv_generation, make_fake_forecast, make_fake_status
-from pydantic_models import (
-    Forecast,
-    MultiplePVActual,
-    PVSiteAPIStatus,
-    PVSiteMetadata,
-    PVSites,
-)
+from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
+from pydantic_models import Forecast, MultiplePVActual, PVSiteAPIStatus, PVSiteMetadata, PVSites
 
 app = FastAPI()
 
