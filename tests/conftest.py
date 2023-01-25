@@ -13,6 +13,7 @@ from testcontainers.postgres import PostgresContainer
 
 @pytest.fixture(scope="session")
 def engine():
+    """ Make database engine"""
     with PostgresContainer("postgres:14.5") as postgres:
 
         url = postgres.get_connection_url()
@@ -46,7 +47,7 @@ def db_session(engine):
 
 @pytest.fixture()
 def sites(db_session):
-    """create some fake sites"""
+    """Create some fake sites"""
 
     sites = []
     for i in range(0, 4):
@@ -103,4 +104,5 @@ def generations(db_session, sites):
 
 @pytest.fixture()
 def fake():
+    """ Set up ENV VAR FAKE to 1"""
     os.environ['FAKE'] = '1'
