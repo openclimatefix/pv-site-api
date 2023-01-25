@@ -10,5 +10,5 @@ jobs:
     with:
       pytest_cov_dir: src
       python-version: "['3.10']"
-      python_paht: './src'
+      python_path: './src'
 
