@@ -10,7 +10,7 @@ from pydantic_models import Forecast, MultiplePVActual, PVSiteAPIStatus, PVSiteM
 app = FastAPI()
 
 title = "Nowcasting PV Site API"
-version = "0.0.9"
+version = "0.0.10"
 
 
 @app.get("/")
