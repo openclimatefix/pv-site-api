@@ -10,3 +10,4 @@ pandas
 pvsite_datamodel
 sqlalchemy
 testcontainers
+psycopg2-binary
