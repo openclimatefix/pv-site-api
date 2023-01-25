@@ -6,7 +6,7 @@ on:
 
 jobs:
   call-pytest-test:
-    uses: openclimatefix/.github/.github/workflows/python-test.yml@main
+    uses: openclimatefix/.github/.github/workflows/python-test.yml@working-directory
     with:
       pytest_cov_dir: src
       python-version: "['3.10']"

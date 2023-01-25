@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from pvsite_datamodel.sqlmodels import Base, ClientSQL, SiteSQL, GenerationSQL
+from pvsite_datamodel.sqlmodels import Base, ClientSQL, GenerationSQL, SiteSQL
 from pvsite_datamodel.write.datetime_intervals import get_or_else_create_datetime_interval
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -13,7 +13,7 @@ from testcontainers.postgres import PostgresContainer
 
 @pytest.fixture(scope="session")
 def engine():
-    """ Make database engine"""
+    """Make database engine"""
     with PostgresContainer("postgres:14.5") as postgres:
 
         url = postgres.get_connection_url()
@@ -104,5 +104,5 @@ def generations(db_session, sites):
 
 @pytest.fixture()
 def fake():
-    """ Set up ENV VAR FAKE to 1"""
-    os.environ['FAKE'] = '1'
+    """Set up ENV VAR FAKE to 1"""
+    os.environ["FAKE"] = "1"
