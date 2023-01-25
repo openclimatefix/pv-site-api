@@ -77,7 +77,7 @@ async def post_pv_actual(
 
 
 # put_site_info: client can update a site
-@app.put("/sites/pv_actual/{site_uuid}/info")
+@app.put("/sites/{site_uuid}")
 async def put_site_info(site_info: PVSiteMetadata):
     """
     ### This route allows a user to update site information for a single site.
@@ -86,6 +86,21 @@ async def put_site_info(site_info: PVSiteMetadata):
 
     if int(os.environ["FAKE"]):
         print(f"Successfully updated {site_info.dict()} for site {site_info.client_site_name}")
+        print("Not doing anything with it (yet!)")
+        return
+
+    raise Exception(NotImplemented)
+
+
+@app.post("/sites")
+async def post_site_info(site_info: PVSiteMetadata):
+    """
+    ### This route allows a user to add a site.
+
+    """
+
+    if int(os.environ["FAKE"]):
+        print(f"Successfully added {site_info.dict()} for site {site_info.client_site_name}")
         print("Not doing anything with it (yet!)")
         return
 
