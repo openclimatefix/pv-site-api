@@ -17,10 +17,14 @@ def engine():
     with PostgresContainer("postgres:14.5") as postgres:
 
         url = postgres.get_connection_url()
+        os.environ['DB_URL'] = url
         engine = create_engine(url)
         Base.metadata.create_all(engine)
 
         yield engine
+
+        os.environ['DB_URL'] = 'not-set'
+
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -106,3 +110,15 @@ def generations(db_session, sites):
 def fake():
     """Set up ENV VAR FAKE to 1"""
     os.environ["FAKE"] = "1"
+
+    yield
+
+    os.environ["FAKE"] = "0"
+
+
+@pytest.fixture()
+def client_sql(db_session):
+
+    client = ClientSQL(client_name='test_client')
+    db_session.add(client)
+    db_session.commit()

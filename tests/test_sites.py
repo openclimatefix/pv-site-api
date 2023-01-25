@@ -11,6 +11,7 @@ from pydantic_models import (
     PVSiteMetadata,
     PVSites,
 )
+from session import get_session
 
 client = TestClient(app)
 
@@ -28,32 +29,7 @@ def test_put_site_fake(fake):
 
     pv_site = PVSiteMetadata(
         site_uuid="ffff-ffff",
-        client_uuid="eeee-eeee",
-        client_site_id="the site id used by the user",
-        client_site_name="the site name",
-        region="the site's region",
-        dno="the site's dno",
-        gsp="the site's gsp",
-        orientation=180,
-        tilt=90,
-        latitude=50,
-        longitude=0,
-        installed_capacity_kw=1,
-        created_utc=datetime.now(timezone.utc).isoformat(),
-        updated_utc=datetime.now(timezone.utc).isoformat(),
-    )
-
-    pv_site_dict = json.loads(pv_site.json())
-
-    response = client.put("sites/ffff-ffff", json=pv_site_dict)
-    assert response.status_code == 200, response.text
-
-
-def test_put_site(db_session):
-
-    pv_site = PVSiteMetadata(
-        site_uuid=str(uuid4()),
-        client_uuid="eeee-eeee",
+        client_name="client_name_1",
         client_site_id="the site id used by the user",
         client_site_name="the site name",
         region="the site's region",
@@ -73,9 +49,39 @@ def test_put_site(db_session):
     response = client.post("sites/", json=pv_site_dict)
     assert response.status_code == 200, response.text
 
+
+def test_put_site(db_session, client_sql):
+
+    # make site object
+    pv_site = PVSiteMetadata(
+        site_uuid=str(uuid4()),
+        client_name='test_client',
+        client_site_id=1,
+        client_site_name="the site name",
+        region="the site's region",
+        dno="the site's dno",
+        gsp="the site's gsp",
+        orientation=180,
+        tilt=90,
+        latitude=50,
+        longitude=0,
+        installed_capacity_kw=1,
+        created_utc=datetime.now(timezone.utc).isoformat(),
+        updated_utc=datetime.now(timezone.utc).isoformat(),
+
+    )
+
+    pv_site_dict = json.loads(pv_site.json())
+
+    # make sure we are using the same session
+    app.dependency_overrides[get_session] = lambda: db_session
+
+    response = client.post("sites/", json=pv_site_dict)
+    assert response.status_code == 200, response.text
+
     sites = db_session.query(SiteSQL).all()
     assert len(sites) == 1
-    assert sites[0].site_uuid == pv_site.site_uuid
+    assert str(sites[0].site_uuid) == str(pv_site.site_uuid)
 
 # Comment this out, until we have security on this
 # def test_put_site_and_update(db_session):

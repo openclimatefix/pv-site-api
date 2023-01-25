@@ -1,9 +1,12 @@
 """Main API Routes"""
 import logging
 import os
+import uuid
 
 from fastapi import Depends, FastAPI
 from sqlalchemy.orm.session import Session
+
+from pvsite_datamodel.sqlmodels import SiteSQL, ClientSQL
 
 from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
 from pydantic_models import Forecast, MultiplePVActual, PVSiteAPIStatus, PVSiteMetadata, PVSites
@@ -94,7 +97,7 @@ async def post_pv_actual(
 
 
 @app.post("/sites")
-async def post_site_info(site_info: PVSiteMetadata):
+async def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_session)):
     """
     ### This route allows a user to add a site.
 
@@ -105,7 +108,29 @@ async def post_site_info(site_info: PVSiteMetadata):
         print("Not doing anything with it (yet!)")
         return
 
-    raise Exception(NotImplemented)
+    # client uuid from name
+    client = session.query(ClientSQL).first()
+    assert client is not None
+
+    site = SiteSQL(
+        site_uuid=site_info.site_uuid,
+        client_uuid = client.client_uuid,
+        client_site_id=site_info.client_site_id,
+        client_site_name=site_info.client_site_name,
+        region=site_info.region,
+        dno=site_info.dno,
+        gsp=site_info.gsp,
+        orientation=site_info.orientation,
+        tilt=site_info.tilt,
+        latitude=site_info.latitude,
+        longitude=site_info.longitude,
+        capacity_kw=site_info.installed_capacity_kw,
+        ml_id=1,
+    )
+
+    # add site
+    session.add(site)
+    session.commit()
 
 
 # get_pv_actual: the client can read pv data from the past
