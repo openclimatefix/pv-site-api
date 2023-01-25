@@ -51,12 +51,10 @@ async def get_sites():
     ### This route returns a list of the user's PV Sites with metadata for each site.
     """
 
-    if int(os.environ['FAKE']):
+    if int(os.environ["FAKE"]):
         return await make_fake_site()
 
     raise Exception(NotImplemented)
-
-    return pv_site_list
 
 
 # post_pv_actual: sends data to us, and we save to database
@@ -72,7 +70,7 @@ async def post_pv_actual(
     Currently this route does not return anything.
     """
 
-    if int(os.environ['FAKE']):
+    if int(os.environ["FAKE"]):
         print(f"Got {pv_actual.dict()} for site {site_uuid}")
         print("Not doing anything with it (yet!)")
         return
@@ -88,7 +86,7 @@ async def put_site_info(site_info: PVSiteMetadata):
 
     """
 
-    if int(os.environ['FAKE']):
+    if int(os.environ["FAKE"]):
         print(f"Successfully updated {site_info.dict()} for site {site_info.client_site_name}")
         print("Not doing anything with it (yet!)")
         return
@@ -107,11 +105,9 @@ async def get_pv_actual(site_uuid: str):
     to generate a list of datetimes and actual kw generation for that site.
     """
 
-    if int(os.environ['FAKE']):
+    if int(os.environ["FAKE"]):
         return await make_fake_pv_generation(site_uuid)
     raise Exception(NotImplemented)
-
-    return fake_pv_actual_iteration
 
 
 # get_forecast: Client gets the forecast for their site
@@ -131,12 +127,10 @@ async def get_pv_forecast(site_uuid: str):
 
     """
 
-    if int(os.environ['FAKE']):
+    if int(os.environ["FAKE"]):
         return await make_fake_forecast(site_uuid)
 
     raise Exception(NotImplemented)
-
-    return fake_forecast
 
 
 # get_status: get the status of the system
@@ -147,11 +141,7 @@ async def get_status():
     It's mostly used by OCF to
     make sure things are running smoothly.
     """
-    if os.environ['FAKE']:
+    if os.environ["FAKE"]:
         return await make_fake_status()
 
     raise Exception(NotImplemented)
-
-    return pv_api_status
-
-
