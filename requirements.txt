@@ -9,3 +9,4 @@ pytest-cov
 pandas
 pvsite_datamodel
 sqlalchemy
+testcontainers
