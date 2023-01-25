@@ -4,17 +4,23 @@ from uuid import uuid4
 
 import pandas as pd
 
-from pydantic_models import PVSiteMetadata, PVSites, PVActualValue, MultiplePVActual, SiteForecastValues, Forecast, \
-    PVSiteAPIStatus
+from pydantic_models import (
+    PVSiteMetadata,
+    PVSites,
+    PVActualValue,
+    MultiplePVActual,
+    SiteForecastValues,
+    Forecast,
+    PVSiteAPIStatus,
+)
 from utils import make_fake_intensity
-
 
 fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 fake_client_uuid = "c97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 
 
 async def make_fake_site() -> PVSiteMetadata:
-    """ Make a fake site """
+    """Make a fake site"""
     pv_site = PVSiteMetadata(
         site_uuid=fake_site_uuid,
         client_uuid=fake_client_uuid,
@@ -36,7 +42,7 @@ async def make_fake_site() -> PVSiteMetadata:
 
 
 async def make_fake_pv_generation(site_uuid) -> MultiplePVActual:
-    """ Make fake pv generations"""
+    """Make fake pv generations"""
     previous_day = pd.Timestamp((datetime.now(timezone.utc)) - (pd.Timedelta(hours=24))).ceil("5T")
     datetimes = [previous_day + pd.Timedelta(hours=(i * 1)) for i in range(0, 24)]
     pv_actual_values = []
@@ -53,15 +59,14 @@ async def make_fake_pv_generation(site_uuid) -> MultiplePVActual:
 
 
 async def make_fake_forecast(site_uuid) -> Forecast:
-    """ Make fake forecast """
+    """Make fake forecast"""
     now = pd.Timestamp(datetime.now(timezone.utc)).ceil("5T")
     datetimes = [now + pd.Timedelta(f"{i * 30}T") for i in range(0, 16)]
     # make fake forecast values
     forecast_values = []
     for d in datetimes:
         forecast_value = SiteForecastValues(
-            target_datetime_utc=d,
-            expected_generation_kw=make_fake_intensity(datetime_utc=d)
+            target_datetime_utc=d, expected_generation_kw=make_fake_intensity(datetime_utc=d)
         )
         forecast_values.append(forecast_value)
     # join together to make forecast object
@@ -76,7 +81,7 @@ async def make_fake_forecast(site_uuid) -> Forecast:
 
 
 async def make_fake_status() -> PVSiteAPIStatus:
-    """ Make fake status object """
+    """Make fake status object"""
     pv_api_status = PVSiteAPIStatus(
         status="ok",
         message="The API is up and running",
