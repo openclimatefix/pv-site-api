@@ -12,7 +12,7 @@ from session import get_session
 app = FastAPI()
 
 title = "Nowcasting PV Site API"
-version = "0.0.10"
+version = "0.0.11"
 
 
 @app.get("/")
