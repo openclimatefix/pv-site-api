@@ -2,10 +2,14 @@
 import logging
 import os
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
+
+from sqlalchemy.orm.session import Session
 
 from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
 from pydantic_models import Forecast, MultiplePVActual, PVSiteAPIStatus, PVSiteMetadata, PVSites
+from session import get_session
+
 
 app = FastAPI()
 
@@ -40,7 +44,7 @@ async def get_api_information():
 
 
 @app.get("/sites/site_list", response_model=PVSites)
-async def get_sites():
+async def get_sites(session: Session = Depends(get_session),):
     """
     ### This route returns a list of the user's PV Sites with metadata for each site.
     """

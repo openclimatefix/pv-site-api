@@ -1,0 +1,13 @@
+name: Run pytests
+on:
+  push:
+  schedule:
+    - cron: "0 12 * * 1"
+
+jobs:
+  call-pytest-test:
+    uses: openclimatefix/.github/.github/workflows/pythong-test.yml@main
+    with:
+      pytest_cov_dir: src
+      python-version: "['3.10']"
+

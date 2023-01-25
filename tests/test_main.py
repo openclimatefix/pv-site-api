@@ -24,7 +24,7 @@ def test_read_main():
     assert response.json()["version"] == version
 
 
-def test_get_status():
+def test_get_status(fake):
 
     response = client.get("/api_status")
     assert response.status_code == 200
@@ -34,7 +34,7 @@ def test_get_status():
     assert returned_status.message == "The API is up and running"
 
 
-def test_get_forecast():
+def test_get_forecast(fake):
 
     response = client.get("sites/pv_forecast/ffff-ffff")
     assert response.status_code == 200
@@ -43,7 +43,7 @@ def test_get_forecast():
     assert len(forecast.forecast_values) > 0
 
 
-def test_pv_actual():
+def test_pv_actual(fake):
 
     response = client.get("sites/pv_actual/fff-fff-fff")
     assert response.status_code == 200
@@ -52,7 +52,7 @@ def test_pv_actual():
     assert len(pv_actuals.pv_actual_values) > 0
 
 
-def test_post_pv_actual():
+def test_post_pv_actual(fake):
 
     pv_actual_value = PVActualValue(
         datetime_utc=datetime.now(timezone.utc), actual_generation_kw=73.3
@@ -70,7 +70,7 @@ def test_post_pv_actual():
     assert response.status_code == 200
 
 
-def test_get_site_list():
+def test_get_site_list(fake):
 
     response = client.get("sites/site_list")
     assert response.status_code == 200, response.text
@@ -79,7 +79,7 @@ def test_get_site_list():
     assert len(pv_sites.site_list) > 0
 
 
-def test_put_site():
+def test_put_site(fake):
 
     pv_site = PVSiteMetadata(
         site_uuid="ffff-ffff",
