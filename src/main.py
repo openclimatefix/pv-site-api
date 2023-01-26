@@ -22,6 +22,12 @@ from pydantic_models import (
 from session import get_session
 from utils import get_start_datetime
 
+logging.basicConfig(
+    level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
+    format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
 app = FastAPI()
 
 title = "Nowcasting PV Site API"
@@ -35,7 +41,7 @@ async def get_api_information():
 
     """
 
-    logging.info("Route / has been called")
+    logger.info("Route / has been called")
 
     return {
         "title": "Nowcasting PV Site API",
