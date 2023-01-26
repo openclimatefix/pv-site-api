@@ -123,7 +123,7 @@ async def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(g
         latitude=site_info.latitude,
         longitude=site_info.longitude,
         capacity_kw=site_info.installed_capacity_kw,
-        ml_id=1, # TODO remove this once https://github.com/openclimatefix/pvsite-datamodel/issues/27 is complete #noqa
+        ml_id=1, # TODO remove this once https://github.com/openclimatefix/pvsite-datamodel/issues/27 is complete # noqa
     )
 
     # add site
