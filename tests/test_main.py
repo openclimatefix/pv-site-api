@@ -5,12 +5,7 @@ from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 
 from main import app, version
-from pydantic_models import (
-    Forecast,
-    MultiplePVActual,
-    PVActualValue,
-    PVSiteAPIStatus,
-)
+from pydantic_models import Forecast, MultiplePVActual, PVActualValue, PVSiteAPIStatus
 
 client = TestClient(app)
 

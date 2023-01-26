@@ -7,10 +7,7 @@ from fastapi.testclient import TestClient
 from pvsite_datamodel.sqlmodels import SiteSQL
 
 from main import app
-from pydantic_models import (
-    PVSiteMetadata,
-    PVSites,
-)
+from pydantic_models import PVSiteMetadata, PVSites
 from session import get_session
 
 client = TestClient(app)
@@ -55,7 +52,7 @@ def test_put_site(db_session, client_sql):
     # make site object
     pv_site = PVSiteMetadata(
         site_uuid=str(uuid4()),
-        client_name='test_client',
+        client_name="test_client",
         client_site_id=1,
         client_site_name="the site name",
         region="the site's region",
@@ -68,7 +65,6 @@ def test_put_site(db_session, client_sql):
         installed_capacity_kw=1,
         created_utc=datetime.now(timezone.utc).isoformat(),
         updated_utc=datetime.now(timezone.utc).isoformat(),
-
     )
 
     pv_site_dict = json.loads(pv_site.json())
@@ -82,6 +78,7 @@ def test_put_site(db_session, client_sql):
     sites = db_session.query(SiteSQL).all()
     assert len(sites) == 1
     assert str(sites[0].site_uuid) == str(pv_site.site_uuid)
+
 
 # Comment this out, until we have security on this
 # def test_put_site_and_update(db_session):

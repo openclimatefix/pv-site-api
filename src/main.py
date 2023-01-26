@@ -3,7 +3,7 @@ import logging
 import os
 
 from fastapi import Depends, FastAPI
-from pvsite_datamodel.sqlmodels import SiteSQL, ClientSQL
+from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
 from sqlalchemy.orm.session import Session
 
 from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
