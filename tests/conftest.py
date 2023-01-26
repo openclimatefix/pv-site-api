@@ -131,7 +131,7 @@ def client_sql(db_session):
 
 
 @pytest.fixture()
-def latestforecastvalues(db_session, sites):
+def latest_forecast_values(db_session, sites):
     """Create some fake latest forecast values"""
 
     latest_forecast_values = []
@@ -164,3 +164,30 @@ def latestforecastvalues(db_session, sites):
     db_session.commit()
 
     return latest_forecast_values
+
+
+@pytest.fixture()
+def generations(db_session, sites):
+    """Create some fake generations"""
+
+    start_times = [datetime.today() - timedelta(minutes=x) for x in range(10)]
+
+    all_generations = []
+    for site in sites:
+        for i in range(0, 10):
+            datetime_interval, _ = get_or_else_create_datetime_interval(
+                session=db_session, start_time=start_times[i]
+            )
+
+            generation = GenerationSQL(
+                generation_uuid=uuid.uuid4(),
+                site_uuid=site.site_uuid,
+                power_kw=i,
+                datetime_interval_uuid=datetime_interval.datetime_interval_uuid,
+            )
+            all_generations.append(generation)
+
+    db_session.add_all(all_generations)
+    db_session.commit()
+
+    return all_generations
