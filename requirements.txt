@@ -1,4 +1,5 @@
 fastapi
+psycopg2-binary
 uvicorn[standard]
 pydantic
 numpy
@@ -10,4 +11,3 @@ pandas
 pvsite_datamodel
 sqlalchemy
 testcontainers
-psycopg2-binary
