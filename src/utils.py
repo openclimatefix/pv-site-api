@@ -1,6 +1,6 @@
 """ make fake intensity"""
 from datetime import datetime
-from typing import List
+from typing import List, Optional, Union
 
 import numpy as np
 
@@ -34,3 +34,28 @@ def make_fake_intensities(datetimes_utc: List[datetime]) -> List:
     intensities = [make_fake_intensity(datetime) for datetime in datetimes_utc]
 
     return intensities
+
+
+def get_start_datetime(n_history_days: Optional[Union[str, int]] = None) -> datetime:
+    """
+    Get the start datetime for the query
+
+    By default we get yesterdays morning at midnight,
+    we 'N_HISTORY_DAYS' use env var to get number of days
+
+    :param n_history_days: n_history
+    :return: start datetime
+    """
+
+    if n_history_days is None:
+        n_history_days = os.getenv("N_HISTORY_DAYS", "yesterday")
+
+    # get at most 2 days of data.
+    if n_history_days == "yesterday":
+        start_datetime = datetime.now(tz=timezone.utc).date() - timedelta(days=1)
+        start_datetime = datetime.combine(start_datetime, datetime.min.time())
+        start_datetime = start_datetime.replace(tzinfo=timezone.utc)
+    else:
+        start_datetime = datetime.now(tz=timezone.utc) - timedelta(days=int(n_history_days))
+        start_datetime = floor_6_hours_dt(start_datetime)
+    return start_datetime

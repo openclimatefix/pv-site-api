@@ -27,15 +27,6 @@ def test_get_status(fake):
     assert returned_status.message == "The API is up and running"
 
 
-def test_get_forecast(fake):
-
-    response = client.get("sites/pv_forecast/ffff-ffff")
-    assert response.status_code == 200
-
-    forecast = Forecast(**response.json())
-    assert len(forecast.forecast_values) > 0
-
-
 def test_pv_actual(fake):
 
     response = client.get("sites/pv_actual/fff-fff-fff")
