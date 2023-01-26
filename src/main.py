@@ -5,6 +5,7 @@ import uuid
 
 from fastapi import Depends, FastAPI
 from pvsite_datamodel.read.latest_forecast_values import get_latest_forecast_values_by_site
+from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.sqlmodels import (
     ClientSQL,
     SiteSQL,
@@ -15,6 +16,7 @@ from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, ma
 from pydantic_models import (
     Forecast,
     MultiplePVActual,
+    PVActualValue,
     PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
@@ -146,7 +148,7 @@ async def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(g
 
 # get_pv_actual: the client can read pv data from the past
 @app.get("/sites/pv_actual/{site_uuid}", response_model=MultiplePVActual)
-async def get_pv_actual(site_uuid: str):
+async def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
     """### This route returns PV readings from a single PV site.
 
     Currently the route is set to provide a reading
@@ -157,7 +159,22 @@ async def get_pv_actual(site_uuid: str):
 
     if int(os.environ["FAKE"]):
         return await make_fake_pv_generation(site_uuid)
-    raise Exception(NotImplemented)
+
+    start_utc = get_start_datetime()
+    generations_sql = get_pv_generation_by_sites(
+        session=session, start_utc=start_utc, site_uuids=[uuid.UUID(site_uuid)]
+    )
+
+    # convert into MultiplePVActual object
+    generations = []
+    for generation_sql in generations_sql:
+        generations.append(
+            PVActualValue(
+                datetime_utc=generation_sql.datetime_interval.start_utc,
+                actual_generation_kw=generation_sql.power_kw,
+            )
+        )
+    return MultiplePVActual(pv_actual_values=generations, site_uuid=site_uuid)
 
 
 # get_forecast: Client gets the forecast for their site
