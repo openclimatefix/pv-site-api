@@ -25,7 +25,7 @@ from utils import get_start_datetime
 app = FastAPI()
 
 title = "Nowcasting PV Site API"
-version = "0.0.14"
+version = "0.0.15"
 
 
 @app.get("/")
