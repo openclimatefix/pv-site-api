@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 title = "Nowcasting PV Site API"
-version = "0.0.15"
+version = "0.0.16"
 
 
 @app.get("/")
