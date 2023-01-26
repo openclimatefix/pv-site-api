@@ -1,9 +1,15 @@
 """Main API Routes"""
 import logging
 import os
+import uuid
 
 from fastapi import Depends, FastAPI
-from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
+from pvsite_datamodel.sqlmodels import (
+    ClientSQL,
+    DatetimeIntervalSQL,
+    SiteSQL,
+    LatestForecastValueSQL,
+)
 from pvsite_datamodel.read.latest_forecast_values import get_latest_forecast_values_by_site
 from sqlalchemy.orm.session import Session
 
@@ -176,10 +182,16 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
     if int(os.environ["FAKE"]):
         return await make_fake_forecast(site_uuid)
 
+    site_uuid = uuid.UUID(site_uuid)
     start_utc = get_start_datetime()
 
     latest_forecast_values = get_latest_forecast_values_by_site(
         session=session, site_uuids=[site_uuid], start_utc=start_utc
+    )
+    latest_forecast_values = latest_forecast_values[site_uuid]
+
+    assert len(latest_forecast_values) > 0, Exception(
+        f"Did not find any forecasts for {site_uuid} after {start_utc}"
     )
 
     # make the forecast values object
@@ -187,15 +199,15 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
     for latest_forecast_value in latest_forecast_values:
         forecast_values.append(
             SiteForecastValues(
-                target_datetime_utc=latest_forecast_value.datetime_intervals.start_utc,
+                target_datetime_utc=latest_forecast_value.datetime_interval.start_utc,
                 expected_generation_kw=latest_forecast_value.forecast_generation_kw,
             )
         )
 
     # make the forecast object
     forecast = Forecast(
-        forecast_uuid=latest_forecast_values[0].forecast_uuid,
-        site_uuid=latest_forecast_values[0].site_uuid,
+        forecast_uuid=str(latest_forecast_values[0].forecast_uuid),
+        site_uuid=str(latest_forecast_values[0].site_uuid),
         forecast_creation_datetime=latest_forecast_values[0].created_utc,
         forecast_version=latest_forecast_values[0].forecast_version,
         forecast_values=forecast_values,
