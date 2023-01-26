@@ -23,7 +23,7 @@ async def make_fake_site() -> PVSiteMetadata:
     """Make a fake site"""
     pv_site = PVSiteMetadata(
         site_uuid=fake_site_uuid,
-        client_uuid=fake_client_uuid,
+        client_name="client_name_1",
         client_site_id="the site id used by the user",
         client_site_name="the site name",
         region="the site's region",

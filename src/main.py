@@ -3,6 +3,7 @@ import logging
 import os
 
 from fastapi import Depends, FastAPI
+from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
 from sqlalchemy.orm.session import Session
 
 from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
@@ -76,20 +77,58 @@ async def post_pv_actual(
     raise Exception(NotImplemented)
 
 
-# put_site_info: client can update a site
-@app.put("/sites/pv_actual/{site_uuid}/info")
-async def put_site_info(site_info: PVSiteMetadata):
+# Comment this out, until we have security on this
+# # put_site_info: client can update a site
+# @app.put("/sites/{site_uuid}")
+# async def put_site_info(site_info: PVSiteMetadata):
+#     """
+#     ### This route allows a user to update site information for a single site.
+#
+#     """
+#
+#     if int(os.environ["FAKE"]):
+#         print(f"Successfully updated {site_info.dict()} for site {site_info.client_site_name}")
+#         print("Not doing anything with it (yet!)")
+#         return
+#
+#     raise Exception(NotImplemented)
+
+
+@app.post("/sites")
+async def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_session)):
     """
-    ### This route allows a user to update site information for a single site.
+    ### This route allows a user to add a site.
 
     """
 
     if int(os.environ["FAKE"]):
-        print(f"Successfully updated {site_info.dict()} for site {site_info.client_site_name}")
+        print(f"Successfully added {site_info.dict()} for site {site_info.client_site_name}")
         print("Not doing anything with it (yet!)")
         return
 
-    raise Exception(NotImplemented)
+    # client uuid from name
+    client = session.query(ClientSQL).first()
+    assert client is not None
+
+    site = SiteSQL(
+        site_uuid=site_info.site_uuid,
+        client_uuid=client.client_uuid,
+        client_site_id=site_info.client_site_id,
+        client_site_name=site_info.client_site_name,
+        region=site_info.region,
+        dno=site_info.dno,
+        gsp=site_info.gsp,
+        orientation=site_info.orientation,
+        tilt=site_info.tilt,
+        latitude=site_info.latitude,
+        longitude=site_info.longitude,
+        capacity_kw=site_info.installed_capacity_kw,
+        ml_id=1, # TODO remove this once https://github.com/openclimatefix/pvsite-datamodel/issues/27 is complete # noqa
+    )
+
+    # add site
+    session.add(site)
+    session.commit()
 
 
 # get_pv_actual: the client can read pv data from the past
