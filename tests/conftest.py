@@ -4,7 +4,14 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from pvsite_datamodel.sqlmodels import Base, ClientSQL, ForecastSQL, GenerationSQL,LatestForecastValueSQL, SiteSQL
+from pvsite_datamodel.sqlmodels import (
+    Base,
+    ClientSQL,
+    ForecastSQL,
+    GenerationSQL,
+    LatestForecastValueSQL,
+    SiteSQL,
+)
 from pvsite_datamodel.write.datetime_intervals import get_or_else_create_datetime_interval
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -121,6 +128,7 @@ def client_sql(db_session):
     client = ClientSQL(client_name="test_client")
     db_session.add(client)
     db_session.commit()
+
 
 @pytest.fixture()
 def latestforecastvalues(db_session, sites):
