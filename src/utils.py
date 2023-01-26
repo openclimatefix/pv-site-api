@@ -1,5 +1,5 @@
 """ make fake intensity"""
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 import numpy as np
@@ -34,3 +34,19 @@ def make_fake_intensities(datetimes_utc: List[datetime]) -> List:
     intensities = [make_fake_intensity(datetime) for datetime in datetimes_utc]
 
     return intensities
+
+
+def get_start_datetime() -> datetime:
+    """
+    Get the start datetime for the query
+
+    We get yesterdays morning at midnight,
+
+    :return: start datetime
+    """
+
+    start_datetime = datetime.now(tz=timezone.utc).date() - timedelta(days=1)
+    start_datetime = datetime.combine(start_datetime, datetime.min.time())
+    start_datetime = start_datetime.replace(tzinfo=timezone.utc)
+
+    return start_datetime

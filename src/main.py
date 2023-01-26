@@ -1,14 +1,27 @@
 """Main API Routes"""
 import logging
 import os
+import uuid
 
 from fastapi import Depends, FastAPI
-from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
+from pvsite_datamodel.read.latest_forecast_values import get_latest_forecast_values_by_site
+from pvsite_datamodel.sqlmodels import (
+    ClientSQL,
+    SiteSQL,
+)
 from sqlalchemy.orm.session import Session
 
 from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
-from pydantic_models import Forecast, MultiplePVActual, PVSiteAPIStatus, PVSiteMetadata, PVSites
+from pydantic_models import (
+    Forecast,
+    MultiplePVActual,
+    PVSiteAPIStatus,
+    PVSiteMetadata,
+    PVSites,
+    SiteForecastValues,
+)
 from session import get_session
+from utils import get_start_datetime
 
 app = FastAPI()
 
@@ -123,7 +136,7 @@ async def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(g
         latitude=site_info.latitude,
         longitude=site_info.longitude,
         capacity_kw=site_info.installed_capacity_kw,
-        ml_id=1, # TODO remove this once https://github.com/openclimatefix/pvsite-datamodel/issues/27 is complete # noqa
+        ml_id=1,  # TODO remove this once https://github.com/openclimatefix/pvsite-datamodel/issues/27 is complete # noqa
     )
 
     # add site
@@ -149,7 +162,7 @@ async def get_pv_actual(site_uuid: str):
 
 # get_forecast: Client gets the forecast for their site
 @app.get("/sites/pv_forecast/{site_uuid}", response_model=Forecast)
-async def get_pv_forecast(site_uuid: str):
+async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     """
     ### This route is where you might say the magic happens.
 
@@ -167,7 +180,38 @@ async def get_pv_forecast(site_uuid: str):
     if int(os.environ["FAKE"]):
         return await make_fake_forecast(site_uuid)
 
-    raise Exception(NotImplemented)
+    site_uuid = uuid.UUID(site_uuid)
+    start_utc = get_start_datetime()
+
+    latest_forecast_values = get_latest_forecast_values_by_site(
+        session=session, site_uuids=[site_uuid], start_utc=start_utc
+    )
+    latest_forecast_values = latest_forecast_values[site_uuid]
+
+    assert len(latest_forecast_values) > 0, Exception(
+        f"Did not find any forecasts for {site_uuid} after {start_utc}"
+    )
+
+    # make the forecast values object
+    forecast_values = []
+    for latest_forecast_value in latest_forecast_values:
+        forecast_values.append(
+            SiteForecastValues(
+                target_datetime_utc=latest_forecast_value.datetime_interval.start_utc,
+                expected_generation_kw=latest_forecast_value.forecast_generation_kw,
+            )
+        )
+
+    # make the forecast object
+    forecast = Forecast(
+        forecast_uuid=str(latest_forecast_values[0].forecast_uuid),
+        site_uuid=str(latest_forecast_values[0].site_uuid),
+        forecast_creation_datetime=latest_forecast_values[0].created_utc,
+        forecast_version=latest_forecast_values[0].forecast_version,
+        forecast_values=forecast_values,
+    )
+
+    return forecast
 
 
 # get_status: get the status of the system

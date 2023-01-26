@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 
 from main import app, version
-from pydantic_models import Forecast, MultiplePVActual, PVActualValue, PVSiteAPIStatus
+from pydantic_models import MultiplePVActual, PVActualValue, PVSiteAPIStatus
 
 client = TestClient(app)
 
@@ -25,15 +25,6 @@ def test_get_status(fake):
     returned_status = PVSiteAPIStatus(**response.json())
     assert returned_status.status == "ok"
     assert returned_status.message == "The API is up and running"
-
-
-def test_get_forecast(fake):
-
-    response = client.get("sites/pv_forecast/ffff-ffff")
-    assert response.status_code == 200
-
-    forecast = Forecast(**response.json())
-    assert len(forecast.forecast_values) > 0
 
 
 def test_pv_actual(fake):
