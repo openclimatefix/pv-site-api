@@ -111,6 +111,8 @@ def generations(db_session, sites):
     db_session.add_all(all_generations)
     db_session.commit()
 
+    return all_generations
+
 
 @pytest.fixture()
 def fake():
@@ -131,7 +133,7 @@ def client_sql(db_session):
 
 
 @pytest.fixture()
-def latestforecastvalues(db_session, sites):
+def latest_forecast_values(db_session, sites):
     """Create some fake latest forecast values"""
 
     latest_forecast_values = []
