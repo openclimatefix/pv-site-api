@@ -17,14 +17,13 @@ def engine():
     with PostgresContainer("postgres:14.5") as postgres:
 
         url = postgres.get_connection_url()
-        os.environ['DB_URL'] = url
+        os.environ["DB_URL"] = url
         engine = create_engine(url)
         Base.metadata.create_all(engine)
 
         yield engine
 
-        os.environ['DB_URL'] = 'not-set'
-
+        os.environ["DB_URL"] = "not-set"
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -118,7 +117,7 @@ def fake():
 
 @pytest.fixture()
 def client_sql(db_session):
-    """ Make fake client sql """
-    client = ClientSQL(client_name='test_client')
+    """Make fake client sql"""
+    client = ClientSQL(client_name="test_client")
     db_session.add(client)
     db_session.commit()

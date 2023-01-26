@@ -1,12 +1,10 @@
 """Main API Routes"""
 import logging
 import os
-import uuid
 
 from fastapi import Depends, FastAPI
-from sqlalchemy.orm.session import Session
-
 from pvsite_datamodel.sqlmodels import SiteSQL, ClientSQL
+from sqlalchemy.orm.session import Session
 
 from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
 from pydantic_models import Forecast, MultiplePVActual, PVSiteAPIStatus, PVSiteMetadata, PVSites
@@ -114,7 +112,7 @@ async def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(g
 
     site = SiteSQL(
         site_uuid=site_info.site_uuid,
-        client_uuid = client.client_uuid,
+        client_uuid=client.client_uuid,
         client_site_id=site_info.client_site_id,
         client_site_name=site_info.client_site_name,
         region=site_info.region,

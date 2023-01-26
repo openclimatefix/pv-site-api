@@ -1,11 +1,8 @@
 """ Test for main app """
 import json
 from datetime import datetime, timezone
-from uuid import uuid4
 
 from fastapi.testclient import TestClient
-
-from pvsite_datamodel.sqlmodels import SiteSQL
 
 from main import app, version
 from pydantic_models import (
@@ -13,8 +10,6 @@ from pydantic_models import (
     MultiplePVActual,
     PVActualValue,
     PVSiteAPIStatus,
-    PVSiteMetadata,
-    PVSites,
 )
 
 client = TestClient(app)
@@ -71,6 +66,3 @@ def test_post_pv_actual(fake):
 
     response = client.post("sites/pv_actual/fff-fff-fff", json=obj)
     assert response.status_code == 200
-
-
-
