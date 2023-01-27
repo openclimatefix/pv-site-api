@@ -69,7 +69,7 @@ async def make_fake_forecast(site_uuid) -> Forecast:
             target_datetime_utc=d, expected_generation_kw=make_fake_intensity(datetime_utc=d)
         )
         forecast_values.append(forecast_value)
-        
+
     # join together to make forecast object
     fake_forecast = Forecast(
         forecast_uuid=str(uuid4()),
