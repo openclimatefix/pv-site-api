@@ -6,6 +6,7 @@ import uuid
 from fastapi import Depends, FastAPI
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.latest_forecast_values import get_latest_forecast_values_by_site
+from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
 from sqlalchemy.orm.session import Session
 
@@ -236,13 +237,18 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
 
 # get_status: get the status of the system
 @app.get("/api_status", response_model=PVSiteAPIStatus)
-async def get_status():
+async def get_status(session: Session = Depends(get_session)):
     """This route gets the status of the system.
 
     It's mostly used by OCF to
     make sure things are running smoothly.
     """
+
     if os.environ["FAKE"]:
         return await make_fake_status()
 
-    raise Exception(NotImplemented)
+    status = get_latest_status(session=session)
+
+    status = PVSiteAPIStatus(status=status.status, message=status.message)
+
+    return status
