@@ -1,5 +1,6 @@
 """Test that get status route works"""
 from fastapi.testclient import TestClient
+
 from main import app
 from pydantic_models import PVSiteAPIStatus
 from session import get_session
