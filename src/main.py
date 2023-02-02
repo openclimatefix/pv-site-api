@@ -6,8 +6,8 @@ import uuid
 from fastapi import Depends, FastAPI
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.latest_forecast_values import get_latest_forecast_values_by_site
-from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.site import get_all_sites
+from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
 from sqlalchemy.orm.session import Session
 
