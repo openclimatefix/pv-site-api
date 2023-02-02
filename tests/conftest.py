@@ -8,6 +8,7 @@ from pvsite_datamodel.sqlmodels import (
     Base,
     ClientSQL,
     ForecastSQL,
+    ForecastValueSQL,
     GenerationSQL,
     LatestForecastValueSQL,
     SiteSQL,
@@ -171,3 +172,41 @@ def latest_forecast_values(db_session, sites):
     db_session.commit()
 
     return latest_forecast_values
+
+
+@pytest.fixture()
+def forecast_values(db_session, sites):
+    """Create some fake forecast values"""
+
+    forecast_values = []
+    forecast_version: str = "0.0.0"
+    start_times = [datetime.today() - timedelta(minutes=x) for x in range(10)]
+
+    for site in sites:
+        forecast: ForecastSQL = ForecastSQL(
+            forecast_uuid=uuid.uuid4(),
+            site_uuid=site.site_uuid,
+            forecast_version=forecast_version,
+        )
+
+        db_session.add(forecast)
+        db_session.commit()
+
+        for i in range(0, 10):
+            datetime_interval, _ = get_or_else_create_datetime_interval(
+                session=db_session, start_time=start_times[i]
+            )
+
+            forecast_value: ForecastValueSQL = ForecastValueSQL(
+                forecast_value_uuid=uuid.uuid4(),
+                datetime_interval_uuid=datetime_interval.datetime_interval_uuid,
+                forecast_generation_kw=i,
+                forecast_uuid=forecast.forecast_uuid,
+            )
+
+            forecast_values.append(forecast_value)
+
+    db_session.add_all(forecast_values)
+    db_session.commit()
+
+    return forecast_values
