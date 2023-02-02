@@ -66,10 +66,15 @@ def sites(db_session):
             client_name=f"testclient_{i}",
             created_utc=datetime.now(timezone.utc),
         )
+
+        db_session.add(client)
+        db_session.commit()
+
         site = SiteSQL(
             site_uuid=uuid.uuid4(),
             client_uuid=client.client_uuid,
-            client_site_id=1,
+            client_site_id=i,
+            client_site_name=f"sites_i{i+1000}",
             latitude=51,
             longitude=3,
             capacity_kw=4,
@@ -77,7 +82,7 @@ def sites(db_session):
             updated_utc=datetime.now(timezone.utc),
             ml_id=i,
         )
-        db_session.add(client)
+
         db_session.add(site)
         db_session.commit()
 

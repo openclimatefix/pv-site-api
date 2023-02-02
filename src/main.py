@@ -7,6 +7,7 @@ from fastapi import Depends, FastAPI
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.latest_forecast_values import get_latest_forecast_values_by_site
 from pvsite_datamodel.read.status import get_latest_status
+from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
 from sqlalchemy.orm.session import Session
 
@@ -72,7 +73,34 @@ async def get_sites(
     if int(os.environ["FAKE"]):
         return await make_fake_site()
 
-    raise Exception(NotImplemented)
+    sites = get_all_sites(session=session)
+
+    assert len(sites) > 0
+
+    pv_sites = []
+    for site in sites:
+
+        print(site.client)
+        print(site.client.client_name)
+
+        pv_sites.append(
+            PVSiteMetadata(
+                site_uuid=str(site.site_uuid),
+                client_name=site.client.client_name,
+                client_site_id=site.client_site_id,
+                client_site_name=site.client_site_name,
+                region=site.region,
+                dno=site.dno,
+                gsp=site.gsp,
+                latitude=site.latitude,
+                longitude=site.longitude,
+                installed_capacity_kw=site.capacity_kw,
+                created_utc=site.created_utc,
+                updated_utc=site.updated_utc,
+            )
+        )
+
+    return PVSites(site_list=pv_sites)
 
 
 # post_pv_actual: sends data to us, and we save to database
