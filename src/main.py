@@ -5,7 +5,7 @@ import uuid
 
 from fastapi import Depends, FastAPI
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
-from pvsite_datamodel.read.latest_forecast_values import get_latest_forecast_values_by_site
+from pvsite_datamodel.read.latest_forecast_values import get_forecast_values_by_site_latest
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.sqlmodels import ClientSQL, ForecastValueSQL, SiteSQL
 from sqlalchemy.orm.session import Session
@@ -205,8 +205,8 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
     start_utc = get_start_datetime()
 
     # using ForecastValueSQL, but should fix this in the future
-    latest_forecast_values = get_latest_forecast_values_by_site(
-        session=session, site_uuids=[site_uuid], start_utc=start_utc, model=ForecastValueSQL
+    latest_forecast_values = get_forecast_values_by_site_latest(
+        session=session, site_uuids=[site_uuid], start_utc=start_utc
     )
     latest_forecast_values = latest_forecast_values[site_uuid]
 
@@ -227,9 +227,9 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
     # make the forecast object
     forecast = Forecast(
         forecast_uuid=str(latest_forecast_values[0].forecast_uuid),
-        site_uuid=str(latest_forecast_values[0].site_uuid),
+        site_uuid=str(latest_forecast_values[0].forecast.site_uuid),
         forecast_creation_datetime=latest_forecast_values[0].created_utc,
-        forecast_version=latest_forecast_values[0].forecast_version,
+        forecast_version=latest_forecast_values[0].forecast.forecast_version,
         forecast_values=forecast_values,
     )
 
