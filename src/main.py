@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.latest_forecast_values import get_forecast_values_by_site_latest
 from pvsite_datamodel.read.status import get_latest_status
-from pvsite_datamodel.sqlmodels import ClientSQL, ForecastValueSQL, SiteSQL
+from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
 from sqlalchemy.orm.session import Session
 
 from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
