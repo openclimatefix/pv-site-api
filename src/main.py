@@ -242,6 +242,8 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
         f"Did not find any forecasts for {site_uuid} after {start_utc}"
     )
 
+    logger.debug(f'Found {len(latest_forecast_values)} forecasts')
+
     # make the forecast values object
     forecast_values = []
     for latest_forecast_value in latest_forecast_values:
@@ -260,6 +262,8 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
         forecast_version=latest_forecast_values[0].forecast.forecast_version,
         forecast_values=forecast_values,
     )
+
+    logger.debug(f'Converted to pydantic object')
 
     return forecast
 
