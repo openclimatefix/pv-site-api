@@ -3,6 +3,7 @@ import logging
 import os
 import uuid
 
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.latest_forecast_values import get_forecast_values_by_site_latest
@@ -23,6 +24,8 @@ from pydantic_models import (
 )
 from session import get_session
 from utils import get_start_datetime
+
+load_dotenv()
 
 logging.basicConfig(
     level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
