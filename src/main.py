@@ -3,11 +3,13 @@ import logging
 import os
 import uuid
 
+
 from fastapi import Depends, FastAPI
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.latest_forecast_values import get_latest_forecast_values_by_site
 from pvsite_datamodel.read.status import get_latest_status
-from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
+from pvsite_datamodel.write.generation import insert_generation_values
+from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL, GenerationSQL
 from sqlalchemy.orm.session import Session
 
 from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
@@ -80,6 +82,7 @@ async def get_sites(
 async def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
+    session: Session = Depends(get_session),
 ):
     """### This route is used to input actual PV generation.
 
@@ -92,8 +95,19 @@ async def post_pv_actual(
         print(f"Got {pv_actual.dict()} for site {site_uuid}")
         print("Not doing anything with it (yet!)")
         return
+    
+    site = session.query(SiteSQL).first()
+    assert site is not None
 
-    raise Exception(NotImplemented)
+    generation = GenerationSQL(
+        power_kw=pv_actual.pv_actual_values[PVActualValue.actual_generation_kw],
+        date_time_interval=pv_actual.pv_actual_values[PVActualValue.datetime_utc]
+    )
+
+    generation = insert_generation_values(session=session, generation_values_df=[generation])
+
+    session.add(generation)
+    session.commit()
 
 
 # Comment this out, until we have security on this
