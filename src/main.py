@@ -266,7 +266,7 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
         forecast_values=forecast_values,
     )
 
-    logger.debug(f'Converted to pydantic object')
+    logger.debug('Converted to pydantic object')
 
     return forecast
 
