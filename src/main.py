@@ -7,13 +7,11 @@ import pandas as pd
 from fastapi import Depends, FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse
-from redoc_theme import get_redoc_html_with_theme
-
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.latest_forecast_values import get_latest_forecast_values_by_site
 from pvsite_datamodel.read.status import get_latest_status
-from pvsite_datamodel.write.generation import insert_generation_values
 from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
+from pvsite_datamodel.write.generation import insert_generation_values
 from sqlalchemy.orm.session import Session
 
 from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
@@ -26,6 +24,7 @@ from pydantic_models import (
     PVSites,
     SiteForecastValues,
 )
+from redoc_theme import get_redoc_html_with_theme
 from session import get_session
 from utils import get_start_datetime
 

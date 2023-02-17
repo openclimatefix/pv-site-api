@@ -1,13 +1,14 @@
 """ Test for main app """
 
+import json
+from datetime import datetime, timezone
+
 from fastapi.testclient import TestClient
+from pvsite_datamodel.sqlmodels import GenerationSQL
 
 from main import app
 from pydantic_models import MultiplePVActual, PVActualValue
-from pvsite_datamodel.sqlmodels import GenerationSQL
 from session import get_session
-from datetime import datetime, timezone
-import json
 
 client = TestClient(app)
 
