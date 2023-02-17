@@ -88,7 +88,7 @@ async def post_pv_actual(
         print("Not doing anything with it (yet!)")
         return
     #filter for site_uuid
-    site = session.query(SiteSQL).filter(SiteSQL.site_uuid)
+    site = session.query(SiteSQL).filter(SiteSQL.site_uuid ==site_uuid).first()
     assert site is not None
 
     generation = GenerationSQL(
