@@ -3,8 +3,11 @@ import logging
 import os
 import uuid
 
-
 from fastapi import Depends, FastAPI
+from fastapi.openapi.utils import get_openapi
+from fastapi.responses import FileResponse
+from redoc_theme import get_redoc_html_with_theme
+
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.latest_forecast_values import get_latest_forecast_values_by_site
 from pvsite_datamodel.read.status import get_latest_status
@@ -31,26 +34,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = FastAPI(docs_url="/swagger", redoc_url=None)
 
 title = "Nowcasting PV Site API"
 version = "0.0.17"
+folder = os.path.dirname(os.path.abspath(__file__))
+description = """
+Description of PV Site API
+"""
 
-
-@app.get("/")
-async def get_api_information():
-    """
-    ###  This route returns basic information about the Nowcasting PV Site API.
-
-    """
-
-    logger.info("Route / has been called")
-
-    return {
-        "title": "Nowcasting PV Site API",
-        "version": version,
-        "progress": "The Nowcasting PV Site API is still underconstruction.",
-    }
 
 
 # name the api
@@ -266,3 +258,66 @@ async def get_status(session: Session = Depends(get_session)):
     status = PVSiteAPIStatus(status=status.status, message=status.message)
 
     return status
+
+
+@app.get("/")
+async def get_api_information():
+    """
+    ####  This route returns basic information about the Nowcasting PV Site API.
+
+    """
+
+    logger.info("Route / has been called")
+
+    return {
+        "title": "Nowcasting PV Site API",
+        "version": version,
+        "progress": "The Nowcasting PV Site API is still underconstruction.",
+    }
+
+# @app.get("/favicon.ico", include_in_schema=False)
+# async def get_favicon() -> FileResponse:
+#     """Get favicon"""
+#     return FileResponse(f"/favicon.ico")
+
+
+@app.get("/nowcasting.png", include_in_schema=False)
+async def get_nowcasting_logo() -> FileResponse:
+    """Get logo"""
+    return FileResponse(f"{folder}/nowcasting.png")
+
+
+@app.get("/docs", include_in_schema=False)
+async def redoc_html():
+    """### Render ReDoc with custom theme options included"""
+    return get_redoc_html_with_theme(
+        title=title,
+    )
+
+
+# OpenAPI (ReDoc) custom theme
+def custom_openapi():
+    """Make custom redoc theme"""
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=title,
+        version=version,
+        description=description,
+        contact={
+            "name": "Nowcasting by Open Climate Fix",
+            "url": "https://nowcasting.io",
+            "email": "info@openclimatefix.org",
+        },
+        license_info={
+            "name": "MIT License",
+            "url": "https://github.com/openclimatefix/nowcasting_api/blob/main/LICENSE",
+        },
+        routes=app.routes,
+    )
+    openapi_schema["info"]["x-logo"] = {"url": "/nowcasting.png"}
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
