@@ -3,13 +3,17 @@ import logging
 import os
 import uuid
 
+import pandas as pd
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
+from fastapi.openapi.utils import get_openapi
+from fastapi.responses import FileResponse
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.latest_forecast_values import get_forecast_values_by_site_latest
 from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
+from pvsite_datamodel.write.generation import insert_generation_values
 from sqlalchemy.orm.session import Session
 
 from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
@@ -22,6 +26,7 @@ from pydantic_models import (
     PVSites,
     SiteForecastValues,
 )
+from redoc_theme import get_redoc_html_with_theme
 from session import get_session
 from utils import get_start_datetime
 
@@ -33,26 +38,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = FastAPI(docs_url="/swagger", redoc_url=None)
 
 title = "Nowcasting PV Site API"
+
+folder = os.path.dirname(os.path.abspath(__file__))
+description = """
+Description of PV Site API
+"""
+
 version = "0.0.23"
-
-
-@app.get("/")
-async def get_api_information():
-    """
-    ###  This route returns basic information about the Nowcasting PV Site API.
-
-    """
-
-    logger.info("Route / has been called")
-
-    return {
-        "title": "Nowcasting PV Site API",
-        "version": version,
-        "progress": "The Nowcasting PV Site API is still underconstruction.",
-    }
 
 
 # name the api
@@ -111,6 +106,7 @@ async def get_sites(
 async def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
+    session: Session = Depends(get_session),
 ):
     """### This route is used to input actual PV generation.
 
@@ -124,7 +120,23 @@ async def post_pv_actual(
         print("Not doing anything with it (yet!)")
         return
 
-    raise Exception(NotImplemented)
+    generations = []
+    for pv_actual_value in pv_actual.pv_actual_values:
+
+        generations.append(
+            {
+                "start_datetime_utc": pv_actual_value.datetime_utc,
+                "power_kw": pv_actual_value.actual_generation_kw,
+                "site_uuid": site_uuid,
+            }
+        )
+
+    generation_values_df = pd.DataFrame(generations)
+
+    logger.debug(f"Adding {len(generation_values_df)} generation values")
+
+    _ = insert_generation_values(session=session, generation_values_df=generation_values_df)
+    session.commit()
 
 
 # Comment this out, until we have security on this
@@ -245,7 +257,7 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
         f"Did not find any forecasts for {site_uuid} after {start_utc}"
     )
 
-    logger.debug(f'Found {len(latest_forecast_values)} forecasts')
+    logger.debug(f"Found {len(latest_forecast_values)} forecasts")
 
     # make the forecast values object
     forecast_values = []
@@ -266,7 +278,7 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
         forecast_values=forecast_values,
     )
 
-    logger.debug('Converted to pydantic object')
+    logger.debug("Converted to pydantic object")
 
     return forecast
 
@@ -288,3 +300,67 @@ async def get_status(session: Session = Depends(get_session)):
     status = PVSiteAPIStatus(status=status.status, message=status.message)
 
     return status
+
+
+@app.get("/")
+async def get_api_information():
+    """
+    ####  This route returns basic information about the Nowcasting PV Site API.
+
+    """
+
+    logger.info("Route / has been called")
+
+    return {
+        "title": "Nowcasting PV Site API",
+        "version": version,
+        "progress": "The Nowcasting PV Site API is still underconstruction.",
+    }
+
+
+# @app.get("/favicon.ico", include_in_schema=False)
+# async def get_favicon() -> FileResponse:
+#     """Get favicon"""
+#     return FileResponse(f"/favicon.ico")
+
+
+@app.get("/nowcasting.png", include_in_schema=False)
+async def get_nowcasting_logo() -> FileResponse:
+    """Get logo"""
+    return FileResponse(f"{folder}/nowcasting.png")
+
+
+@app.get("/docs", include_in_schema=False)
+async def redoc_html():
+    """### Render ReDoc with custom theme options included"""
+    return get_redoc_html_with_theme(
+        title=title,
+    )
+
+
+# OpenAPI (ReDoc) custom theme
+def custom_openapi():
+    """Make custom redoc theme"""
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=title,
+        version=version,
+        description=description,
+        contact={
+            "name": "Nowcasting by Open Climate Fix",
+            "url": "https://nowcasting.io",
+            "email": "info@openclimatefix.org",
+        },
+        license_info={
+            "name": "MIT License",
+            "url": "https://github.com/openclimatefix/nowcasting_api/blob/main/LICENSE",
+        },
+        routes=app.routes,
+    )
+    openapi_schema["info"]["x-logo"] = {"url": "/nowcasting.png"}
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
