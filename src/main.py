@@ -3,6 +3,7 @@ import logging
 import os
 import uuid
 
+import pandas as pd
 from fastapi import Depends, FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse
@@ -42,7 +43,6 @@ folder = os.path.dirname(os.path.abspath(__file__))
 description = """
 Description of PV Site API
 """
-
 
 
 # name the api
@@ -87,16 +87,23 @@ async def post_pv_actual(
         print(f"Got {pv_actual.dict()} for site {site_uuid}")
         print("Not doing anything with it (yet!)")
         return
-    #filter for site_uuid
-    site = session.query(SiteSQL).filter(SiteSQL.site_uuid ==site_uuid).first()
-    assert site is not None
 
-    generation = GenerationSQL(
-        power_kw=pv_actual.pv_actual_values[PVActualValue.actual_generation_kw],
-        date_time_interval=pv_actual.pv_actual_values[PVActualValue.datetime_utc]
-    )
+    generations = []
+    for pv_actual_value in pv_actual.pv_actual_values:
 
-    session.add(generation)
+        generations.append(
+            {
+                "start_datetime_utc": pv_actual_value.datetime_utc,
+                "power_kw": pv_actual_value.actual_generation_kw,
+                "site_uuid": site_uuid,
+            }
+        )
+
+    generation_values_df = pd.DataFrame(generations)
+
+    logger.debug(f"Adding {len(generation_values_df)} generation values")
+
+    _ = insert_generation_values(session=session, generation_values_df=generation_values_df)
     session.commit()
 
 
@@ -272,6 +279,7 @@ async def get_api_information():
         "version": version,
         "progress": "The Nowcasting PV Site API is still underconstruction.",
     }
+
 
 # @app.get("/favicon.ico", include_in_schema=False)
 # async def get_favicon() -> FileResponse:
