@@ -7,7 +7,6 @@ from pydantic_models import MultiplePVActual, PVActualValue
 from pvsite_datamodel.sqlmodels import GenerationSQL
 from session import get_session
 from datetime import datetime, timezone
-from uuid import uuid4
 import json
 
 client = TestClient(app)

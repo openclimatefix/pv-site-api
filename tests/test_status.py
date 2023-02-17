@@ -10,7 +10,7 @@ client = TestClient(app)
 
 def test_get_fake_status(fake):
 
-    response = client.get("/api_status") 
+    response = client.get("/api_status")
     assert response.status_code == 200
 
     returned_status = PVSiteAPIStatus(**response.json())
