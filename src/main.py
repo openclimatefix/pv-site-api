@@ -50,22 +50,6 @@ Description of PV Site API
 version = "0.0.23"
 
 
-@app.get("/")
-async def get_api_information():
-    """
-    ###  This route returns basic information about the Nowcasting PV Site API.
-
-    """
-
-    logger.info("Route / has been called")
-
-    return {
-        "title": "Nowcasting PV Site API",
-        "version": version,
-        "progress": "The Nowcasting PV Site API is still underconstruction.",
-    }
-
-
 # name the api
 # test that the routes are there on swagger
 # Following on from #1 now will be good to set out models
@@ -273,7 +257,7 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
         f"Did not find any forecasts for {site_uuid} after {start_utc}"
     )
 
-    logger.debug(f'Found {len(latest_forecast_values)} forecasts')
+    logger.debug(f"Found {len(latest_forecast_values)} forecasts")
 
     # make the forecast values object
     forecast_values = []
@@ -294,7 +278,7 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
         forecast_values=forecast_values,
     )
 
-    logger.debug('Converted to pydantic object')
+    logger.debug("Converted to pydantic object")
 
     return forecast
 
