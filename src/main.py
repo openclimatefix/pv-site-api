@@ -87,16 +87,14 @@ async def post_pv_actual(
         print(f"Got {pv_actual.dict()} for site {site_uuid}")
         print("Not doing anything with it (yet!)")
         return
-    
-    site = session.query(SiteSQL).first()
+    #filter for site_uuid
+    site = session.query(SiteSQL).filter(SiteSQL.site_uuid)
     assert site is not None
 
     generation = GenerationSQL(
         power_kw=pv_actual.pv_actual_values[PVActualValue.actual_generation_kw],
         date_time_interval=pv_actual.pv_actual_values[PVActualValue.datetime_utc]
     )
-
-    generation = insert_generation_values(session=session, generation_values_df=[generation])
 
     session.add(generation)
     session.commit()
