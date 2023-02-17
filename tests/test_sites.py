@@ -13,7 +13,19 @@ from session import get_session
 client = TestClient(app)
 
 
-def test_get_site_list(fake):
+def test_get_site_list_fake(fake):
+
+    response = client.get("sites/site_list")
+    assert response.status_code == 200, response.text
+
+    pv_sites = PVSites(**response.json())
+    assert len(pv_sites.site_list) > 0
+
+
+def test_get_site_list(db_session, sites):
+
+    # make sure we are using the same session
+    app.dependency_overrides[get_session] = lambda: db_session
 
     response = client.get("sites/site_list")
     assert response.status_code == 200, response.text

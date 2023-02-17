@@ -4,11 +4,13 @@ import os
 import uuid
 
 import pandas as pd
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
-from pvsite_datamodel.read.latest_forecast_values import get_latest_forecast_values_by_site
+from pvsite_datamodel.read.latest_forecast_values import get_forecast_values_by_site_latest
+from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
@@ -28,6 +30,8 @@ from redoc_theme import get_redoc_html_with_theme
 from session import get_session
 from utils import get_start_datetime
 
+load_dotenv()
+
 logging.basicConfig(
     level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
     format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
@@ -37,11 +41,29 @@ logger = logging.getLogger(__name__)
 app = FastAPI(docs_url="/swagger", redoc_url=None)
 
 title = "Nowcasting PV Site API"
-version = "0.0.17"
+
 folder = os.path.dirname(os.path.abspath(__file__))
 description = """
 Description of PV Site API
 """
+
+version = "0.0.23"
+
+
+@app.get("/")
+async def get_api_information():
+    """
+    ###  This route returns basic information about the Nowcasting PV Site API.
+
+    """
+
+    logger.info("Route / has been called")
+
+    return {
+        "title": "Nowcasting PV Site API",
+        "version": version,
+        "progress": "The Nowcasting PV Site API is still underconstruction.",
+    }
 
 
 # name the api
@@ -65,7 +87,34 @@ async def get_sites(
     if int(os.environ["FAKE"]):
         return await make_fake_site()
 
-    raise Exception(NotImplemented)
+    sites = get_all_sites(session=session)
+
+    assert len(sites) > 0
+
+    pv_sites = []
+    for site in sites:
+
+        print(site.client)
+        print(site.client.client_name)
+
+        pv_sites.append(
+            PVSiteMetadata(
+                site_uuid=str(site.site_uuid),
+                client_name=site.client.client_name,
+                client_site_id=site.client_site_id,
+                client_site_name=site.client_site_name,
+                region=site.region,
+                dno=site.dno,
+                gsp=site.gsp,
+                latitude=site.latitude,
+                longitude=site.longitude,
+                installed_capacity_kw=site.capacity_kw,
+                created_utc=site.created_utc,
+                updated_utc=site.updated_utc,
+            )
+        )
+
+    return PVSites(site_list=pv_sites)
 
 
 # post_pv_actual: sends data to us, and we save to database
@@ -214,7 +263,8 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
     site_uuid = uuid.UUID(site_uuid)
     start_utc = get_start_datetime()
 
-    latest_forecast_values = get_latest_forecast_values_by_site(
+    # using ForecastValueSQL, but should fix this in the future
+    latest_forecast_values = get_forecast_values_by_site_latest(
         session=session, site_uuids=[site_uuid], start_utc=start_utc
     )
     latest_forecast_values = latest_forecast_values[site_uuid]
@@ -222,6 +272,8 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
     assert len(latest_forecast_values) > 0, Exception(
         f"Did not find any forecasts for {site_uuid} after {start_utc}"
     )
+
+    logger.debug(f'Found {len(latest_forecast_values)} forecasts')
 
     # make the forecast values object
     forecast_values = []
@@ -236,11 +288,13 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
     # make the forecast object
     forecast = Forecast(
         forecast_uuid=str(latest_forecast_values[0].forecast_uuid),
-        site_uuid=str(latest_forecast_values[0].site_uuid),
+        site_uuid=str(latest_forecast_values[0].forecast.site_uuid),
         forecast_creation_datetime=latest_forecast_values[0].created_utc,
-        forecast_version=latest_forecast_values[0].forecast_version,
+        forecast_version=latest_forecast_values[0].forecast.forecast_version,
         forecast_values=forecast_values,
     )
+
+    logger.debug('Converted to pydantic object')
 
     return forecast
 
