@@ -32,8 +32,6 @@ async def make_fake_site() -> PVSiteMetadata:
         latitude=50,
         longitude=0,
         installed_capacity_kw=1,
-        created_utc=datetime.now(timezone.utc),
-        updated_utc=datetime.now(timezone.utc),
     )
     pv_site_list = PVSites(
         site_list=[pv_site],

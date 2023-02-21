@@ -39,8 +39,6 @@ class PVSiteMetadata(BaseModel):
     latitude: float = Field(..., description="The site's latitude", ge=-90, le=90)
     longitude: float = Field(..., description="The site's longitude", ge=-180, le=180)
     installed_capacity_kw: float = Field(..., description="The site's capacity in kw", ge=0)
-    created_utc: datetime = Field(..., description="Datetime the site was entered into the system.")
-    updated_utc: datetime = Field(..., description="Datetime of latest site information update.")
 
 
 # post_pv_actual

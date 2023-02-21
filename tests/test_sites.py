@@ -50,7 +50,6 @@ def test_put_site_fake(fake):
         longitude=0,
         installed_capacity_kw=1,
         created_utc=datetime.now(timezone.utc).isoformat(),
-        updated_utc=datetime.now(timezone.utc).isoformat(),
     )
 
     pv_site_dict = json.loads(pv_site.json())
@@ -76,7 +75,6 @@ def test_put_site(db_session, client_sql):
         longitude=0,
         installed_capacity_kw=1,
         created_utc=datetime.now(timezone.utc).isoformat(),
-        updated_utc=datetime.now(timezone.utc).isoformat(),
     )
 
     pv_site_dict = json.loads(pv_site.json())
@@ -108,7 +106,6 @@ def test_put_site(db_session, client_sql):
 #         longitude=0,
 #         installed_capacity_kw=1,
 #         created_utc=datetime.now(timezone.utc).isoformat(),
-#         updated_utc=datetime.now(timezone.utc).isoformat(),
 #     )
 #
 #     pv_site_dict = json.loads(pv_site.json())

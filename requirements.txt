@@ -9,6 +9,6 @@ pytest
 pytest-cov
 python-dotenv
 pandas
-pvsite_datamodel
+pvsite-datamodel==0.1.25
 sqlalchemy
 testcontainers

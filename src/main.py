@@ -94,7 +94,6 @@ async def get_sites(
                 longitude=site.longitude,
                 installed_capacity_kw=site.capacity_kw,
                 created_utc=site.created_utc,
-                updated_utc=site.updated_utc,
             )
         )
 
@@ -125,7 +124,7 @@ async def post_pv_actual(
 
         generations.append(
             {
-                "start_datetime_utc": pv_actual_value.datetime_utc,
+                "start_utc": pv_actual_value.datetime_utc,
                 "power_kw": pv_actual_value.actual_generation_kw,
                 "site_uuid": site_uuid,
             }
@@ -135,7 +134,7 @@ async def post_pv_actual(
 
     logger.debug(f"Adding {len(generation_values_df)} generation values")
 
-    _ = insert_generation_values(session=session, generation_values_df=generation_values_df)
+    insert_generation_values(session, generation_values_df)
     session.commit()
 
 
@@ -217,8 +216,8 @@ async def get_pv_actual(site_uuid: str, session: Session = Depends(get_session))
     for generation_sql in generations_sql:
         generations.append(
             PVActualValue(
-                datetime_utc=generation_sql.datetime_interval.start_utc,
-                actual_generation_kw=generation_sql.power_kw,
+                datetime_utc=generation_sql.start_utc,
+                actual_generation_kw=generation_sql.generation_power_kw,
             )
         )
     return MultiplePVActual(pv_actual_values=generations, site_uuid=site_uuid)
@@ -264,8 +263,8 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
     for latest_forecast_value in latest_forecast_values:
         forecast_values.append(
             SiteForecastValues(
-                target_datetime_utc=latest_forecast_value.datetime_interval.start_utc,
-                expected_generation_kw=latest_forecast_value.forecast_generation_kw,
+                target_datetime_utc=latest_forecast_value.start_utc,
+                expected_generation_kw=latest_forecast_value.forecast_power_kw,
             )
         )
 
