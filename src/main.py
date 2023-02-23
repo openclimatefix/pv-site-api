@@ -47,7 +47,7 @@ description = """
 Description of PV Site API
 """
 
-version = "0.0.24"
+version = "0.0.25"
 
 
 # name the api
