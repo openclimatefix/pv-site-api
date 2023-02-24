@@ -48,7 +48,7 @@ description = """
 Description of PV Site API
 """
 
-version = "0.0.25"
+version = "0.0.26"
 
 origins = os.getenv("ORIGINS", "*").split(",")
 app.add_middleware(
