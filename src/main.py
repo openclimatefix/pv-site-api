@@ -6,6 +6,7 @@ import uuid
 import pandas as pd
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
@@ -49,6 +50,14 @@ Description of PV Site API
 
 version = "0.0.25"
 
+origins = os.getenv("ORIGINS", "*").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # name the api
 # test that the routes are there on swagger
