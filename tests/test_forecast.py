@@ -10,7 +10,6 @@ client = TestClient(app)
 
 
 def test_get_forecast_fake(fake):
-
     response = client.get("sites/pv_forecast/ffff-ffff")
     assert response.status_code == 200
 
@@ -19,7 +18,6 @@ def test_get_forecast_fake(fake):
 
 
 def test_get_forecast(db_session, forecast_values):
-
     # make sure we are using the same session
     app.dependency_overrides[get_session] = lambda: db_session
 

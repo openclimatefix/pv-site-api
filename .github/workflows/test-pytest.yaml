@@ -1,10 +1,10 @@
-name: Run pytests
+name: Run tests and lint
 on:
   push:
 
 jobs:
-  test:
-    name: Run the tests
+  test_and_lint:
+    name: Run the tests and lint
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -21,6 +21,9 @@ jobs:
 
       - name: Install python dependencies
         run: poetry install
+
+      - name: Run lint
+        run: make lint
 
       - name: Run the tests
         run: poetry run pytest --cov=pv_site_api --cov-report=xml

@@ -86,7 +86,6 @@ async def get_sites(
 
     pv_sites = []
     for site in sites:
-
         print(site.client)
         print(site.client.client_name)
 
@@ -130,7 +129,6 @@ async def post_pv_actual(
 
     generations = []
     for pv_actual_value in pv_actual.pv_actual_values:
-
         generations.append(
             {
                 "start_utc": pv_actual_value.datetime_utc,

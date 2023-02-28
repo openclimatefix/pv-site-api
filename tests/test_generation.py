@@ -14,7 +14,6 @@ client = TestClient(app)
 
 
 def test_pv_actual_fake(fake):
-
     response = client.get("sites/pv_actual/fff-fff-fff")
     assert response.status_code == 200
 
@@ -23,7 +22,6 @@ def test_pv_actual_fake(fake):
 
 
 def test_pv_actual(db_session, generations):
-
     site_uuid = generations[0].site_uuid
 
     # make sure we are using the same session
@@ -37,7 +35,6 @@ def test_pv_actual(db_session, generations):
 
 
 def test_post_fake_pv_actual(fake):
-
     pv_actual_value = PVActualValue(
         datetime_utc=datetime.now(timezone.utc), actual_generation_kw=73.3
     )
@@ -55,7 +52,6 @@ def test_post_fake_pv_actual(fake):
 
 
 def test_post_pv_actual(db_session, sites):
-
     db_session.query(GenerationSQL).delete()
 
     site_uuid = sites[0].site_uuid

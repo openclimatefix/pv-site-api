@@ -14,7 +14,6 @@ client = TestClient(app)
 
 
 def test_get_site_list_fake(fake):
-
     response = client.get("sites/site_list")
     assert response.status_code == 200, response.text
 
@@ -23,7 +22,6 @@ def test_get_site_list_fake(fake):
 
 
 def test_get_site_list(db_session, sites):
-
     # make sure we are using the same session
     app.dependency_overrides[get_session] = lambda: db_session
 
@@ -35,7 +33,6 @@ def test_get_site_list(db_session, sites):
 
 
 def test_put_site_fake(fake):
-
     pv_site = PVSiteMetadata(
         site_uuid="ffff-ffff",
         client_name="client_name_1",
@@ -59,7 +56,6 @@ def test_put_site_fake(fake):
 
 
 def test_put_site(db_session, client_sql):
-
     # make site object
     pv_site = PVSiteMetadata(
         site_uuid=str(uuid4()),

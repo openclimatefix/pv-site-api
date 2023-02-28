@@ -19,7 +19,6 @@ def test_read_main():
 
 
 def test_get_status(fake):
-
     response = client.get("/api_status")
     assert response.status_code == 200
 
@@ -29,7 +28,6 @@ def test_get_status(fake):
 
 
 def test_pv_actual(fake):
-
     response = client.get("sites/pv_actual/fff-fff-fff")
     assert response.status_code == 200
 
@@ -38,7 +36,6 @@ def test_pv_actual(fake):
 
 
 def test_post_pv_actual(fake):
-
     pv_actual_value = PVActualValue(
         datetime_utc=datetime.now(timezone.utc), actual_generation_kw=73.3
     )

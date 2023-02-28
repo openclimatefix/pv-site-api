@@ -5,16 +5,35 @@
 Site specific API for SBRI project
 
 
-# pytest tests
-```
-poetry run pytest tests
-```
+## Setup and Run
 
-# Setup and Run
-```
-poetry install
-poetry run uvicorn pv_site_api.main:app --reload
-```
+### [Install poetry][p]
+
+### Install python dependencies
+
+    poetry install
+
+### Start the API using uvicorn
+
+    poetry run uvicorn pv_site_api.main:app --reload
+
+
+## Runing the tests
+
+    poetry run pytest tests
+
+
+## Coding style
+
+Format the code *in place*
+
+    make format
+
+Verify that the code satisfies the style
+
+    make lint
+
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
@@ -38,3 +57,5 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
+[p]: https://python-poetry.org/docs/#installation

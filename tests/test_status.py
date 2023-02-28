@@ -9,7 +9,6 @@ client = TestClient(app)
 
 
 def test_get_fake_status(fake):
-
     response = client.get("/api_status")
     assert response.status_code == 200
 
@@ -19,7 +18,6 @@ def test_get_fake_status(fake):
 
 
 def test_get_status(db_session):
-
     app.dependency_overrides[get_session] = lambda: db_session
 
     response = client.get("/api_status")
