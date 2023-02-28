@@ -1,3 +1,2 @@
-/infrastructure/terraform/terraform.tfvars
 /src/.env
 *.pyc
