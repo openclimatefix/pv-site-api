@@ -1,7 +1,7 @@
 """ Pytest fixtures for tests """
 import os
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 import pytest
 from pvsite_datamodel.sqlmodels import (
@@ -58,23 +58,19 @@ def sites(db_session):
     sites = []
     for i in range(0, 4):
         client = ClientSQL(
-            client_uuid=uuid.uuid4(),
             client_name=f"testclient_{i}",
-            created_utc=datetime.now(timezone.utc),
         )
 
         db_session.add(client)
         db_session.commit()
 
         site = SiteSQL(
-            site_uuid=uuid.uuid4(),
             client_uuid=client.client_uuid,
             client_site_id=i,
             client_site_name=f"sites_i{i+1000}",
             latitude=51,
             longitude=3,
             capacity_kw=4,
-            created_utc=datetime.now(timezone.utc),
             ml_id=i,
         )
 
@@ -95,7 +91,6 @@ def generations(db_session, sites):
     for site in sites:
         for i in range(0, 10):
             generation = GenerationSQL(
-                generation_uuid=uuid.uuid4(),
                 site_uuid=site.site_uuid,
                 generation_power_kw=i,
                 start_utc=start_times[i],
@@ -136,9 +131,9 @@ def forecast_values(db_session, sites):
 
     for site in sites:
         forecast: ForecastSQL = ForecastSQL(
-            forecast_uuid=uuid.uuid4(),
             site_uuid=site.site_uuid,
             forecast_version=forecast_version,
+            timestamp_utc=datetime.utcnow(),
         )
 
         db_session.add(forecast)
@@ -147,7 +142,6 @@ def forecast_values(db_session, sites):
         for i in range(0, 10):
             forecast_value: ForecastValueSQL = ForecastValueSQL(
                 forecast_value_uuid=uuid.uuid4(),
-                site_uuid=site.site_uuid,
                 forecast_power_kw=i,
                 forecast_uuid=forecast.forecast_uuid,
                 start_utc=start_times[i],
