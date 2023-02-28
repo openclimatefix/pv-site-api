@@ -1,4 +1,4 @@
-from pydantic_models import PVSiteAPIStatus
+from pv_site_api.pydantic_models import PVSiteAPIStatus
 
 
 def test_status():

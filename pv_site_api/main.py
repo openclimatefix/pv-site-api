@@ -17,8 +17,10 @@ from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
 from sqlalchemy.orm.session import Session
 
-from fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
-from pydantic_models import (
+import pv_site_api
+
+from .fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
+from .pydantic_models import (
     Forecast,
     MultiplePVActual,
     PVActualValue,
@@ -27,9 +29,9 @@ from pydantic_models import (
     PVSites,
     SiteForecastValues,
 )
-from redoc_theme import get_redoc_html_with_theme
-from session import get_session
-from utils import get_start_datetime
+from .redoc_theme import get_redoc_html_with_theme
+from .session import get_session
+from .utils import get_start_datetime
 
 load_dotenv()
 
@@ -47,8 +49,6 @@ folder = os.path.dirname(os.path.abspath(__file__))
 description = """
 Description of PV Site API
 """
-
-version = "0.0.26"
 
 origins = os.getenv("ORIGINS", "*").split(",")
 app.add_middleware(
@@ -321,7 +321,7 @@ async def get_api_information():
 
     return {
         "title": "Nowcasting PV Site API",
-        "version": version,
+        "version": pv_site_api.__version__,
         "progress": "The Nowcasting PV Site API is still underconstruction.",
     }
 
@@ -353,7 +353,7 @@ def custom_openapi():
         return app.openapi_schema
     openapi_schema = get_openapi(
         title=title,
-        version=version,
+        version=pv_site_api.__version__,
         description=description,
         contact={
             "name": "Nowcasting by Open Climate Fix",

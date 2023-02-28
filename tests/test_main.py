@@ -4,8 +4,9 @@ from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
 
-from main import app, version
-from pydantic_models import MultiplePVActual, PVActualValue, PVSiteAPIStatus
+from pv_site_api import __version__
+from pv_site_api.main import app
+from pv_site_api.pydantic_models import MultiplePVActual, PVActualValue, PVSiteAPIStatus
 
 client = TestClient(app)
 
@@ -14,7 +15,7 @@ def test_read_main():
     """Check main route works"""
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json()["version"] == version
+    assert response.json()["version"] == __version__
 
 
 def test_get_status(fake):

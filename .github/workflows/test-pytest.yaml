@@ -1,15 +1,29 @@
 name: Run pytests
 on:
   push:
-  schedule:
-    - cron: "0 12 * * 1"
 
 jobs:
-  call-pytest-test:
-    uses: openclimatefix/.github/.github/workflows/python-test.yml@main
-    with:
-      pytest_cov_dir: src
-      python-version: "['3.10']"
-      python_path: './src'
-      os_list: '["ubuntu-latest"]'
+  test:
+    name: Run the tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
 
+      - name: Install poetry
+        run: pipx install poetry==1.3.2
+
+      - name: Install python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: poetry
+
+      - name: Install python dependencies
+        run: poetry install
+
+      - name: Run the tests
+        run: poetry run pytest --cov=pv_site_api --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3

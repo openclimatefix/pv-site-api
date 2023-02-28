@@ -1,20 +1,24 @@
 FROM python:3.10-slim
 
-# copy files requirements
-COPY ./requirements.txt /app/requirements.txt
+
+# Copy required files.
+COPY ./poetry.lock /app/poetry.lock
+COPY ./pyproject.toml /app/pyproject.toml
+COPY ./pv_site_api /app/pv_site_api/
+COPY ./README.md /app/README.md
 
 # install requirements
 RUN apt-get clean
 RUN apt-get update -y
+
+# Upgrade `pip`
 RUN pip install -U pip
-RUN pip install -r /app/requirements.txt
+
+# Install poetry.
+RUN pip install "poetry==1.3.2" --no-cache-dir
 
 # set working directory
 WORKDIR /app
 
-# copy files over
-COPY ./src /app/src
-COPY ./tests /app/tests
-
-# make sure 'src' is in python path - this is so imports work
-ENV PYTHONPATH=${PYTHONPATH}:/app/src
+# Install python requirements.
+RUN poetry install --no-cache --without=dev

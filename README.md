@@ -7,14 +7,13 @@ Site specific API for SBRI project
 
 # pytest tests
 ```
-export PYTHONPATH=${PYTHONPATH}:./src
-pytest
+poetry run pytest tests
 ```
 
 # Setup and Run
 ```
-pip install -r requirements.txt
-cd src && uvicorn main:app --reload
+poetry install
+poetry run uvicorn pv_site_api.main:app --reload
 ```
 ## Contributors ✨
 

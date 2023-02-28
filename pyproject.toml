@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "pv-site-api"
+version = "0.0.26"
+description = ""
+authors = ["Open Climate Fix"]
+readme = "README.md"
+packages = [{include = "pv_site_api"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydantic = "^1.10.5"
+uvicorn = {extras = ["standard"], version = "^0.20.0"}
+psycopg2-binary = "^2.9.5"
+sqlalchemy = "^1.4.46"
+pvsite-datamodel = "0.1.25"
+fastapi = "^0.92.0"
+httpx = "^0.23.3"
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.12.0"
+ruff = "^0.0.253"
+black = "^23.1.0"
+pytest = "^7.2.1"
+pytest-cov = "^4.0.0"
+testcontainers-postgres = "^0.0.1rc1"
+ipython = "^8.11.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+line_length = 100

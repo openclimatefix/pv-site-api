@@ -2,9 +2,9 @@
 
 from fastapi.testclient import TestClient
 
-from main import app
-from pydantic_models import Forecast
-from session import get_session
+from pv_site_api.main import app
+from pv_site_api.pydantic_models import Forecast
+from pv_site_api.session import get_session
 
 client = TestClient(app)
 

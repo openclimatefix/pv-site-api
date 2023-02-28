@@ -6,9 +6,9 @@ from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 from pvsite_datamodel.sqlmodels import GenerationSQL
 
-from main import app
-from pydantic_models import MultiplePVActual, PVActualValue
-from session import get_session
+from pv_site_api.main import app
+from pv_site_api.pydantic_models import MultiplePVActual, PVActualValue
+from pv_site_api.session import get_session
 
 client = TestClient(app)
 

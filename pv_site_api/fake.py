@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pandas as pd
 
-from pydantic_models import (
+from .pydantic_models import (
     Forecast,
     MultiplePVActual,
     PVActualValue,
@@ -13,7 +13,7 @@ from pydantic_models import (
     PVSites,
     SiteForecastValues,
 )
-from utils import make_fake_intensity
+from .utils import make_fake_intensity
 
 fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 fake_client_uuid = "c97f68cd-50e0-49bb-a850-108d4a9f7b7e"

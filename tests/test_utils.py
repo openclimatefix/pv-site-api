@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from utils import make_fake_intensities
+from pv_site_api.utils import make_fake_intensities
 
 
 def test_make_fake_intensities():

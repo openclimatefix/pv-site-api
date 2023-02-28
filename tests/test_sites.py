@@ -6,9 +6,9 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 from pvsite_datamodel.sqlmodels import SiteSQL
 
-from main import app
-from pydantic_models import PVSiteMetadata, PVSites
-from session import get_session
+from pv_site_api.main import app
+from pv_site_api.pydantic_models import PVSiteMetadata, PVSites
+from pv_site_api.session import get_session
 
 client = TestClient(app)
 
