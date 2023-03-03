@@ -10,5 +10,6 @@ pytest-cov
 python-dotenv
 pandas
 pvsite-datamodel==0.1.25
+sentry-sdk
 sqlalchemy
 testcontainers
