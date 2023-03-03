@@ -18,7 +18,7 @@ Site specific API for SBRI project
     poetry run uvicorn pv_site_api.main:app --reload
 
 
-## Runing the tests
+## Running the tests
 
     poetry run pytest tests
 
