@@ -44,9 +44,13 @@ logger = logging.getLogger(__name__)
 
 
 def traces_sampler(sampling_context):
-    # Examine provided context data (including parent decision, if any)
-    # along with anything in the global namespace to compute the sample rate
-    # or sampling decision for this transaction
+    """
+    Filter tracing for sentry logs.
+
+    Examine provided context data (including parent decision, if any)
+    along with anything in the global namespace to compute the sample rate
+    or sampling decision for this transaction
+    """
 
     if os.getenv("ENVIRONMENT") == "local":
         return 0.0
