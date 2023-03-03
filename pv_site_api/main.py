@@ -369,10 +369,6 @@ async def redoc_html():
         title=title,
     )
 
-@app.get("/sentry-debug")
-async def trigger_error():
-    division_by_zero = 1 / 0
-
 
 # OpenAPI (ReDoc) custom theme
 def custom_openapi():
