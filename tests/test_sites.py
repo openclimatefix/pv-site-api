@@ -3,17 +3,12 @@ import json
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi.testclient import TestClient
 from pvsite_datamodel.sqlmodels import SiteSQL
 
-from pv_site_api.main import app
 from pv_site_api.pydantic_models import PVSiteMetadata, PVSites
-from pv_site_api.session import get_session
-
-client = TestClient(app)
 
 
-def test_get_site_list_fake(fake):
+def test_get_site_list_fake(client, fake):
     response = client.get("sites/site_list")
     assert response.status_code == 200, response.text
 
@@ -21,10 +16,7 @@ def test_get_site_list_fake(fake):
     assert len(pv_sites.site_list) > 0
 
 
-def test_get_site_list(db_session, sites):
-    # make sure we are using the same session
-    app.dependency_overrides[get_session] = lambda: db_session
-
+def test_get_site_list(client, sites):
     response = client.get("sites/site_list")
     assert response.status_code == 200, response.text
 
@@ -32,7 +24,7 @@ def test_get_site_list(db_session, sites):
     assert len(pv_sites.site_list) > 0
 
 
-def test_put_site_fake(fake):
+def test_put_site_fake(client, fake):
     pv_site = PVSiteMetadata(
         site_uuid="ffff-ffff",
         client_name="client_name_1",
@@ -55,7 +47,7 @@ def test_put_site_fake(fake):
     assert response.status_code == 200, response.text
 
 
-def test_put_site(db_session, client_sql):
+def test_put_site(db_session, client, client_sql):
     # make site object
     pv_site = PVSiteMetadata(
         site_uuid=str(uuid4()),
@@ -74,9 +66,6 @@ def test_put_site(db_session, client_sql):
     )
 
     pv_site_dict = json.loads(pv_site.json())
-
-    # make sure we are using the same session
-    app.dependency_overrides[get_session] = lambda: db_session
 
     response = client.post("sites/", json=pv_site_dict)
     assert response.status_code == 200, response.text

@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timedelta
 
 import pytest
+from fastapi.testclient import TestClient
 from pvsite_datamodel.sqlmodels import (
     Base,
     ClientSQL,
@@ -15,6 +16,9 @@ from pvsite_datamodel.sqlmodels import (
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from testcontainers.postgres import PostgresContainer
+
+from pv_site_api.main import app
+from pv_site_api.session import get_session
 
 
 @pytest.fixture(scope="session")
@@ -154,3 +158,9 @@ def forecast_values(db_session, sites):
     db_session.commit()
 
     return forecast_values
+
+
+@pytest.fixture()
+def client(db_session):
+    app.dependency_overrides[get_session] = lambda: db_session
+    return TestClient(app)
