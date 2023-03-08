@@ -9,7 +9,7 @@ from pv_site_api.pydantic_models import MultiplePVActual, PVActualValue
 
 
 def test_pv_actual_fake(client, fake):
-    response = client.get("sites/pv_actual/fff-fff-fff")
+    response = client.get("/sites/fff-fff-fff/pv_actual")
     assert response.status_code == 200
 
     pv_actuals = MultiplePVActual(**response.json())
@@ -19,7 +19,7 @@ def test_pv_actual_fake(client, fake):
 def test_pv_actual(client, generations):
     site_uuid = generations[0].site_uuid
 
-    response = client.get(f"sites/pv_actual/{site_uuid}")
+    response = client.get(f"/sites/{site_uuid}/pv_actual")
     assert response.status_code == 200
 
     pv_actuals = MultiplePVActual(**response.json())
@@ -39,7 +39,7 @@ def test_post_fake_pv_actual(client, fake):
     # this makes sure the datetimes are iso strings
     obj = json.loads(fake_pv_actual_iteration.json())
 
-    response = client.post("sites/pv_actual/fff-fff-fff", json=obj)
+    response = client.post("/sites/fff-fff-fff/pv_actual", json=obj)
     assert response.status_code == 200
 
 
@@ -60,7 +60,7 @@ def test_post_pv_actual(db_session, client, sites):
     # this makes sure the datetimes are iso strings
     pv_actual_dict = json.loads(pv_actual_iteration.json())
 
-    response = client.post(f"sites/pv_actual/{site_uuid}", json=pv_actual_dict)
+    response = client.post(f"/sites/{site_uuid}/pv_actual", json=pv_actual_dict)
     assert response.status_code == 200, response.text
 
     generations = db_session.query(GenerationSQL).all()

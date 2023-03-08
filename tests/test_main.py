@@ -23,7 +23,7 @@ def test_get_status(client, fake):
 
 
 def test_pv_actual(client, fake):
-    response = client.get("sites/pv_actual/fff-fff-fff")
+    response = client.get("/sites/fff-fff-fff/pv_actual")
     assert response.status_code == 200
 
     pv_actuals = MultiplePVActual(**response.json())
@@ -43,5 +43,5 @@ def test_post_pv_actual(client, fake):
     # this makes sure the datetimes are iso strings
     obj = json.loads(fake_pv_actual_iteration.json())
 
-    response = client.post("sites/pv_actual/fff-fff-fff", json=obj)
+    response = client.post("/sites/fff-fff-fff/pv_actual", json=obj)
     assert response.status_code == 200

@@ -95,7 +95,7 @@ app.add_middleware(
 # get_sites: Clients get the site id that are available to them
 
 
-@app.get("/sites/site_list", response_model=PVSites)
+@app.get("/sites", response_model=PVSites)
 async def get_sites(
     session: Session = Depends(get_session),
 ):
@@ -135,7 +135,7 @@ async def get_sites(
 
 
 # post_pv_actual: sends data to us, and we save to database
-@app.post("/sites/pv_actual/{site_uuid}")
+@app.post("/sites/{site_uuid}/pv_actual")
 async def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
@@ -226,7 +226,7 @@ async def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(g
 
 
 # get_pv_actual: the client can read pv data from the past
-@app.get("/sites/pv_actual/{site_uuid}", response_model=MultiplePVActual)
+@app.get("/sites/{site_uuid}/pv_actual", response_model=MultiplePVActual)
 async def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
     """### This route returns PV readings from a single PV site.
 
@@ -257,7 +257,7 @@ async def get_pv_actual(site_uuid: str, session: Session = Depends(get_session))
 
 
 # get_forecast: Client gets the forecast for their site
-@app.get("/sites/pv_forecast/{site_uuid}", response_model=Forecast)
+@app.get("/sites/{site_uuid}/pv_forecast", response_model=Forecast)
 async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     """
     ### This route is where you might say the magic happens.

@@ -9,7 +9,7 @@ from pv_site_api.pydantic_models import PVSiteMetadata, PVSites
 
 
 def test_get_site_list_fake(client, fake):
-    response = client.get("sites/site_list")
+    response = client.get("/sites")
     assert response.status_code == 200, response.text
 
     pv_sites = PVSites(**response.json())
@@ -17,7 +17,7 @@ def test_get_site_list_fake(client, fake):
 
 
 def test_get_site_list(client, sites):
-    response = client.get("sites/site_list")
+    response = client.get("/sites")
     assert response.status_code == 200, response.text
 
     pv_sites = PVSites(**response.json())
@@ -43,7 +43,7 @@ def test_put_site_fake(client, fake):
 
     pv_site_dict = json.loads(pv_site.json())
 
-    response = client.post("sites/", json=pv_site_dict)
+    response = client.post("/sites", json=pv_site_dict)
     assert response.status_code == 200, response.text
 
 
@@ -67,7 +67,7 @@ def test_put_site(db_session, client, client_sql):
 
     pv_site_dict = json.loads(pv_site.json())
 
-    response = client.post("sites/", json=pv_site_dict)
+    response = client.post("/sites", json=pv_site_dict)
     assert response.status_code == 200, response.text
 
     sites = db_session.query(SiteSQL).all()
