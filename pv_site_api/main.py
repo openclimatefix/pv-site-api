@@ -36,10 +36,6 @@ from .utils import get_start_datetime
 
 load_dotenv()
 
-logging.basicConfig(
-    level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
-    format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
-)
 logger = logging.getLogger(__name__)
 
 
@@ -400,3 +396,10 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi
+
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
+        format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
+    )
