@@ -26,6 +26,18 @@ def test_pv_actual(client, generations):
     assert len(pv_actuals.pv_actual_values) == 10
 
 
+def test_pv_actual_many_sites(client, sites, generations):
+    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuid_str = ",".join(site_uuids)
+
+    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}")
+
+    assert resp.status_code == 200
+
+    pv_actuals = [MultiplePVActual(**x) for x in resp.json()]
+    assert len(pv_actuals) == 4
+
+
 def test_post_fake_pv_actual(client, fake):
     pv_actual_value = PVActualValue(
         datetime_utc=datetime.now(timezone.utc), actual_generation_kw=73.3

@@ -35,7 +35,7 @@ def make_fake_intensities(datetimes_utc: List[datetime]) -> List:
     return intensities
 
 
-def get_start_datetime() -> datetime:
+def get_yesterday_midnight() -> datetime:
     """
     Get the start datetime for the query
 

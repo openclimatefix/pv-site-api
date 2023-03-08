@@ -2,6 +2,8 @@
 import logging
 import os
 import uuid
+from collections import defaultdict
+from typing import Any
 
 import pandas as pd
 import sentry_sdk
@@ -11,16 +13,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
-from pvsite_datamodel.read.latest_forecast_values import get_latest_forecast_values_by_site
 from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
-from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
+from pvsite_datamodel.sqlmodels import ClientSQL, ForecastSQL, ForecastValueSQL, SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
-from sqlalchemy.orm.session import Session
+from sqlalchemy.orm import Session, aliased
 
 import pv_site_api
 
-from .fake import make_fake_forecast, make_fake_pv_generation, make_fake_site, make_fake_status
+from .fake import (
+    fake_site_uuid,
+    make_fake_forecast,
+    make_fake_pv_generation,
+    make_fake_site,
+    make_fake_status,
+)
 from .pydantic_models import (
     Forecast,
     MultiplePVActual,
@@ -32,7 +39,7 @@ from .pydantic_models import (
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
-from .utils import get_start_datetime
+from .utils import get_yesterday_midnight
 
 load_dotenv()
 
@@ -225,6 +232,37 @@ async def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(g
     session.commit()
 
 
+def _get_generation_by_sites(session: Session, site_uuids: list[str]) -> list[MultiplePVActual]:
+    """Get the generation since yesterday (midnight) for a list of sites.
+
+    Return:
+    ------
+        Pydantic models representing the data.
+    """
+    start_utc = get_yesterday_midnight()
+
+    rows = get_pv_generation_by_sites(
+        session=session, start_utc=start_utc, site_uuids=[uuid.UUID(su) for su in site_uuids]
+    )
+
+    # Go through the rows and split the data by site.
+    pv_actual_values_per_site: dict[str, list[PVActualValue]] = defaultdict(list)
+
+    for row in rows:
+        site_uuid = str(row.site_uuid)
+        pv_actual_values_per_site[site_uuid].append(
+            PVActualValue(
+                datetime_utc=row.start_utc,
+                actual_generation_kw=row.generation_power_kw,
+            )
+        )
+
+    return [
+        MultiplePVActual(site_uuid=site_uuid, pv_actual_values=pv_actual_values)
+        for site_uuid, pv_actual_values in pv_actual_values_per_site.items()
+    ]
+
+
 # get_pv_actual: the client can read pv data from the past
 @app.get("/sites/{site_uuid}/pv_actual", response_model=MultiplePVActual)
 async def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
@@ -239,21 +277,77 @@ async def get_pv_actual(site_uuid: str, session: Session = Depends(get_session))
     if int(os.environ["FAKE"]):
         return await make_fake_pv_generation(site_uuid)
 
-    start_utc = get_start_datetime()
-    generations_sql = get_pv_generation_by_sites(
-        session=session, start_utc=start_utc, site_uuids=[uuid.UUID(site_uuid)]
+    return _get_generation_by_sites(session, site_uuids=[site_uuid])[0]
+
+
+@app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
+def get_pv_actual_many_sites(
+    site_uuids: str,
+    session: Session = Depends(get_session),
+):
+    """
+    ### Get the actual power generation for a list of sites.
+    """
+    site_uuids_list = site_uuids.split(",")
+    return _get_generation_by_sites(session, site_uuids_list)
+
+
+def _get_latest_forecast_by_sites(session: Session, site_uuids: list[str]) -> list[Forecast]:
+    """Get the latest forecast for given site uuids.
+
+    Return:
+    ------
+        Pydantic models representing the data.
+    """
+    # Get the latest forecast for each site.
+    subquery = (
+        session.query(ForecastSQL)
+        .distinct(ForecastSQL.site_uuid)
+        .filter(ForecastSQL.site_uuid.in_([uuid.UUID(su) for su in site_uuids]))
+        .order_by(
+            ForecastSQL.site_uuid,
+            ForecastSQL.timestamp_utc.desc(),
+        )
+    ).subquery()
+
+    forecast_subq = aliased(ForecastSQL, subquery, name="ForecastSQL")
+
+    # Final query for the forecast values.
+    query = (
+        session.query(forecast_subq, ForecastValueSQL)
+        .join(ForecastValueSQL)
+        .order_by(forecast_subq.timestamp_utc, ForecastValueSQL.start_utc)
     )
 
-    # convert into MultiplePVActual object
-    generations = []
-    for generation_sql in generations_sql:
-        generations.append(
-            PVActualValue(
-                datetime_utc=generation_sql.start_utc,
-                actual_generation_kw=generation_sql.generation_power_kw,
+    # Go through the rows and split the data by site.
+    data: dict[str, dict[str, Any]] = defaultdict(dict)
+    values: dict[str, list[SiteForecastValues]] = defaultdict(list)
+
+    for row in query:
+        site_uuid = str(row.ForecastSQL.site_uuid)
+
+        if site_uuid not in data:
+            data[site_uuid]["site_uuid"] = site_uuid
+            data[site_uuid]["forecast_uuid"] = str(row.ForecastSQL.forecast_uuid)
+            data[site_uuid]["forecast_creation_datetime"] = row.ForecastSQL.timestamp_utc
+            data[site_uuid]["forecast_version"] = row.ForecastSQL.forecast_version
+
+        values[site_uuid].append(
+            SiteForecastValues(
+                target_datetime_utc=row.ForecastValueSQL.start_utc,
+                expected_generation_kw=row.ForecastValueSQL.forecast_power_kw,
             )
         )
-    return MultiplePVActual(pv_actual_values=generations, site_uuid=site_uuid)
+
+    logger.debug(f"Found {len(data)} forecasts.")
+
+    return [
+        Forecast(
+            forecast_values=values[site_uuid],
+            **data[site_uuid],
+        )
+        for site_uuid in data.keys()
+    ]
 
 
 # get_forecast: Client gets the forecast for their site
@@ -270,49 +364,27 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
 
     You can currently input any number for **site_uuid** (ex. 567),
     and the route returns a sample forecast.
-
     """
 
     if int(os.environ["FAKE"]):
         return await make_fake_forecast(site_uuid)
 
-    site_uuid = uuid.UUID(site_uuid)
-    start_utc = get_start_datetime()
+    return _get_latest_forecast_by_sites(session, [site_uuid])[0]
 
-    # using ForecastValueSQL, but should fix this in the future
-    latest_forecast_values = get_latest_forecast_values_by_site(
-        session=session, site_uuids=[site_uuid], start_utc=start_utc
-    )
-    latest_forecast_values = latest_forecast_values[site_uuid]
 
-    assert len(latest_forecast_values) > 0, Exception(
-        f"Did not find any forecasts for {site_uuid} after {start_utc}"
-    )
+@app.get("/sites/pv_forecast")
+def get_pv_forecast_many_sites(
+    site_uuids: str,
+    session: Session = Depends(get_session),
+):
+    """
+    ### Get the forecasts for multiple sites.
+    """
+    if int(os.environ.get("FAKE", 0)):
+        return [make_fake_forecast(fake_site_uuid)]
 
-    logger.debug(f"Found {len(latest_forecast_values)} forecasts")
-
-    # make the forecast values object
-    forecast_values = []
-    for latest_forecast_value in latest_forecast_values:
-        forecast_values.append(
-            SiteForecastValues(
-                target_datetime_utc=latest_forecast_value.start_utc,
-                expected_generation_kw=latest_forecast_value.forecast_power_kw,
-            )
-        )
-
-    # make the forecast object
-    forecast = Forecast(
-        forecast_uuid=str(latest_forecast_values[0].forecast_uuid),
-        site_uuid=str(latest_forecast_values[0].forecast.site_uuid),
-        forecast_creation_datetime=latest_forecast_values[0].created_utc,
-        forecast_version=latest_forecast_values[0].forecast.forecast_version,
-        forecast_values=forecast_values,
-    )
-
-    logger.debug("Converted to pydantic object")
-
-    return forecast
+    site_uuids_list = site_uuids.split(",")
+    return _get_latest_forecast_by_sites(session, site_uuids_list)
 
 
 # get_status: get the status of the system
