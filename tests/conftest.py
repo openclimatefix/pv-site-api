@@ -1,6 +1,5 @@
 """ Pytest fixtures for tests """
 import os
-import uuid
 from datetime import datetime, timedelta
 
 import pytest
@@ -131,28 +130,37 @@ def forecast_values(db_session, sites):
     """Create some fake forecast values"""
     forecast_values = []
     forecast_version: str = "0.0.0"
-    start_times = [datetime.today() - timedelta(minutes=x) for x in range(10)]
+
+    num_forecasts = 10
+    num_values_per_forecast = 11
+
+    timestamps = [datetime.utcnow() - timedelta(minutes=10 * i) for i in range(num_forecasts)]
+
+    # To make things trickier we make a second forecast at the same for one of the timestamps.
+    timestamps = timestamps + timestamps[-1:]
 
     for site in sites:
-        forecast: ForecastSQL = ForecastSQL(
-            site_uuid=site.site_uuid,
-            forecast_version=forecast_version,
-            timestamp_utc=datetime.utcnow(),
-        )
-
-        db_session.add(forecast)
-        db_session.commit()
-
-        for i in range(0, 10):
-            forecast_value: ForecastValueSQL = ForecastValueSQL(
-                forecast_value_uuid=uuid.uuid4(),
-                forecast_power_kw=i,
-                forecast_uuid=forecast.forecast_uuid,
-                start_utc=start_times[i],
-                end_utc=start_times[i] + timedelta(minutes=5),
+        for timestamp in timestamps:
+            forecast: ForecastSQL = ForecastSQL(
+                site_uuid=site.site_uuid, forecast_version=forecast_version, timestamp_utc=timestamp
             )
 
-            forecast_values.append(forecast_value)
+            db_session.add(forecast)
+            db_session.commit()
+
+            for i in range(num_values_per_forecast):
+                # Forecasts of 15 minutes.
+                duration = 15
+                horizon = duration * i
+                forecast_value: ForecastValueSQL = ForecastValueSQL(
+                    forecast_power_kw=i,
+                    forecast_uuid=forecast.forecast_uuid,
+                    start_utc=timestamp + timedelta(minutes=horizon),
+                    end_utc=timestamp + timedelta(minutes=horizon + duration),
+                    horizon_minutes=horizon,
+                )
+
+                forecast_values.append(forecast_value)
 
     db_session.add_all(forecast_values)
     db_session.commit()

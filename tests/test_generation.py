@@ -16,6 +16,14 @@ def test_pv_actual_fake(client, fake):
     assert len(pv_actuals.pv_actual_values) > 0
 
 
+def test_pv_actual_many_sites_fake(client, fake):
+    resp = client.get("/sites/pv_actual?site_uuids=fff-fff-fff")
+
+    pv_actuals = [MultiplePVActual(**x) for x in resp.json()]
+    assert len(pv_actuals) == 1
+    assert len(pv_actuals[0].pv_actual_values) > 0
+
+
 def test_pv_actual(client, generations):
     site_uuid = generations[0].site_uuid
 
