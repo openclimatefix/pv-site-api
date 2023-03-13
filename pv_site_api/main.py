@@ -92,7 +92,7 @@ app.add_middleware(
 
 
 @app.get("/sites", response_model=PVSites)
-async def get_sites(
+def get_sites(
     session: Session = Depends(get_session),
 ):
     """
@@ -100,7 +100,7 @@ async def get_sites(
     """
 
     if int(os.environ["FAKE"]):
-        return await make_fake_site()
+        return make_fake_site()
 
     sites = get_all_sites(session=session)
 
@@ -132,7 +132,7 @@ async def get_sites(
 
 # post_pv_actual: sends data to us, and we save to database
 @app.post("/sites/{site_uuid}/pv_actual")
-async def post_pv_actual(
+def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
     session: Session = Depends(get_session),
@@ -170,7 +170,7 @@ async def post_pv_actual(
 # Comment this out, until we have security on this
 # # put_site_info: client can update a site
 # @app.put("/sites/{site_uuid}")
-# async def put_site_info(site_info: PVSiteMetadata):
+# def put_site_info(site_info: PVSiteMetadata):
 #     """
 #     ### This route allows a user to update site information for a single site.
 #
@@ -185,7 +185,7 @@ async def post_pv_actual(
 
 
 @app.post("/sites")
-async def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_session)):
+def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_session)):
     """
     ### This route allows a user to add a site.
 
@@ -223,7 +223,7 @@ async def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(g
 
 # get_pv_actual: the client can read pv data from the past
 @app.get("/sites/{site_uuid}/pv_actual", response_model=MultiplePVActual)
-async def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
+def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
     """### This route returns PV readings from a single PV site.
 
     Currently the route is set to provide a reading
@@ -231,11 +231,11 @@ async def get_pv_actual(site_uuid: str, session: Session = Depends(get_session))
     To test the route, you can input any number for the site_uuid (ex. 567)
     to generate a list of datetimes and actual kw generation for that site.
     """
-    return (await get_pv_actual_many_sites(site_uuid, session))[0]
+    return (get_pv_actual_many_sites(site_uuid, session))[0]
 
 
 @app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
-async def get_pv_actual_many_sites(
+def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
 ):
@@ -245,7 +245,7 @@ async def get_pv_actual_many_sites(
     site_uuids_list = site_uuids.split(",")
 
     if int(os.environ["FAKE"]):
-        return [await make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
+        return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
 
     start_utc = get_yesterday_midnight()
 
@@ -254,7 +254,7 @@ async def get_pv_actual_many_sites(
 
 # get_forecast: Client gets the forecast for their site
 @app.get("/sites/{site_uuid}/pv_forecast", response_model=Forecast)
-async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
+def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     """
     ### This route is where you might say the magic happens.
 
@@ -267,11 +267,11 @@ async def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session
     You can currently input any number for **site_uuid** (ex. 567),
     and the route returns a sample forecast.
     """
-    return (await get_pv_forecast_many_sites(site_uuid, session))[0]
+    return (get_pv_forecast_many_sites(site_uuid, session))[0]
 
 
 @app.get("/sites/pv_forecast")
-async def get_pv_forecast_many_sites(
+def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
 ):
@@ -279,7 +279,7 @@ async def get_pv_forecast_many_sites(
     ### Get the forecasts for multiple sites.
     """
     if int(os.environ.get("FAKE", 0)):
-        return [await make_fake_forecast(fake_site_uuid)]
+        return [make_fake_forecast(fake_site_uuid)]
 
     start_utc = get_yesterday_midnight()
     site_uuids_list = site_uuids.split(",")
@@ -293,7 +293,7 @@ async def get_pv_forecast_many_sites(
 
 # get_status: get the status of the system
 @app.get("/api_status", response_model=PVSiteAPIStatus)
-async def get_status(session: Session = Depends(get_session)):
+def get_status(session: Session = Depends(get_session)):
     """This route gets the status of the system.
 
     It's mostly used by OCF to
@@ -301,7 +301,7 @@ async def get_status(session: Session = Depends(get_session)):
     """
 
     if os.environ["FAKE"]:
-        return await make_fake_status()
+        return make_fake_status()
 
     status = get_latest_status(session=session)
 
@@ -311,7 +311,7 @@ async def get_status(session: Session = Depends(get_session)):
 
 
 @app.get("/")
-async def get_api_information():
+def get_api_information():
     """
     ####  This route returns basic information about the Nowcasting PV Site API.
 
@@ -327,19 +327,19 @@ async def get_api_information():
 
 
 # @app.get("/favicon.ico", include_in_schema=False)
-# async def get_favicon() -> FileResponse:
+# def get_favicon() -> FileResponse:
 #     """Get favicon"""
 #     return FileResponse(f"/favicon.ico")
 
 
 @app.get("/nowcasting.png", include_in_schema=False)
-async def get_nowcasting_logo() -> FileResponse:
+def get_nowcasting_logo() -> FileResponse:
     """Get logo"""
     return FileResponse(f"{folder}/nowcasting.png")
 
 
 @app.get("/docs", include_in_schema=False)
-async def redoc_html():
+def redoc_html():
     """### Render ReDoc with custom theme options included"""
     return get_redoc_html_with_theme(
         title=title,

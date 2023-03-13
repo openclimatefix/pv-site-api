@@ -19,7 +19,7 @@ fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 fake_client_uuid = "c97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 
 
-async def make_fake_site() -> PVSiteMetadata:
+def make_fake_site() -> PVSiteMetadata:
     """Make a fake site"""
     pv_site = PVSiteMetadata(
         site_uuid=fake_site_uuid,
@@ -39,7 +39,7 @@ async def make_fake_site() -> PVSiteMetadata:
     return pv_site_list
 
 
-async def make_fake_pv_generation(site_uuid) -> MultiplePVActual:
+def make_fake_pv_generation(site_uuid) -> MultiplePVActual:
     """Make fake pv generations"""
     previous_day = pd.Timestamp((datetime.now(timezone.utc)) - (pd.Timedelta(hours=24))).ceil("5T")
     datetimes = [previous_day + pd.Timedelta(hours=(i * 1)) for i in range(0, 24)]
@@ -56,7 +56,7 @@ async def make_fake_pv_generation(site_uuid) -> MultiplePVActual:
     return fake_pv_actual_iteration
 
 
-async def make_fake_forecast(site_uuid) -> Forecast:
+def make_fake_forecast(site_uuid) -> Forecast:
     """Make fake forecast"""
     now = pd.Timestamp(datetime.now(timezone.utc)).ceil("5T")
     datetimes = [now + pd.Timedelta(f"{i * 30}T") for i in range(0, 16)]
@@ -79,7 +79,7 @@ async def make_fake_forecast(site_uuid) -> Forecast:
     return fake_forecast
 
 
-async def make_fake_status() -> PVSiteAPIStatus:
+def make_fake_status() -> PVSiteAPIStatus:
     """Make fake status object"""
     pv_api_status = PVSiteAPIStatus(
         status="ok",
