@@ -333,9 +333,8 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     pac = irr.apply(
         lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)), axis=1
     )
-    res = pac.reset_index()
-    res.rename(columns={"index": "datetime_utc", 0: "clearsky_generation_kw"}, inplace=True)
-    return res.to_dict("record")
+    res = pac.reset_index().rename(columns={"index": "datetime_utc", 0: "clearsky_generation_kw"})
+    return res.to_dict("records")
 
 
 # get_status: get the status of the system
