@@ -291,6 +291,7 @@ def get_pv_forecast_many_sites(
 
     return forecasts
 
+
 @app.get("/sites/{site_uuid}/clearsky_estimate")
 def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_session)):
     """
@@ -303,14 +304,15 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
         site = get_site_by_uuid(session, site_uuid)
     loc = location.Location(site.latitude, site.longitude)
 
-    # Create DatetimeIndex over four days, with a frequency of 15 minutes. Starts from midnight yesterday.
+    # Create DatetimeIndex over four days, with a frequency of 15 minutes.
+    # Starts from midnight yesterday.
     times = pd.date_range(start=get_yesterday_midnight(), periods=384, freq="15min", tz="UTC")
     clearsky = loc.get_clearsky(times)
     solar_position = loc.get_solarposition(times=times)
 
     # Using default tilt of 0 and orientation of 180 from defaults of PVSystem
-    tilt = site.tilt if site.tilt != None else 0
-    orientation = site.orientation if site.orientation != None else 180
+    tilt = site.tilt if site.tilt is not None else 0
+    orientation = site.orientation if site.orientation is not None else 180
 
     irr = irradiance.get_total_irradiance(
         surface_tilt=tilt,
@@ -321,17 +323,19 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
         solar_zenith=solar_position["apparent_zenith"],
         solar_azimuth=solar_position["azimuth"],
     )
-    # @TODO: allow for differing inverter and module capacities—currently using site.installed_capacity_kw for both
-    pv_system = pvsystem.PVSystem(surface_tilt=tilt, surface_azimuth=orientation, module_parameters={"pdc0": site.installed_capacity_kw, "gamma_pdc": -0.005}, inverter_parameters={"pdc0": site.installed_capacity_kw})
-    pac = irr.apply(lambda row: pv_system.get_ac(p_dc=pv_system.pvwatts_dc(g_poa_effective=row["poa_global"], temp_cell=25), model='pvwatts'), axis=1)
-    # print(pac.reset_index(drop=True))
-    # print(pd.Series(times))
-    # res = pd.concat([pd.Series(times), pac], axis=1, join="inner")
-    # print(res)
+    # @TODO: allow differing inverter and module capacities
+    pv_system = pvsystem.PVSystem(
+        surface_tilt=tilt,
+        surface_azimuth=orientation,
+        module_parameters={"pdc0": site.installed_capacity_kw, "gamma_pdc": -0.005},
+        inverter_parameters={"pdc0": site.installed_capacity_kw},
+    )
+    pac = irr.apply(
+        lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)), axis=1
+    )
     res = pac.reset_index()
     res.rename(columns={"index": "datetime_utc", 0: "clearsky_generation_kw"}, inplace=True)
-    print(res)
-    return res.to_dict('record')
+    return res.to_dict("record")
 
 
 # get_status: get the status of the system
