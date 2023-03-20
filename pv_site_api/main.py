@@ -26,7 +26,7 @@ from .fake import (
     make_fake_site,
     make_fake_status,
 )
-from .pydantic_models import Forecast, MultiplePVActual, PVSiteAPIStatus, PVSiteMetadata, PVSites
+from .pydantic_models import ClearskyEstimate, Forecast, MultiplePVActual, PVSiteAPIStatus, PVSiteMetadata, PVSites
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
 from .utils import get_yesterday_midnight
@@ -292,7 +292,7 @@ def get_pv_forecast_many_sites(
     return forecasts
 
 
-@app.get("/sites/{site_uuid}/clearsky_estimate")
+@app.get("/sites/{site_uuid}/clearsky_estimate", response_model=ClearskyEstimate)
 def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_session)):
     """
     ### Gets a estimate of AC production under a clear sky
@@ -333,8 +333,8 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     pac = irr.apply(
         lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)), axis=1
     )
-    res = pac.reset_index().rename(columns={"index": "datetime_utc", 0: "clearsky_generation_kw"})
-    return res.to_dict("records")
+    res = {"clearsky_estimate" : pac.reset_index().rename(columns={"index": "datetime_utc", 0: "clearsky_generation_kw"}).to_dict("records")}
+    return res
 
 
 # get_status: get the status of the system
