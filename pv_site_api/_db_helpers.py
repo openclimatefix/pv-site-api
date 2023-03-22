@@ -178,6 +178,7 @@ def get_generation_by_sites(
 
 
 def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
+    """Converts a SiteSQL object into a PVSiteMetadata object."""
     pv_site = PVSiteMetadata(
         site_uuid=str(site.site_uuid),
         client_name=site.client.client_name,
