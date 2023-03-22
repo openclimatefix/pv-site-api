@@ -316,6 +316,8 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
         solar_zenith=solar_position["apparent_zenith"],
         solar_azimuth=solar_position["azimuth"],
     )
+
+    # Value for "gamma_pdc" is set to the fixed temp. coeff. used in PVWatts V1
     # @TODO: allow differing inverter and module capacities
     # addressed in https://github.com/openclimatefix/pv-site-api/issues/54
     pv_system = pvsystem.PVSystem(
