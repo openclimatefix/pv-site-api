@@ -95,11 +95,13 @@ class PVSites(BaseModel):
         ..., description="List of all sites with their metadata"
     )
 
+
 class ClearskyEstimateValues(BaseModel):
     """Clearsky estimate data for a single time"""
 
-    datetime_utc: datetime = Field(..., description="Time for clearsky estimate")
+    target_datetime_utc: datetime = Field(..., description="Time for clearsky estimate")
     clearsky_generation_kw: float = Field(..., description="Clearsky estimate in kW", ge=0)
+
 
 class ClearskyEstimate(BaseModel):
     """Clearsky estimate for a site"""
@@ -107,4 +109,3 @@ class ClearskyEstimate(BaseModel):
     clearsky_estimate: List[ClearskyEstimateValues] = Field(
         ..., description="List of times and clearsky estimate"
     )
-

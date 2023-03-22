@@ -26,7 +26,14 @@ from .fake import (
     make_fake_site,
     make_fake_status,
 )
-from .pydantic_models import ClearskyEstimate, Forecast, MultiplePVActual, PVSiteAPIStatus, PVSiteMetadata, PVSites
+from .pydantic_models import (
+    ClearskyEstimate,
+    Forecast,
+    MultiplePVActual,
+    PVSiteAPIStatus,
+    PVSiteMetadata,
+    PVSites,
+)
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
 from .utils import get_yesterday_midnight
@@ -333,7 +340,9 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     pac = irr.apply(
         lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)), axis=1
     )
-    res = {"clearsky_estimate" : pac.reset_index().rename(columns={"index": "datetime_utc", 0: "clearsky_generation_kw"}).to_dict("records")}
+    pac = pac.reset_index()
+    pac = pac.rename(columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
+    res = {"clearsky_estimate": pac.to_dict("records")}
     return res
 
 
