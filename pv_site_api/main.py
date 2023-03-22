@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 import pv_site_api
 
-from ._db_helpers import get_forecasts_by_sites, get_generation_by_sites
+from ._db_helpers import get_forecasts_by_sites, get_generation_by_sites, site_to_pydantic
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -119,21 +119,7 @@ def get_sites(
         print(site.client)
         print(site.client.client_name)
 
-        pv_sites.append(
-            PVSiteMetadata(
-                site_uuid=str(site.site_uuid),
-                client_name=site.client.client_name,
-                client_site_id=site.client_site_id,
-                client_site_name=site.client_site_name,
-                region=site.region,
-                dno=site.dno,
-                gsp=site.gsp,
-                latitude=site.latitude,
-                longitude=site.longitude,
-                installed_capacity_kw=site.capacity_kw,
-                created_utc=site.created_utc,
-            )
-        )
+        pv_sites.append(site_to_pydantic(site))
 
     return PVSites(site_list=pv_sites)
 
@@ -308,7 +294,7 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
         fake_sites = make_fake_site()
         site = fake_sites.site_list[0]
     else:
-        site = get_site_by_uuid(session, site_uuid)
+        site = site_to_pydantic(get_site_by_uuid(session, site_uuid))
     loc = location.Location(site.latitude, site.longitude)
 
     # Create DatetimeIndex over four days, with a frequency of 15 minutes.
