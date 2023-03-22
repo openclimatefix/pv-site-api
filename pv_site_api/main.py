@@ -331,6 +331,7 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
         solar_azimuth=solar_position["azimuth"],
     )
     # @TODO: allow differing inverter and module capacities
+    # addressed in https://github.com/openclimatefix/pv-site-api/issues/54
     pv_system = pvsystem.PVSystem(
         surface_tilt=tilt,
         surface_azimuth=orientation,
