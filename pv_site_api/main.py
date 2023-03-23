@@ -108,9 +108,6 @@ def get_sites(
 
     pv_sites = []
     for site in sites:
-        print(site.client)
-        print(site.client.client_name)
-
         pv_sites.append(
             PVSiteMetadata(
                 site_uuid=str(site.site_uuid),
