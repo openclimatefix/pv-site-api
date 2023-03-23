@@ -5,10 +5,10 @@ import os
 import pandas as pd
 import sentry_sdk
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 import pv_site_api
 
-from ._db_helpers import get_forecasts_by_sites, get_generation_by_sites
+from ._db_helpers import does_site_exist, get_forecasts_by_sites, get_generation_by_sites
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -264,7 +264,20 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     You can currently input any number for **site_uuid** (ex. 567),
     and the route returns a sample forecast.
     """
-    return (get_pv_forecast_many_sites(site_uuid, session))[0]
+    if int(os.environ.get("FAKE", 0)):
+        return make_fake_forecast(fake_site_uuid)
+
+    site_exists = does_site_exist(session, site_uuid)
+
+    if not site_exists:
+        raise HTTPException(status_code=404)
+
+    forecasts = get_pv_forecast_many_sites(site_uuid, session)
+
+    if len(forecasts) == 0:
+        return JSONResponse(status_code=204, content="no data")
+
+    return forecasts[0]
 
 
 @app.get("/sites/pv_forecast")

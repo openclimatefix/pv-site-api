@@ -13,7 +13,7 @@ from typing import Any
 
 import sqlalchemy as sa
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
-from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL
+from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteSQL
 from sqlalchemy.orm import Session, aliased
 
 from .pydantic_models import Forecast, MultiplePVActual, PVActualValue, SiteForecastValues
@@ -169,3 +169,11 @@ def get_generation_by_sites(
         MultiplePVActual(site_uuid=site_uuid, pv_actual_values=pv_actual_values)
         for site_uuid, pv_actual_values in pv_actual_values_per_site.items()
     ]
+
+
+def does_site_exist(session: Session, site_uuid: str) -> bool:
+    """Checks if a site exists."""
+    return (
+        session.execute(sa.select(SiteSQL).where(SiteSQL.site_uuid == site_uuid)).one_or_none()
+        is not None
+    )

@@ -1,5 +1,8 @@
 """ Test for main app """
 
+import uuid
+
+from pvsite_datamodel.sqlmodels import SiteSQL
 
 from pv_site_api.pydantic_models import Forecast
 
@@ -50,3 +53,20 @@ def test_get_forecast_many_sites(db_session, client, forecast_values, sites):
         list(sorted(forecasts[0].forecast_values, key=lambda fv: fv.target_datetime_utc))
         == forecasts[0].forecast_values
     )
+
+
+def test_get_forecast_no_data(db_session, client, clients):
+    # Make a brand new site.
+    site = SiteSQL(client_uuid=clients[0].client_uuid, ml_id=123)
+    db_session.add(site)
+    db_session.commit()
+
+    # Get forecasts from that site with no forecasts.
+    resp = client.get(f"/sites/{site.site_uuid}/pv_forecast")
+    assert resp.status_code == 204
+
+
+def test_get_forecast_404(db_session, client):
+    """If we get forecasts for an unknown site, we get a 404."""
+    resp = client.get(f"/sites/{uuid.uuid4()}/pv_forecast")
+    assert resp.status_code == 404
