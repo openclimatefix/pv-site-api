@@ -43,7 +43,7 @@ def test_pv_actual_many_sites(client, sites, generations):
     assert resp.status_code == 200
 
     pv_actuals = [MultiplePVActual(**x) for x in resp.json()]
-    assert len(pv_actuals) == 4
+    assert len(pv_actuals) == len(sites)
 
 
 def test_post_fake_pv_actual(client, fake):

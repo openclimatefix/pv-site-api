@@ -39,7 +39,7 @@ def test_get_forecast_many_sites(db_session, client, forecast_values, sites):
 
     forecasts = [Forecast(**x) for x in resp.json()]
 
-    assert len(forecasts) == 4
+    assert len(forecasts) == len(sites)
     # We have 10 forecasts with 11 values each.
     # We should get 11 values for the latest forecast, and 9 values (all but the most recent)
     # for the first prediction for each (other) forecast.

@@ -56,31 +56,35 @@ def db_session(engine):
 
 
 @pytest.fixture()
-def sites(db_session):
+def clients(db_session):
+    """Make fake client sql"""
+    clients = [ClientSQL(client_name=f"test_client_{i}") for i in range(2)]
+    db_session.add_all(clients)
+    db_session.commit()
+    return clients
+
+
+@pytest.fixture()
+def sites(db_session, clients):
     """Create some fake sites"""
     sites = []
-    for i in range(0, 4):
-        client = ClientSQL(
-            client_name=f"testclient_{i}",
-        )
+    num_sites = 3
+    for i, client in enumerate(clients):
+        for j in range(num_sites):
+            site = SiteSQL(
+                client_uuid=client.client_uuid,
+                client_site_id=j,
+                client_site_name=f"site_{j}",
+                latitude=51,
+                longitude=3,
+                capacity_kw=4,
+                ml_id=i * num_sites + j,
+            )
 
-        db_session.add(client)
-        db_session.commit()
+            sites.append(site)
 
-        site = SiteSQL(
-            client_uuid=client.client_uuid,
-            client_site_id=i,
-            client_site_name=f"sites_i{i+1000}",
-            latitude=51,
-            longitude=3,
-            capacity_kw=4,
-            ml_id=i,
-        )
-
-        db_session.add(site)
-        db_session.commit()
-
-        sites.append(site)
+    db_session.add_all(sites)
+    db_session.commit()
 
     return sites
 
@@ -115,14 +119,6 @@ def fake():
     yield
 
     os.environ["FAKE"] = "0"
-
-
-@pytest.fixture()
-def client_sql(db_session):
-    """Make fake client sql"""
-    client = ClientSQL(client_name="test_client")
-    db_session.add(client)
-    db_session.commit()
 
 
 @pytest.fixture()
