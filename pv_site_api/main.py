@@ -350,6 +350,7 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     )
     pac = pac.reset_index()
     pac = pac.rename(columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
+    pac["target_datetime_utc"] = pd.to_datetime(pac["target_datetime_utc"], utc=True)
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
 
