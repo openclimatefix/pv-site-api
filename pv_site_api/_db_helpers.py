@@ -194,6 +194,7 @@ def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
     )
     return pv_site
 
+
 def does_site_exist(session: Session, site_uuid: str) -> bool:
     """Checks if a site exists."""
     return (
