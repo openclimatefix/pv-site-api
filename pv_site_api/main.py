@@ -342,7 +342,7 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     pv_system = pvsystem.PVSystem(
         surface_tilt=tilt,
         surface_azimuth=orientation,
-        module_parameters={"pdc0": site.installed_capacity_kw, "gamma_pdc": -0.005},
+        module_parameters={"pdc0": (1.5 * site.installed_capacity_kw), "gamma_pdc": -0.005},
         inverter_parameters={"pdc0": site.installed_capacity_kw},
     )
     pac = irr.apply(
