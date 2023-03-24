@@ -16,7 +16,13 @@ from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteSQL
 from sqlalchemy.orm import Session, aliased
 
-from .pydantic_models import Forecast, MultiplePVActual, PVActualValue, SiteForecastValues
+from .pydantic_models import (
+    Forecast,
+    MultiplePVActual,
+    PVActualValue,
+    PVSiteMetadata,
+    SiteForecastValues,
+)
 
 # Sqlalchemy rows are tricky to type: we use this to make the code more readable.
 Row = Any
@@ -169,6 +175,24 @@ def get_generation_by_sites(
         MultiplePVActual(site_uuid=site_uuid, pv_actual_values=pv_actual_values)
         for site_uuid, pv_actual_values in pv_actual_values_per_site.items()
     ]
+
+
+def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
+    """Converts a SiteSQL object into a PVSiteMetadata object."""
+    pv_site = PVSiteMetadata(
+        site_uuid=str(site.site_uuid),
+        client_name=site.client.client_name,
+        client_site_id=site.client_site_id,
+        client_site_name=site.client_site_name,
+        region=site.region,
+        dno=site.dno,
+        gsp=site.gsp,
+        latitude=site.latitude,
+        longitude=site.longitude,
+        installed_capacity_kw=site.capacity_kw,
+        created_utc=site.created_utc,
+    )
+    return pv_site
 
 
 def does_site_exist(session: Session, site_uuid: str) -> bool:

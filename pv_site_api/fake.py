@@ -19,7 +19,7 @@ fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 fake_client_uuid = "c97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 
 
-def make_fake_site() -> PVSiteMetadata:
+def make_fake_site() -> PVSites:
     """Make a fake site"""
     pv_site = PVSiteMetadata(
         site_uuid=fake_site_uuid,
