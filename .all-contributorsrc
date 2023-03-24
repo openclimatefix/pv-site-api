@@ -32,6 +32,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "simlmx",
+      "name": "Simon Lemieux",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1105380?v=4",
+      "profile": "http://lefun.fun",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
