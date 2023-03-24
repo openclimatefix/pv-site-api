@@ -67,7 +67,7 @@ class SiteForecastValues(BaseModel):
 
     # forecast_value_uuid: str = Field(..., description="ID for this specific forecast value")
     target_datetime_utc: datetime = Field(..., description="Target time for forecast")
-    expected_generation_kw: float = Field(..., description="Expected generation in kw", ge=0)
+    expected_generation_kw: float = Field(..., description="Expected generation in kw")
 
 
 # get_forecast

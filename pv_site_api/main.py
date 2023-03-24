@@ -5,10 +5,10 @@ import os
 import pandas as pd
 import sentry_sdk
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pvlib import irradiance, location, pvsystem
 from pvsite_datamodel.read.site import get_all_sites, get_site_by_uuid
 from pvsite_datamodel.read.status import get_latest_status
@@ -18,7 +18,12 @@ from sqlalchemy.orm import Session
 
 import pv_site_api
 
-from ._db_helpers import get_forecasts_by_sites, get_generation_by_sites, site_to_pydantic
+from ._db_helpers import (
+    does_site_exist, 
+    get_forecasts_by_sites, 
+    get_generation_by_sites, 
+    site_to_pydantic
+)
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -116,9 +121,6 @@ def get_sites(
 
     pv_sites = []
     for site in sites:
-        print(site.client)
-        print(site.client.client_name)
-
         pv_sites.append(site_to_pydantic(site))
 
     return PVSites(site_list=pv_sites)
@@ -261,7 +263,20 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     You can currently input any number for **site_uuid** (ex. 567),
     and the route returns a sample forecast.
     """
-    return (get_pv_forecast_many_sites(site_uuid, session))[0]
+    if int(os.environ.get("FAKE", 0)):
+        return make_fake_forecast(fake_site_uuid)
+
+    site_exists = does_site_exist(session, site_uuid)
+
+    if not site_exists:
+        raise HTTPException(status_code=404)
+
+    forecasts = get_pv_forecast_many_sites(site_uuid, session)
+
+    if len(forecasts) == 0:
+        return JSONResponse(status_code=204, content="no data")
+
+    return forecasts[0]
 
 
 @app.get("/sites/pv_forecast")
@@ -294,7 +309,11 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
         fake_sites = make_fake_site()
         site = fake_sites.site_list[0]
     else:
+        site_exists = does_site_exist(session, site_uuid)
+        if not site_exists:
+            raise HTTPException(status_code=404)
         site = site_to_pydantic(get_site_by_uuid(session, site_uuid))
+
     loc = location.Location(site.latitude, site.longitude)
 
     # Create DatetimeIndex over four days, with a frequency of 15 minutes.

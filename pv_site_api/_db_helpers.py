@@ -193,3 +193,10 @@ def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
         created_utc=site.created_utc,
     )
     return pv_site
+
+def does_site_exist(session: Session, site_uuid: str) -> bool:
+    """Checks if a site exists."""
+    return (
+        session.execute(sa.select(SiteSQL).where(SiteSQL.site_uuid == site_uuid)).one_or_none()
+        is not None
+    )
