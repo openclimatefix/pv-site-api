@@ -1,6 +1,6 @@
 # PVSiteAPI
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-3-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 Site specific API for SBRI project
 
@@ -47,6 +47,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/peterdudfield"><img src="https://avatars.githubusercontent.com/u/34686298?v=4?s=100" width="100px;" alt="Peter Dudfield"/><br /><sub><b>Peter Dudfield</b></sub></a><br /><a href="https://github.com/openclimatefix/pv-site-api/commits?author=peterdudfield" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/rachel-labri-tipton"><img src="https://avatars.githubusercontent.com/u/86949265?v=4?s=100" width="100px;" alt="rachel tipton"/><br /><sub><b>rachel tipton</b></sub></a><br /><a href="https://github.com/openclimatefix/pv-site-api/commits?author=rachel-labri-tipton" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ericcccsliu"><img src="https://avatars.githubusercontent.com/u/62641231?v=4?s=100" width="100px;" alt="Eric Liu"/><br /><sub><b>Eric Liu</b></sub></a><br /><a href="https://github.com/openclimatefix/pv-site-api/commits?author=ericcccsliu" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://lefun.fun"><img src="https://avatars.githubusercontent.com/u/1105380?v=4?s=100" width="100px;" alt="Simon Lemieux"/><br /><sub><b>Simon Lemieux</b></sub></a><br /><a href="https://github.com/openclimatefix/pv-site-api/commits?author=simlmx" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
