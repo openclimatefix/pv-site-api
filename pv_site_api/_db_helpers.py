@@ -80,7 +80,7 @@ def _get_latest_forecast_by_sites(
     query = session.query(forecast_subq, ForecastValueSQL)
     query = query.join(ForecastValueSQL)
 
-    # only get future forecast values. This solves the cast if a forecast is made 1 day a go,
+    # only get future forecast values. This solves the case when a forecast is made 1 day a go,
     # but since then, no new forecast have been made
     if start_utc is not None:
         query = query.filter(ForecastValueSQL.start_utc >= start_utc)
