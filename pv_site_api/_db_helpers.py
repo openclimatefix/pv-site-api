@@ -7,10 +7,10 @@ style.
 """
 
 import datetime as dt
+import logging
 import uuid
 from collections import defaultdict
 from typing import Any, Optional
-import logging
 
 import sqlalchemy as sa
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
@@ -59,7 +59,9 @@ def _get_forecasts_for_horizon(
     return list(session.execute(stmt))
 
 
-def _get_latest_forecast_by_sites(session: Session, site_uuids: list[str], start_utc: Optional[dt.datetime] = None) -> list[Row]:
+def _get_latest_forecast_by_sites(
+    session: Session, site_uuids: list[str], start_utc: Optional[dt.datetime] = None
+) -> list[Row]:
     """Get the latest forecast for given site uuids."""
     # Get the latest forecast for each site.
     subquery = (
@@ -152,10 +154,12 @@ def get_forecasts_by_sites(
         end_utc=end_utc,
         horizon_minutes=horizon_minutes,
     )
-    logger.debug('Found %s past forecasts', len(rows_past))
+    logger.debug("Found %s past forecasts", len(rows_past))
 
-    rows_future = _get_latest_forecast_by_sites(session=session, site_uuids=site_uuids, start_utc=start_utc)
-    logger.debug('Found %s future forecasts', len(rows_future))
+    rows_future = _get_latest_forecast_by_sites(
+        session=session, site_uuids=site_uuids, start_utc=start_utc
+    )
+    logger.debug("Found %s future forecasts", len(rows_future))
 
     forecasts = _forecast_rows_to_pydantic(rows_past + rows_future)
 
