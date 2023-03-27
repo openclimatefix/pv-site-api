@@ -58,7 +58,7 @@ def test_get_forecast_many_sites(db_session, client, forecast_values, sites):
 
 
 def test_get_forecast_many_sites_late_forecast_one_week(db_session, client, forecast_values, sites):
-    """ Test the case where the forecast stop working 1 week ago"""
+    """Test the case where the forecast stop working 1 week ago"""
     site_uuids = [str(s.site_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
 
@@ -73,7 +73,7 @@ def test_get_forecast_many_sites_late_forecast_one_week(db_session, client, fore
 
 
 def test_get_forecast_many_sites_late_forecast_one_day(db_session, client, forecast_values, sites):
-    """ Test the case where the forecast stop working 1 day ago"""
+    """Test the case where the forecast stop working 1 day ago"""
     site_uuids = [str(s.site_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
     one_day_from_now = datetime.utcnow() + timedelta(days=1)
@@ -92,8 +92,8 @@ def test_get_forecast_many_sites_late_forecast_one_day(db_session, client, forec
 
     # Also check that the forecasts values are sorted by date.
     assert (
-            list(sorted(forecasts[0].forecast_values, key=lambda fv: fv.target_datetime_utc))
-            == forecasts[0].forecast_values
+        list(sorted(forecasts[0].forecast_values, key=lambda fv: fv.target_datetime_utc))
+        == forecasts[0].forecast_values
     )
 
     # check they are all less than one day from now
