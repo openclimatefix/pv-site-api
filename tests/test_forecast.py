@@ -3,8 +3,8 @@
 import uuid
 from datetime import datetime, timedelta
 
-from pvsite_datamodel.sqlmodels import SiteSQL
 from freezegun import freeze_time
+from pvsite_datamodel.sqlmodels import SiteSQL
 
 from pv_site_api.pydantic_models import Forecast
 
