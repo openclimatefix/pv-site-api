@@ -230,7 +230,7 @@ def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
     return (get_pv_actual_many_sites(site_uuid, session))[0]
 
 
-@app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
+@app.get("/sites/pv_actual", response_model=list[MultiplePVActual], include_in_schema=False)
 def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
@@ -279,7 +279,7 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     return forecasts[0]
 
 
-@app.get("/sites/pv_forecast")
+@app.get("/sites/pv_forecast", include_in_schema=False)
 def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
