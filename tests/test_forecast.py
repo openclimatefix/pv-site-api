@@ -57,7 +57,8 @@ def test_get_forecast_many_sites(db_session, client, forecast_values, sites):
     )
 
 
-def test_get_forecast_many_sites_late_forecast(db_session, client, forecast_values, sites):
+def test_get_forecast_many_sites_late_forecast_one_week(db_session, client, forecast_values, sites):
+    """ Test the case where the forecast stop working 1 week ago"""
     site_uuids = [str(s.site_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
 
@@ -68,15 +69,37 @@ def test_get_forecast_many_sites_late_forecast(db_session, client, forecast_valu
 
         forecasts = [Forecast(**x) for x in resp.json()]
 
+    assert len(forecasts) == 0
+
+
+def test_get_forecast_many_sites_late_forecast_one_day(db_session, client, forecast_values, sites):
+    """ Test the case where the forecast stop working 1 day ago"""
+    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids_str = ",".join(site_uuids)
+    one_day_from_now = datetime.utcnow() + timedelta(days=1)
+
+    with freeze_time(one_day_from_now):
+        resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}")
+        assert resp.status_code == 200
+
+        forecasts = [Forecast(**x) for x in resp.json()]
+
     assert len(forecasts) == len(sites)
-    # No new forecast have been made soo we should get zero forecasts
-    assert len(forecasts[0].forecast_values) == 0
+    # We have 10 forecasts with 11 values each.
+    # We should get 11 values for the latest forecast, and 9 values (all but the most recent)
+    # for the first prediction for each (other) forecast.
+    assert len(forecasts[0].forecast_values) == 20
 
     # Also check that the forecasts values are sorted by date.
     assert (
-        list(sorted(forecasts[0].forecast_values, key=lambda fv: fv.target_datetime_utc))
-        == forecasts[0].forecast_values
+            list(sorted(forecasts[0].forecast_values, key=lambda fv: fv.target_datetime_utc))
+            == forecasts[0].forecast_values
     )
+
+    # check they are all less than one day from now
+    for forecast in forecasts:
+        for forecast_value in forecast.forecast_values:
+            assert forecast_value.target_datetime_utc < one_day_from_now
 
 
 def test_get_forecast_no_data(db_session, client, clients):
