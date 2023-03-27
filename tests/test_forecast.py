@@ -1,8 +1,10 @@
 """ Test for main app """
 
 import uuid
+from datetime import datetime, timedelta
 
 from pvsite_datamodel.sqlmodels import SiteSQL
+from freezegun import freeze_time
 
 from pv_site_api.pydantic_models import Forecast
 
@@ -47,6 +49,28 @@ def test_get_forecast_many_sites(db_session, client, forecast_values, sites):
     # We should get 11 values for the latest forecast, and 9 values (all but the most recent)
     # for the first prediction for each (other) forecast.
     assert len(forecasts[0].forecast_values) == 11 + 9
+
+    # Also check that the forecasts values are sorted by date.
+    assert (
+        list(sorted(forecasts[0].forecast_values, key=lambda fv: fv.target_datetime_utc))
+        == forecasts[0].forecast_values
+    )
+
+
+def test_get_forecast_many_sites_late_forecast(db_session, client, forecast_values, sites):
+    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids_str = ",".join(site_uuids)
+
+    one_week_from_now = datetime.utcnow() + timedelta(days=7)
+    with freeze_time(one_week_from_now):
+        resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}")
+        assert resp.status_code == 200
+
+        forecasts = [Forecast(**x) for x in resp.json()]
+
+    assert len(forecasts) == len(sites)
+    # No new forecast have been made soo we should get zero forecasts
+    assert len(forecasts[0].forecast_values) == 0
 
     # Also check that the forecasts values are sorted by date.
     assert (
