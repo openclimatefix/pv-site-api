@@ -287,11 +287,16 @@ def get_pv_forecast_many_sites(
     """
     ### Get the forecasts for multiple sites.
     """
+
+    logger.info(f"Getting forecasts for {site_uuids}")
+
     if int(os.environ.get("FAKE", 0)):
         return [make_fake_forecast(fake_site_uuid)]
 
     start_utc = get_yesterday_midnight()
     site_uuids_list = site_uuids.split(",")
+
+    logger.debug(f"Loading forecast from {start_utc}")
 
     forecasts = get_forecasts_by_sites(
         session, site_uuids=site_uuids_list, start_utc=start_utc, horizon_minutes=0

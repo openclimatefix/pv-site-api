@@ -7,9 +7,10 @@ style.
 """
 
 import datetime as dt
+import logging
 import uuid
 from collections import defaultdict
-from typing import Any
+from typing import Any, Optional
 
 import sqlalchemy as sa
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
@@ -23,6 +24,9 @@ from .pydantic_models import (
     PVSiteMetadata,
     SiteForecastValues,
 )
+
+logger = logging.getLogger(__name__)
+
 
 # Sqlalchemy rows are tricky to type: we use this to make the code more readable.
 Row = Any
@@ -55,7 +59,9 @@ def _get_forecasts_for_horizon(
     return list(session.execute(stmt))
 
 
-def _get_latest_forecast_by_sites(session: Session, site_uuids: list[str]) -> list[Row]:
+def _get_latest_forecast_by_sites(
+    session: Session, site_uuids: list[str], start_utc: Optional[dt.datetime] = None
+) -> list[Row]:
     """Get the latest forecast for given site uuids."""
     # Get the latest forecast for each site.
     subquery = (
@@ -71,11 +77,15 @@ def _get_latest_forecast_by_sites(session: Session, site_uuids: list[str]) -> li
     forecast_subq = aliased(ForecastSQL, subquery, name="ForecastSQL")
 
     # Join the forecast values.
-    query = (
-        session.query(forecast_subq, ForecastValueSQL)
-        .join(ForecastValueSQL)
-        .order_by(forecast_subq.timestamp_utc, ForecastValueSQL.start_utc)
-    )
+    query = session.query(forecast_subq, ForecastValueSQL)
+    query = query.join(ForecastValueSQL)
+
+    # only get future forecast values. This solves the case when a forecast is made 1 day a go,
+    # but since then, no new forecast have been made
+    if start_utc is not None:
+        query = query.filter(ForecastValueSQL.start_utc >= start_utc)
+
+    query.order_by(forecast_subq.timestamp_utc, ForecastValueSQL.start_utc)
 
     return query.all()
 
@@ -144,7 +154,12 @@ def get_forecasts_by_sites(
         end_utc=end_utc,
         horizon_minutes=horizon_minutes,
     )
-    rows_future = _get_latest_forecast_by_sites(session, site_uuids)
+    logger.debug("Found %s past forecasts", len(rows_past))
+
+    rows_future = _get_latest_forecast_by_sites(
+        session=session, site_uuids=site_uuids, start_utc=start_utc
+    )
+    logger.debug("Found %s future forecasts", len(rows_future))
 
     forecasts = _forecast_rows_to_pydantic(rows_past + rows_future)
 
