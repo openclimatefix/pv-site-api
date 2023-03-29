@@ -2,6 +2,8 @@
 import json
 from datetime import datetime, timezone
 
+from pvsite_datamodel.sqlmodels import SiteSQL
+
 from pv_site_api.pydantic_models import PVSiteMetadata, PVSites
 
 
@@ -64,6 +66,9 @@ def test_put_site(db_session, client, clients):
 
     response = client.post("/sites", json=pv_site_dict)
     assert response.status_code == 200, response.text
+
+    sites = db_session.query(SiteSQL).all()
+    assert len(sites) == 1
 
 
 # Comment this out, until we have security on this
