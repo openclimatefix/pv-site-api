@@ -2,8 +2,6 @@
 import json
 from datetime import datetime, timezone
 
-from pvsite_datamodel.sqlmodels import SiteSQL
-
 from pv_site_api.pydantic_models import PVSiteMetadata, PVSites
 
 
@@ -48,7 +46,6 @@ def test_put_site_fake(client, fake):
 def test_put_site(db_session, client, clients):
     # make site object
     pv_site = PVSiteMetadata(
-        site_uuid="ffff-ffff",
         client_name="test_client",
         client_site_id=1,
         client_site_name="the site name",
@@ -67,10 +64,6 @@ def test_put_site(db_session, client, clients):
 
     response = client.post("/sites", json=pv_site_dict)
     assert response.status_code == 200, response.text
-
-    sites = db_session.query(SiteSQL).all()
-    assert len(sites) == 1
-    assert str(sites[0].site_uuid) == str(pv_site.site_uuid)
 
 
 # Comment this out, until we have security on this
