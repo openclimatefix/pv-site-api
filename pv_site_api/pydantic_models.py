@@ -21,7 +21,7 @@ class PVSiteAPIStatus(BaseModel):
 class PVSiteMetadata(BaseModel):
     """Site metadata"""
 
-    site_uuid: str = Field(..., description="Unique internal ID for site.")
+    site_uuid: Optional[str] = Field(..., description="Unique internal ID for site.")
     client_name: str = Field(..., description="Unique name for user providing the site data.")
     client_site_id: str = Field(..., description="The site ID as given by the providing user.")
     client_site_name: str = Field(

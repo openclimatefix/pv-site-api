@@ -1,7 +1,6 @@
 """ Test for main app """
 import json
 from datetime import datetime, timezone
-from uuid import uuid4
 
 from pvsite_datamodel.sqlmodels import SiteSQL
 
@@ -50,7 +49,6 @@ def test_put_site_fake(client, fake):
 def test_put_site(db_session, client, clients):
     # make site object
     pv_site = PVSiteMetadata(
-        site_uuid=str(uuid4()),
         client_name="test_client",
         client_site_id=1,
         client_site_name="the site name",
