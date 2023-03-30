@@ -69,6 +69,7 @@ def test_put_site(db_session, client, clients):
 
     sites = db_session.query(SiteSQL).all()
     assert len(sites) == 1
+    assert sites[0].site_uuid is not None
 
 
 # Comment this out, until we have security on this
