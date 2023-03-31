@@ -184,7 +184,7 @@ def get_generation_by_sites(
     pv_actual_values_per_site: dict[str, list[PVActualValue]] = defaultdict(list)
 
     # TODO can we speed this up?
-    logger.info(f'Formatting generation 1')
+    logger.info('Formatting generation 1')
     for row in rows:
         site_uuid = str(row.site_uuid)
         pv_actual_values_per_site[site_uuid].append(
@@ -194,7 +194,7 @@ def get_generation_by_sites(
             )
         )
 
-    logger.info(f'Formatting generation 2')
+    logger.info('Formatting generation 2')
     multiple_pv_actuals = [
         MultiplePVActual(site_uuid=site_uuid, pv_actual_values=pv_actual_values)
         for site_uuid, pv_actual_values in pv_actual_values_per_site.items()
