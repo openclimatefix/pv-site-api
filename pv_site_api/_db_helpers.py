@@ -200,6 +200,7 @@ def get_generation_by_sites(
         for site_uuid, pv_actual_values in pv_actual_values_per_site.items()
     ]
 
+    logger.debug("Getting generation for {len(site_uuids)} sites: done")
     return multiple_pv_actuals
 
 
