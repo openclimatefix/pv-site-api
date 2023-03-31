@@ -146,7 +146,7 @@ def get_forecasts_by_sites(
     This is what we show in the UI.
     """
 
-    logger.info(f'Getting forecast for {len(site_uuids)} sites')
+    logger.info(f"Getting forecast for {len(site_uuids)} sites")
 
     end_utc = dt.datetime.utcnow()
 
@@ -164,9 +164,9 @@ def get_forecasts_by_sites(
     )
     logger.debug("Found %s future forecasts", len(rows_future))
 
-    logger.debug('Formatting forecasts to pydantic objects')
+    logger.debug("Formatting forecasts to pydantic objects")
     forecasts = _forecast_rows_to_pydantic(rows_past + rows_future)
-    logger.debug('Formatting forecasts to pydantic objects: done')
+    logger.debug("Formatting forecasts to pydantic objects: done")
 
     return forecasts
 
@@ -175,7 +175,7 @@ def get_generation_by_sites(
     session: Session, site_uuids: list[str], start_utc: dt.datetime
 ) -> list[MultiplePVActual]:
     """Get the generation since yesterday (midnight) for a list of sites."""
-    logger.info(f'Getting generation for {len(site_uuids)} sites')
+    logger.info(f"Getting generation for {len(site_uuids)} sites")
     rows = get_pv_generation_by_sites(
         session=session, start_utc=start_utc, site_uuids=[uuid.UUID(su) for su in site_uuids]
     )
@@ -184,7 +184,7 @@ def get_generation_by_sites(
     pv_actual_values_per_site: dict[str, list[PVActualValue]] = defaultdict(list)
 
     # TODO can we speed this up?
-    logger.info('Formatting generation 1')
+    logger.info("Formatting generation 1")
     for row in rows:
         site_uuid = str(row.site_uuid)
         pv_actual_values_per_site[site_uuid].append(
@@ -194,7 +194,7 @@ def get_generation_by_sites(
             )
         )
 
-    logger.info('Formatting generation 2')
+    logger.info("Formatting generation 2")
     multiple_pv_actuals = [
         MultiplePVActual(site_uuid=site_uuid, pv_actual_values=pv_actual_values)
         for site_uuid, pv_actual_values in pv_actual_values_per_site.items()
