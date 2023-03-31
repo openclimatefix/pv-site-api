@@ -4,6 +4,7 @@ import os
 
 import pandas as pd
 import sentry_sdk
+import structlog
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,7 +46,7 @@ from .utils import get_yesterday_midnight
 
 load_dotenv()
 
-logger = logging.getLogger(__name__)
+logger = structlog.stdlib.get_logger()
 
 
 def traces_sampler(sampling_context):
@@ -118,6 +119,8 @@ def get_sites(
     sites = get_all_sites(session=session)
 
     assert len(sites) > 0
+
+    logger.debug(f"Found {len(sites)} sites")
 
     pv_sites = []
     for site in sites:
