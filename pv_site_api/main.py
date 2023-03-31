@@ -197,7 +197,6 @@ def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_ses
     assert client is not None
 
     site = SiteSQL(
-        site_uuid=site_info.site_uuid,
         client_uuid=client.client_uuid,
         client_site_id=site_info.client_site_id,
         client_site_name=site_info.client_site_name,

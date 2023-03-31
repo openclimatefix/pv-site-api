@@ -50,6 +50,7 @@ def _get_forecasts_for_horizon(
         .where(ForecastSQL.site_uuid.in_(site_uuids))
         # Also filtering on `timestamp_utc` makes the query faster.
         .where(ForecastSQL.timestamp_utc >= start_utc - dt.timedelta(minutes=horizon_minutes))
+        .where(ForecastSQL.timestamp_utc < end_utc)
         .where(ForecastValueSQL.horizon_minutes == horizon_minutes)
         .where(ForecastValueSQL.start_utc >= start_utc)
         .where(ForecastValueSQL.start_utc < end_utc)
