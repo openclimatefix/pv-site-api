@@ -120,6 +120,8 @@ def get_sites(
 
     assert len(sites) > 0
 
+    logger.debug(f"Found {len(sites)} sites")
+
     pv_sites = []
     for site in sites:
         pv_sites.append(site_to_pydantic(site))
