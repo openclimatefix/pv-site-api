@@ -11,6 +11,7 @@ from pvsite_datamodel.sqlmodels import (
     ForecastValueSQL,
     GenerationSQL,
     SiteSQL,
+    StatusSQL,
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -112,13 +113,26 @@ def generations(db_session, sites):
 
 
 @pytest.fixture()
-def fake():
+def statuses(db_session):
+    all_statuses = [
+        StatusSQL(
+            status=f"my_status {i}",
+            message=f"my message {i}",
+        )
+        for i in range(2)
+    ]
+    db_session.add_all(all_statuses)
+    db_session.commit()
+
+    return all_statuses
+
+
+@pytest.fixture()
+def fake(monkeypatch):
     """Set up ENV VAR FAKE to 1"""
-    os.environ["FAKE"] = "1"
-
-    yield
-
-    os.environ["FAKE"] = "0"
+    with monkeypatch.context() as m:
+        m.setenv("FAKE", "1")
+        yield
 
 
 @pytest.fixture()
