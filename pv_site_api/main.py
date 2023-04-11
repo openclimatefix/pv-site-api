@@ -1,5 +1,4 @@
 """Main API Routes"""
-import logging
 import os
 
 import pandas as pd
@@ -443,10 +442,3 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi
-
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
-        format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
-    )

@@ -7,7 +7,7 @@ style.
 """
 
 import datetime as dt
-import logging
+import structlog
 import uuid
 from collections import defaultdict
 from typing import Any, Optional
@@ -25,7 +25,7 @@ from .pydantic_models import (
     SiteForecastValues,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.stdlib.get_logger()
 
 
 # Sqlalchemy rows are tricky to type: we use this to make the code more readable.
