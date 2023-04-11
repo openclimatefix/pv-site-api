@@ -12,7 +12,7 @@ structlog.configure(
         structlog.processors.CallsiteParameterAdder(
             [
                 structlog.processors.CallsiteParameter.FILENAME,
-                structlog.processors.CallsiteParameter.LINENO
+                structlog.processors.CallsiteParameter.LINENO,
             ],
         ),
         structlog.processors.dict_tracebacks,
