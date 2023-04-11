@@ -4,6 +4,7 @@ import os
 
 import pandas as pd
 import sentry_sdk
+import structlog
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,7 +46,7 @@ from .utils import get_yesterday_midnight
 
 load_dotenv()
 
-logger = logging.getLogger(__name__)
+logger = structlog.stdlib.get_logger()
 
 
 def traces_sampler(sampling_context):
@@ -118,6 +119,8 @@ def get_sites(
     sites = get_all_sites(session=session)
 
     assert len(sites) > 0
+
+    logger.debug(f"Found {len(sites)} sites")
 
     pv_sites = []
     for site in sites:
@@ -197,7 +200,6 @@ def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_ses
     assert client is not None
 
     site = SiteSQL(
-        site_uuid=site_info.site_uuid,
         client_uuid=client.client_uuid,
         client_site_id=site_info.client_site_id,
         client_site_name=site_info.client_site_name,
@@ -287,11 +289,16 @@ def get_pv_forecast_many_sites(
     """
     ### Get the forecasts for multiple sites.
     """
+
+    logger.info(f"Getting forecasts for {site_uuids}")
+
     if int(os.environ.get("FAKE", 0)):
         return [make_fake_forecast(fake_site_uuid)]
 
     start_utc = get_yesterday_midnight()
     site_uuids_list = site_uuids.split(",")
+
+    logger.debug(f"Loading forecast from {start_utc}")
 
     forecasts = get_forecasts_by_sites(
         session, site_uuids=site_uuids_list, start_utc=start_utc, horizon_minutes=0

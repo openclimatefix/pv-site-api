@@ -7,9 +7,10 @@ style.
 """
 
 import datetime as dt
+import logging
 import uuid
 from collections import defaultdict
-from typing import Any
+from typing import Any, Optional
 
 import sqlalchemy as sa
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
@@ -23,6 +24,9 @@ from .pydantic_models import (
     PVSiteMetadata,
     SiteForecastValues,
 )
+
+logger = logging.getLogger(__name__)
+
 
 # Sqlalchemy rows are tricky to type: we use this to make the code more readable.
 Row = Any
@@ -46,6 +50,7 @@ def _get_forecasts_for_horizon(
         .where(ForecastSQL.site_uuid.in_(site_uuids))
         # Also filtering on `timestamp_utc` makes the query faster.
         .where(ForecastSQL.timestamp_utc >= start_utc - dt.timedelta(minutes=horizon_minutes))
+        .where(ForecastSQL.timestamp_utc < end_utc)
         .where(ForecastValueSQL.horizon_minutes == horizon_minutes)
         .where(ForecastValueSQL.start_utc >= start_utc)
         .where(ForecastValueSQL.start_utc < end_utc)
@@ -55,7 +60,9 @@ def _get_forecasts_for_horizon(
     return list(session.execute(stmt))
 
 
-def _get_latest_forecast_by_sites(session: Session, site_uuids: list[str]) -> list[Row]:
+def _get_latest_forecast_by_sites(
+    session: Session, site_uuids: list[str], start_utc: Optional[dt.datetime] = None
+) -> list[Row]:
     """Get the latest forecast for given site uuids."""
     # Get the latest forecast for each site.
     subquery = (
@@ -71,11 +78,15 @@ def _get_latest_forecast_by_sites(session: Session, site_uuids: list[str]) -> li
     forecast_subq = aliased(ForecastSQL, subquery, name="ForecastSQL")
 
     # Join the forecast values.
-    query = (
-        session.query(forecast_subq, ForecastValueSQL)
-        .join(ForecastValueSQL)
-        .order_by(forecast_subq.timestamp_utc, ForecastValueSQL.start_utc)
-    )
+    query = session.query(forecast_subq, ForecastValueSQL)
+    query = query.join(ForecastValueSQL)
+
+    # only get future forecast values. This solves the case when a forecast is made 1 day a go,
+    # but since then, no new forecast have been made
+    if start_utc is not None:
+        query = query.filter(ForecastValueSQL.start_utc >= start_utc)
+
+    query.order_by(forecast_subq.timestamp_utc, ForecastValueSQL.start_utc)
 
     return query.all()
 
@@ -135,6 +146,8 @@ def get_forecasts_by_sites(
     This is what we show in the UI.
     """
 
+    logger.info(f"Getting forecast for {len(site_uuids)} sites")
+
     end_utc = dt.datetime.utcnow()
 
     rows_past = _get_forecasts_for_horizon(
@@ -144,9 +157,16 @@ def get_forecasts_by_sites(
         end_utc=end_utc,
         horizon_minutes=horizon_minutes,
     )
-    rows_future = _get_latest_forecast_by_sites(session, site_uuids)
+    logger.debug("Found %s past forecasts", len(rows_past))
 
+    rows_future = _get_latest_forecast_by_sites(
+        session=session, site_uuids=site_uuids, start_utc=start_utc
+    )
+    logger.debug("Found %s future forecasts", len(rows_future))
+
+    logger.debug("Formatting forecasts to pydantic objects")
     forecasts = _forecast_rows_to_pydantic(rows_past + rows_future)
+    logger.debug("Formatting forecasts to pydantic objects: done")
 
     return forecasts
 
@@ -155,6 +175,7 @@ def get_generation_by_sites(
     session: Session, site_uuids: list[str], start_utc: dt.datetime
 ) -> list[MultiplePVActual]:
     """Get the generation since yesterday (midnight) for a list of sites."""
+    logger.info(f"Getting generation for {len(site_uuids)} sites")
     rows = get_pv_generation_by_sites(
         session=session, start_utc=start_utc, site_uuids=[uuid.UUID(su) for su in site_uuids]
     )
@@ -162,6 +183,8 @@ def get_generation_by_sites(
     # Go through the rows and split the data by site.
     pv_actual_values_per_site: dict[str, list[PVActualValue]] = defaultdict(list)
 
+    # TODO can we speed this up?
+    logger.info("Formatting generation 1")
     for row in rows:
         site_uuid = str(row.site_uuid)
         pv_actual_values_per_site[site_uuid].append(
@@ -171,10 +194,14 @@ def get_generation_by_sites(
             )
         )
 
-    return [
+    logger.info("Formatting generation 2")
+    multiple_pv_actuals = [
         MultiplePVActual(site_uuid=site_uuid, pv_actual_values=pv_actual_values)
         for site_uuid, pv_actual_values in pv_actual_values_per_site.items()
     ]
+
+    logger.debug("Getting generation for {len(site_uuids)} sites: done")
+    return multiple_pv_actuals
 
 
 def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:

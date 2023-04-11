@@ -1,7 +1,6 @@
 """ Test for main app """
 import json
 from datetime import datetime, timezone
-from uuid import uuid4
 
 from pvsite_datamodel.sqlmodels import SiteSQL
 
@@ -26,7 +25,6 @@ def test_get_site_list(client, sites):
 
 def test_put_site_fake(client, fake):
     pv_site = PVSiteMetadata(
-        site_uuid="ffff-ffff",
         client_name="client_name_1",
         client_site_id="the site id used by the user",
         client_site_name="the site name",
@@ -50,7 +48,6 @@ def test_put_site_fake(client, fake):
 def test_put_site(db_session, client, clients):
     # make site object
     pv_site = PVSiteMetadata(
-        site_uuid=str(uuid4()),
         client_name="test_client",
         client_site_id=1,
         client_site_name="the site name",
@@ -72,7 +69,7 @@ def test_put_site(db_session, client, clients):
 
     sites = db_session.query(SiteSQL).all()
     assert len(sites) == 1
-    assert str(sites[0].site_uuid) == str(pv_site.site_uuid)
+    assert sites[0].site_uuid is not None
 
 
 # Comment this out, until we have security on this
