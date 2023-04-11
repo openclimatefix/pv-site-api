@@ -7,12 +7,12 @@ style.
 """
 
 import datetime as dt
-import structlog
 import uuid
 from collections import defaultdict
 from typing import Any, Optional
 
 import sqlalchemy as sa
+import structlog
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteSQL
 from sqlalchemy.orm import Session, aliased
