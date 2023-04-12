@@ -2,6 +2,7 @@
 import os
 from datetime import datetime, timedelta
 
+import freezegun
 import pytest
 from fastapi.testclient import TestClient
 from pvsite_datamodel.sqlmodels import (
@@ -19,6 +20,13 @@ from testcontainers.postgres import PostgresContainer
 
 from pv_site_api.main import app
 from pv_site_api.session import get_session
+
+
+@pytest.fixture
+def _now(autouse=True):
+    """Hard-code the time for all tests to make the tests less flaky."""
+    with freezegun.freeze_time(2020, 1, 1):
+        return datetime.utcnow()
 
 
 @pytest.fixture(scope="session")
