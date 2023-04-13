@@ -38,6 +38,7 @@ from .pydantic_models import (
     PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
+    Inverters
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
@@ -188,7 +189,8 @@ def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_ses
     """
 
     if int(os.environ["FAKE"]):
-        print(f"Successfully added {site_info.dict()} for site {site_info.client_site_name}")
+        print(
+            f"Successfully added {site_info.dict()} for site {site_info.client_site_name}")
         print("Not doing anything with it (yet!)")
         return
 
@@ -318,7 +320,8 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
 
     # Create DatetimeIndex over four days, with a frequency of 15 minutes.
     # Starts from midnight yesterday.
-    times = pd.date_range(start=get_yesterday_midnight(), periods=384, freq="15min", tz="UTC")
+    times = pd.date_range(start=get_yesterday_midnight(),
+                          periods=384, freq="15min", tz="UTC")
     clearsky = loc.get_clearsky(times)
     solar_position = loc.get_solarposition(times=times)
 
@@ -342,17 +345,37 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     pv_system = pvsystem.PVSystem(
         surface_tilt=tilt,
         surface_azimuth=orientation,
-        module_parameters={"pdc0": (1.5 * site.installed_capacity_kw), "gamma_pdc": -0.005},
+        module_parameters={
+            "pdc0": (1.5 * site.installed_capacity_kw), "gamma_pdc": -0.005},
         inverter_parameters={"pdc0": site.installed_capacity_kw},
     )
     pac = irr.apply(
         lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)), axis=1
     )
     pac = pac.reset_index()
-    pac = pac.rename(columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
+    pac = pac.rename(
+        columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
     pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
+
+
+# @app.get("/inverters", response_model=Inverters)
+# def get_inverters(
+#     site_uuids: str,
+#     session: Session = Depends(get_session),
+# ):
+#     """
+#     ### Get the actual power generation for a list of sites.
+#     """
+#     site_uuids_list = site_uuids.split(",")
+
+#     if int(os.environ["FAKE"]):
+#         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
+
+#     start_utc = get_yesterday_midnight()
+
+#     return get_generation_by_sites(session, site_uuids=site_uuids_list, start_utc=start_utc)
 
 
 # get_status: get the status of the system
