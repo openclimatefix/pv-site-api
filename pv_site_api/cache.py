@@ -37,8 +37,6 @@ def cache_response(func):
         # get the variables that go into the route
         # we don't want to use the cache for different variables
         route_variables = kwargs.copy()
-        route_args = args.copy()
-        route_variables += route_args
 
         # drop session and user
         for var in ["session", "user"]:
