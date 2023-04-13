@@ -46,7 +46,7 @@ def cache_response(func):
         # make into string
         route_variables = json.dumps(route_variables)
         function_name = func.__name__
-        function_name_and_variables = f'{function_name}_{route_variables}'
+        function_name_and_variables = f"{function_name}_{route_variables}"
 
         # check if its been called before
         if function_name_and_variables not in last_updated:
@@ -58,7 +58,10 @@ def cache_response(func):
         # re-run if cache time out is up
         now = datetime.now(tz=timezone.utc)
         if now - timedelta(seconds=cache_time_seconds) > last_updated[function_name_and_variables]:
-            logger.debug(f"not using cache as longer than {cache_time_seconds} seconds for {function_name_and_variables}")
+            logger.debug(
+                f"not using cache as longer than {cache_time_seconds} "
+                f"seconds for {function_name_and_variables}"
+            )
             last_updated[function_name_and_variables] = now
             response[function_name_and_variables] = func(*args, **kwargs)
             return response[function_name_and_variables]
