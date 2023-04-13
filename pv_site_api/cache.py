@@ -45,35 +45,35 @@ def cache_response(func):
 
         # make into string
         route_variables = json.dumps(route_variables)
+        args_as_json = json.dumps(args)
         function_name = func.__name__
-        function_name_and_variables = f"{function_name}_{route_variables}"
+        key = f"{function_name}_{args_as_json}_{route_variables}"
 
         # seeing if we need to run the function
         now = datetime.now(tz=timezone.utc)
-        last_updated_datetime = last_updated.get(function_name_and_variables)
+        last_updated_datetime = last_updated.get(key)
         refresh_cache = (last_updated_datetime is None) or (
             now - timedelta(seconds=cache_time_seconds) > last_updated_datetime
         )
 
         # check if it's been called before
         if last_updated_datetime is None:
-            logger.debug(f"First time this is route run for {function_name_and_variables}")
+            logger.debug(f"First time this is route run for {key}")
 
         # re-run if cache time out is up
         if refresh_cache:
             logger.debug(
-                f"Not using cache as longer than {cache_time_seconds} "
-                f"seconds for {function_name_and_variables}"
+                f"Not using cache as longer than {cache_time_seconds} seconds for {key}"
             )
 
         if refresh_cache or last_updated_datetime is None:
             # calling function
-            response[function_name_and_variables] = func(*args, **kwargs)
-            last_updated[function_name_and_variables] = now
-            return response[function_name_and_variables]
+            response[key] = func(*args, **kwargs)
+            last_updated[key] = now
+            return response[key]
         else:
             # use cache
-            logger.debug(f"Using cache route {function_name_and_variables}")
-            return response[function_name_and_variables]
+            logger.debug(f"Using cache route {key}")
+            return response[key]
 
     return wrapper
