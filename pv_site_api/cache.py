@@ -48,26 +48,32 @@ def cache_response(func):
         function_name = func.__name__
         function_name_and_variables = f"{function_name}_{route_variables}"
 
-        # check if its been called before
-        if function_name_and_variables not in last_updated:
+        # seeing if we need to run the function
+        now = datetime.now(tz=timezone.utc)
+        last_updated_datetime = last_updated.get(function_name_and_variables)
+        refresh_cache = (last_updated_datetime is None) or (
+            now - timedelta(seconds=cache_time_seconds) > last_updated_datetime
+        )
+
+        # check if it's been called before
+        if last_updated_datetime is None:
             logger.debug(f"First time this is route run for {function_name_and_variables}")
-            last_updated[function_name_and_variables] = datetime.now(tz=timezone.utc)
-            response[function_name_and_variables] = func(*args, **kwargs)
-            return response[function_name_and_variables]
 
         # re-run if cache time out is up
-        now = datetime.now(tz=timezone.utc)
-        if now - timedelta(seconds=cache_time_seconds) > last_updated[function_name_and_variables]:
+        if refresh_cache:
             logger.debug(
-                f"not using cache as longer than {cache_time_seconds} "
+                f"Not using cache as longer than {cache_time_seconds} "
                 f"seconds for {function_name_and_variables}"
             )
-            last_updated[function_name_and_variables] = now
-            response[function_name_and_variables] = func(*args, **kwargs)
-            return response[function_name_and_variables]
 
-        # use cache
-        logger.debug(f"Using cache route {function_name_and_variables}")
-        return response[function_name_and_variables]
+        if refresh_cache or last_updated_datetime is None:
+            # calling function
+            response[function_name_and_variables] = func(*args, **kwargs)
+            last_updated[function_name_and_variables] = now
+            return response[function_name_and_variables]
+        else:
+            # use cache
+            logger.debug(f"Using cache route {function_name_and_variables}")
+            return response[function_name_and_variables]
 
     return wrapper

@@ -221,7 +221,6 @@ def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_ses
 
 # get_pv_actual: the client can read pv data from the past
 @app.get("/sites/{site_uuid}/pv_actual", response_model=MultiplePVActual)
-@cache_response
 def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
     """### This route returns PV readings from a single PV site.
 
@@ -254,7 +253,6 @@ def get_pv_actual_many_sites(
 
 # get_forecast: Client gets the forecast for their site
 @app.get("/sites/{site_uuid}/pv_forecast", response_model=Forecast)
-@cache_response
 def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     """
     ### This route is where you might say the magic happens.
