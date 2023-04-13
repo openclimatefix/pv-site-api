@@ -109,3 +109,69 @@ class ClearskyEstimate(BaseModel):
     clearsky_estimate: List[ClearskyEstimateValues] = Field(
         ..., description="List of times and clearsky estimate"
     )
+
+
+class InverterProductionState(BaseModel):
+    """Production State data for an inverter"""
+
+    productionRate: float = Field(..., description="The current production rate in kW")
+    isProducing: bool = Field(
+        ..., description="Whether the solar inverter is actively producing energy or not"
+    )
+    totalLifetimeProduction: float = Field(..., description="The total lifetime production in kWh")
+    lastUpdated: str = Field(
+        ..., description="ISO8601 UTC timestamp of last received production state update"
+    )
+
+
+class InverterInformation(BaseModel):
+    """ "Inverter information"""
+
+    id: str = Field(..., description="Solar inverter vendor ID")
+    brand: str = Field(..., description="Solar inverter brand")
+    model: str = Field(..., description="Solar inverter model")
+    siteName: str = Field(
+        ...,
+        description="Name of the site, as set by the user on the device/vendor. If no user-specified name is available, we construct a fallback name using the vendor/device/model names.",
+    )
+    installationDate: str = Field(..., description="Solar inverter installation date")
+
+
+class InverterLocation(BaseModel):
+    """ "Longitude and Latitude of inverter"""
+
+    longitude: float = Field(..., description="Longitude in degrees")
+    latitude: float = Field(..., description="Latitude in degrees")
+
+
+class InverterValues(BaseModel):
+    """Inverter Data for a site"""
+
+    id: str = Field(..., description="Solar Inverter ID")
+    vendor: str = Field(
+        ..., description="One of EMA ENPHASE FRONIUS GOODWE GROWATT HUAWEI SMA SOLAREDGE SOLIS"
+    )
+    chargingLocationId: str = Field(
+        ...,
+        description="ID of the charging location the solar inverter is currently positioned at (if any).",
+    )
+    lastSeen: str = Field(
+        ..., description="The last time the solar inverter was successfully communicated with"
+    )
+    isReachable: str = Field(
+        ...,
+        description="Whether live data from the solar inverter is currently reachable from Enode's perspective. This 'reachability' may refer to reading from a cache operated by the solar inverter's cloud service if that service has determined that its cache is valid.",
+    )
+    productionState: InverterProductionState = Field(
+        ..., description="Descriptive information about the production state"
+    )
+    information: InverterInformation = Field(
+        ..., description="Descriptive information about the solar inverter"
+    )
+    location: InverterLocation = Field(..., description="Solar inverter's GPS coordinates")
+
+
+class Inverters(BaseModel):
+    """Return all Inverter Data"""
+
+    inverters: List[InverterValues] = Field(..., description="List of inverter data")
