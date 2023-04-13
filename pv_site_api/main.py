@@ -41,6 +41,7 @@ from .pydantic_models import (
     PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
+    Inverters,
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
@@ -415,6 +416,24 @@ def get_pv_estimate_clearsky_many_sites(
         res.append({"clearsky_estimate": pac.to_dict("records")})
 
     return res
+
+
+# @app.get("/inverters", response_model=Inverters)
+# def get_inverters(
+#     site_uuids: str,
+#     session: Session = Depends(get_session),
+# ):
+#     """
+#     ### Get the actual power generation for a list of sites.
+#     """
+#     site_uuids_list = site_uuids.split(",")
+
+#     if int(os.environ["FAKE"]):
+#         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
+
+#     start_utc = get_yesterday_midnight()
+
+#     return get_generation_by_sites(session, site_uuids=site_uuids_list, start_utc=start_utc)
 
 
 # get_status: get the status of the system
