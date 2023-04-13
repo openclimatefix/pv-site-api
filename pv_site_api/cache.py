@@ -64,7 +64,7 @@ def cache_response(func):
         elif refresh_cache:
             logger.debug(f"Not using cache as longer than {cache_time_seconds} seconds for {key}")
 
-        if refresh_cache or last_updated_datetime is None:
+        if refresh_cache:
             # calling function
             response[key] = func(*args, **kwargs)
             last_updated[key] = now
