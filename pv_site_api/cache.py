@@ -45,24 +45,26 @@ def cache_response(func):
 
         # make into string
         route_variables = json.dumps(route_variables)
+        function_name = func.__name__
+        function_name_and_variables = f'{function_name}_{route_variables}'
 
         # check if its been called before
-        if route_variables not in last_updated:
-            logger.debug("First time this is route run")
-            last_updated[route_variables] = datetime.now(tz=timezone.utc)
-            response[route_variables] = func(*args, **kwargs)
-            return response[route_variables]
+        if function_name_and_variables not in last_updated:
+            logger.debug(f"First time this is route run for {function_name_and_variables}")
+            last_updated[function_name_and_variables] = datetime.now(tz=timezone.utc)
+            response[function_name_and_variables] = func(*args, **kwargs)
+            return response[function_name_and_variables]
 
-        # re run if cache time out is up
+        # re-run if cache time out is up
         now = datetime.now(tz=timezone.utc)
-        if now - timedelta(seconds=cache_time_seconds) > last_updated[route_variables]:
-            logger.debug(f"not using cache as longer than {cache_time_seconds} seconds")
-            last_updated[route_variables] = now
-            response[route_variables] = func(*args, **kwargs)
-            return response[route_variables]
+        if now - timedelta(seconds=cache_time_seconds) > last_updated[function_name_and_variables]:
+            logger.debug(f"not using cache as longer than {cache_time_seconds} seconds for {function_name_and_variables}")
+            last_updated[function_name_and_variables] = now
+            response[function_name_and_variables] = func(*args, **kwargs)
+            return response[function_name_and_variables]
 
         # use cache
-        logger.debug("Using cache route")
-        return response[route_variables]
+        logger.debug(f"Using cache route {function_name_and_variables}")
+        return response[function_name_and_variables]
 
     return wrapper

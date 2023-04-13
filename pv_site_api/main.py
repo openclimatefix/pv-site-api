@@ -131,7 +131,6 @@ def get_sites(
 
 # post_pv_actual: sends data to us, and we save to database
 @app.post("/sites/{site_uuid}/pv_actual")
-@cache_response
 def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
@@ -231,7 +230,7 @@ def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
     To test the route, you can input any number for the site_uuid (ex. 567)
     to generate a list of datetimes and actual kw generation for that site.
     """
-    return (get_pv_actual_many_sites(site_uuid, session))[0]
+    return (get_pv_actual_many_sites(site_uuids=site_uuid, session=session))[0]
 
 
 @app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
@@ -277,7 +276,7 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     if not site_exists:
         raise HTTPException(status_code=404)
 
-    forecasts = get_pv_forecast_many_sites(site_uuid, session)
+    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session)
 
     if len(forecasts) == 0:
         return JSONResponse(status_code=204, content="no data")
