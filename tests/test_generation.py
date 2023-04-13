@@ -8,7 +8,7 @@ from pvsite_datamodel.sqlmodels import GenerationSQL
 from pv_site_api.pydantic_models import MultiplePVActual, PVActualValue
 
 
-def test_pv_actual_fake(client, fake):
+def test_pv_actual_fake(fake, client):
     response = client.get("/sites/fff-fff-fff/pv_actual")
     assert response.status_code == 200
 
@@ -16,7 +16,7 @@ def test_pv_actual_fake(client, fake):
     assert len(pv_actuals.pv_actual_values) > 0
 
 
-def test_pv_actual_many_sites_fake(client, fake):
+def test_pv_actual_many_sites_fake(fake, client):
     resp = client.get("/sites/pv_actual?site_uuids=fff-fff-fff")
 
     pv_actuals = [MultiplePVActual(**x) for x in resp.json()]
@@ -46,7 +46,7 @@ def test_pv_actual_many_sites(client, sites, generations):
     assert len(pv_actuals) == len(sites)
 
 
-def test_post_fake_pv_actual(client, fake):
+def test_post_fake_pv_actual(fake, client):
     pv_actual_value = PVActualValue(
         datetime_utc=datetime.now(timezone.utc), actual_generation_kw=73.3
     )

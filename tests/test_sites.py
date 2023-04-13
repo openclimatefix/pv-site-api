@@ -7,7 +7,7 @@ from pvsite_datamodel.sqlmodels import SiteSQL
 from pv_site_api.pydantic_models import PVSiteMetadata, PVSites
 
 
-def test_get_site_list_fake(client, fake):
+def test_get_site_list_fake(fake, client):
     response = client.get("/sites")
     assert response.status_code == 200, response.text
 
@@ -23,7 +23,7 @@ def test_get_site_list(client, sites):
     assert len(pv_sites.site_list) > 0
 
 
-def test_put_site_fake(client, fake):
+def test_put_site_fake(fake, client):
     pv_site = PVSiteMetadata(
         client_name="client_name_1",
         client_site_id="the site id used by the user",

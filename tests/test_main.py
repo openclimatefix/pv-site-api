@@ -13,7 +13,7 @@ def test_read_main(client):
     assert response.json()["version"] == __version__
 
 
-def test_get_status(client, fake):
+def test_get_status(fake, client):
     response = client.get("/api_status")
     assert response.status_code == 200
 
@@ -22,7 +22,7 @@ def test_get_status(client, fake):
     assert returned_status.message == "The API is up and running"
 
 
-def test_pv_actual(client, fake):
+def test_pv_actual(fake, client):
     response = client.get("/sites/fff-fff-fff/pv_actual")
     assert response.status_code == 200
 
@@ -30,7 +30,7 @@ def test_pv_actual(client, fake):
     assert len(pv_actuals.pv_actual_values) > 0
 
 
-def test_post_pv_actual(client, fake):
+def test_post_pv_actual(fake, client):
     pv_actual_value = PVActualValue(
         datetime_utc=datetime.now(timezone.utc), actual_generation_kw=73.3
     )

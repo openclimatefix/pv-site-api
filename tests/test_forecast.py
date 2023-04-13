@@ -9,7 +9,7 @@ from pvsite_datamodel.sqlmodels import SiteSQL
 from pv_site_api.pydantic_models import Forecast
 
 
-def test_get_forecast_fake(client, fake):
+def test_get_forecast_fake(fake, client):
     response = client.get("/sites/ffff-ffff/pv_forecast")
     assert response.status_code == 200
 
@@ -17,7 +17,7 @@ def test_get_forecast_fake(client, fake):
     assert len(forecast.forecast_values) > 0
 
 
-def test_get_forecast_many_sites_fake(client, fake):
+def test_get_forecast_many_sites_fake(fake, client):
     resp = client.get("/sites/pv_forecast?site_uuids=ffff-ffff")
     assert resp.status_code == 200
 

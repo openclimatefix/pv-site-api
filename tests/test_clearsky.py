@@ -3,7 +3,7 @@
 from pv_site_api.pydantic_models import ClearskyEstimate
 
 
-def test_get_clearsky_fake(client, fake):
+def test_get_clearsky_fake(fake, client):
     response = client.get("/sites/ffff-ffff/clearsky_estimate")
     assert response.status_code == 200
 

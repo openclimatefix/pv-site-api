@@ -3,7 +3,7 @@
 from pv_site_api.pydantic_models import PVSiteAPIStatus
 
 
-def test_get_fake_status(client, fake):
+def test_get_fake_status(fake, client):
     response = client.get("/api_status")
     assert response.status_code == 200
 

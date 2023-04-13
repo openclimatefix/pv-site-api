@@ -18,7 +18,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from testcontainers.postgres import PostgresContainer
 
-from pv_site_api.main import app
+from pv_site_api.app import create_app
 from pv_site_api.session import get_session
 
 
@@ -187,6 +187,11 @@ def forecast_values(db_session, sites):
 
 
 @pytest.fixture()
-def client(db_session):
+def app():
+    return create_app()
+
+
+@pytest.fixture()
+def client(app, db_session):
     app.dependency_overrides[get_session] = lambda: db_session
     return TestClient(app)
