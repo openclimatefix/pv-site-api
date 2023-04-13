@@ -61,7 +61,7 @@ def cache_response(func):
             logger.debug(f"First time this is route run for {key}")
 
         # re-run if cache time out is up
-        if refresh_cache:
+        elif refresh_cache:
             logger.debug(f"Not using cache as longer than {cache_time_seconds} seconds for {key}")
 
         if refresh_cache or last_updated_datetime is None:
