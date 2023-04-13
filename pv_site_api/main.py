@@ -373,6 +373,11 @@ def get_status(session: Session = Depends(get_session)):
 
     return status
 
+@app.get("/sites/{site_uuid}/inverters", response_model=Forecast)
+def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
+
+    raise HTTPException(status_code=404)
+
 
 @app.get("/")
 def get_api_information():
