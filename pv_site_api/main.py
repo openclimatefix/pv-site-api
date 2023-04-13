@@ -24,6 +24,7 @@ from ._db_helpers import (
     get_generation_by_sites,
     site_to_pydantic,
 )
+from .cache import cache_response
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -232,10 +233,11 @@ def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
     To test the route, you can input any number for the site_uuid (ex. 567)
     to generate a list of datetimes and actual kw generation for that site.
     """
-    return (get_pv_actual_many_sites(site_uuid, session))[0]
+    return (get_pv_actual_many_sites(site_uuids=site_uuid, session=session))[0]
 
 
 @app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
+@cache_response
 def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
@@ -276,7 +278,7 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     if not site_exists:
         raise HTTPException(status_code=404)
 
-    forecasts = get_pv_forecast_many_sites(site_uuid, session)
+    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session)
 
     if len(forecasts) == 0:
         return JSONResponse(status_code=204, content="no data")
@@ -285,6 +287,7 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
 
 
 @app.get("/sites/pv_forecast")
+@cache_response
 def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
@@ -311,6 +314,7 @@ def get_pv_forecast_many_sites(
 
 
 @app.get("/sites/{site_uuid}/clearsky_estimate", response_model=ClearskyEstimate)
+@cache_response
 def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_session)):
     """
     ### Gets a estimate of AC production under a clear sky
