@@ -1,16 +1,18 @@
 """ Get access to the database"""
 
-import os
-
 from pvsite_datamodel.connection import DatabaseConnection
 
 
-def get_session():
-    """Get database settion"""
-    if int(os.environ.get("FAKE", 0)):
-        yield None
-    else:
-        connection = DatabaseConnection(url=os.getenv("DB_URL", "not_set"))
+def create_session_dependency(db_url: str, *, is_fake: bool):
+    """Return a fastAPI dependency function."""
 
-        with connection.get_session() as s:
-            yield s
+    def get_session():
+        if is_fake:
+            yield None
+        else:
+            connection = DatabaseConnection(url=db_url)
+
+            with connection.get_session() as s:
+                yield s
+
+    return get_session

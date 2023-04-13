@@ -1,5 +1,6 @@
 """Main API Routes"""
 import os
+from typing import Callable
 
 import pandas as pd
 import sentry_sdk
@@ -24,6 +25,7 @@ from ._db_helpers import (
     site_to_pydantic,
 )
 from .cache import cache_response
+from .config import Config
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -40,7 +42,6 @@ from .pydantic_models import (
     PVSites,
 )
 from .redoc_theme import get_redoc_html_with_theme
-from .session import get_session
 from .utils import get_yesterday_midnight
 
 logger = structlog.stdlib.get_logger()
@@ -55,9 +56,7 @@ def traces_sampler(sampling_context):
     or sampling decision for this transaction
     """
 
-    if os.getenv("ENVIRONMENT") == "local":
-        return 0.0
-    elif "error" in sampling_context["transaction_context"]["name"]:
+    if "error" in sampling_context["transaction_context"]["name"]:
         # These are important - take a big sample
         return 1.0
     elif sampling_context["parent_sampled"] is True:
@@ -68,8 +67,7 @@ def traces_sampler(sampling_context):
         return 0.05
 
 
-def _add_cors(app: FastAPI) -> None:
-    origins = os.getenv("ORIGINS", "*").split(",")
+def _add_cors(app: FastAPI, origins: list[str]) -> None:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
@@ -79,7 +77,7 @@ def _add_cors(app: FastAPI) -> None:
     )
 
 
-def _add_site_routes(app: FastAPI, *, is_fake: bool) -> None:
+def _add_site_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> None:
     @app.get("/sites", response_model=PVSites)
     def get_sites(
         session: Session = Depends(get_session),
@@ -335,7 +333,7 @@ def _add_site_routes(app: FastAPI, *, is_fake: bool) -> None:
         return res
 
 
-def _add_base_routes(app: FastAPI, *, is_fake: bool) -> None:
+def _add_base_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> None:
     title = "Nowcasting PV Site API"
     description = "Description of PV Site API"
 
@@ -418,19 +416,18 @@ def _add_base_routes(app: FastAPI, *, is_fake: bool) -> None:
     app.openapi = custom_openapi
 
 
-def create_app() -> FastAPI:
+def create_app(*, config: Config, get_session: Callable) -> FastAPI:
     app = FastAPI(docs_url="/swagger", redoc_url=None)
 
     sentry_sdk.init(
-        dsn=os.getenv("SENTRY_DSN"),
-        environment=os.getenv("ENVIRONMENT", "local"),
-        traces_sampler=traces_sampler,
+        dsn=config.SENTRY_DSN,
+        environment=config.ENVIRONMENT,
+        traces_sampler=0.0 if config.ENVIRONMENT == "local" else traces_sampler,
     )
 
-    _add_cors(app)
+    _add_cors(app, origins=config.CORS_ORIGINS)
 
-    is_fake = bool(int(os.environ.get("FAKE", 0)))
-    _add_base_routes(app, is_fake=is_fake)
-    _add_site_routes(app, is_fake=is_fake)
+    _add_base_routes(app, is_fake=config.FAKE, get_session=get_session)
+    _add_site_routes(app, is_fake=config.FAKE, get_session=get_session)
 
     return app

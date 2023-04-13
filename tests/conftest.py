@@ -1,5 +1,5 @@
 """ Pytest fixtures for tests """
-import os
+
 from datetime import datetime, timedelta
 
 import freezegun
@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from testcontainers.postgres import PostgresContainer
 
 from pv_site_api.app import create_app
-from pv_site_api.session import get_session
+from pv_site_api.config import Config
 
 
 @pytest.fixture
@@ -30,17 +30,25 @@ def _now(autouse=True):
 
 
 @pytest.fixture(scope="session")
-def engine():
-    """Make database engine"""
+def db_url():
     with PostgresContainer("postgres:14.5") as postgres:
         url = postgres.get_connection_url()
-        os.environ["DB_URL"] = url
-        engine = create_engine(url)
-        Base.metadata.create_all(engine)
+        yield url
 
-        yield engine
 
-        os.environ["DB_URL"] = "not-set"
+@pytest.fixture(scope="session")
+def config(db_url):
+    config = Config(".env.test")
+    config.DB_URL = db_url
+    return config
+
+
+@pytest.fixture(scope="session")
+def engine(db_url):
+    """Make database engine"""
+    engine = create_engine(db_url)
+    Base.metadata.create_all(engine)
+    yield engine
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -60,7 +68,6 @@ def db_session(engine):
         # put back the connection to the connection pool
         connection.close()
         session.flush()
-
     engine.dispose()
 
 
@@ -137,7 +144,12 @@ def statuses(db_session):
 
 @pytest.fixture()
 def fake(monkeypatch):
-    """Set up ENV VAR FAKE to 1"""
+    """Set up ENV VAR FAKE to 1
+
+    Note that this fixture must be included before the others because the
+    environment variables are read in the `config` fixture, on which many
+    other depend.
+    """
     with monkeypatch.context() as m:
         m.setenv("FAKE", "1")
         yield
@@ -187,11 +199,6 @@ def forecast_values(db_session, sites):
 
 
 @pytest.fixture()
-def app():
-    return create_app()
-
-
-@pytest.fixture()
-def client(app, db_session):
-    app.dependency_overrides[get_session] = lambda: db_session
+def client(config, db_session):
+    app = create_app(config=config, get_session=lambda: db_session)
     return TestClient(app)
