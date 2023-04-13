@@ -42,6 +42,7 @@ from .pydantic_models import (
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
 from .utils import get_yesterday_midnight
+from .enode_auth import get_enode_access_token
 
 load_dotenv()
 
@@ -354,6 +355,10 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
 
+# @app.get("/enode_token")
+# def get_enode_token(session: Session = Depends(get_session)):
+#     token = get_enode_access_token()
+#     return {"token": token}
 
 # get_status: get the status of the system
 @app.get("/api_status", response_model=PVSiteAPIStatus)
