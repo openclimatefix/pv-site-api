@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 import pv_site_api
 
+from .cache import cache_response
 from ._db_helpers import (
     does_site_exist,
     get_forecasts_by_sites,
@@ -130,6 +131,7 @@ def get_sites(
 
 # post_pv_actual: sends data to us, and we save to database
 @app.post("/sites/{site_uuid}/pv_actual")
+@cache_response
 def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
@@ -220,6 +222,7 @@ def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_ses
 
 # get_pv_actual: the client can read pv data from the past
 @app.get("/sites/{site_uuid}/pv_actual", response_model=MultiplePVActual)
+@cache_response
 def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
     """### This route returns PV readings from a single PV site.
 
@@ -232,6 +235,7 @@ def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
 
 
 @app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
+@cache_response
 def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
@@ -251,6 +255,7 @@ def get_pv_actual_many_sites(
 
 # get_forecast: Client gets the forecast for their site
 @app.get("/sites/{site_uuid}/pv_forecast", response_model=Forecast)
+@cache_response
 def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     """
     ### This route is where you might say the magic happens.
@@ -281,6 +286,7 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
 
 
 @app.get("/sites/pv_forecast")
+@cache_response
 def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
@@ -307,6 +313,7 @@ def get_pv_forecast_many_sites(
 
 
 @app.get("/sites/{site_uuid}/clearsky_estimate", response_model=ClearskyEstimate)
+@cache_response
 def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_session)):
     """
     ### Gets a estimate of AC production under a clear sky
