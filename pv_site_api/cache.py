@@ -62,9 +62,7 @@ def cache_response(func):
 
         # re-run if cache time out is up
         if refresh_cache:
-            logger.debug(
-                f"Not using cache as longer than {cache_time_seconds} seconds for {key}"
-            )
+            logger.debug(f"Not using cache as longer than {cache_time_seconds} seconds for {key}")
 
         if refresh_cache or last_updated_datetime is None:
             # calling function
