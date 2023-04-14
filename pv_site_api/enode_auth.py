@@ -4,11 +4,10 @@ import httpx
 
 
 def get_enode_access_token() -> str:
-    # Replace these with your actual credentials
+    # TODO: Add environment variables
     client_id = os.getenv("CLIENT_ID")
     client_secret = os.getenv("CLIENT_SECRET")
-
-    url = "https://oauth.sandbox.enode.io/oauth2/token"
+    url = os.getenv("ENODE_TOKEN_URL")
 
     # Encode the client_id and client_secret using Basic Auth
     auth = httpx.BasicAuth(username=client_id, password=client_secret)
