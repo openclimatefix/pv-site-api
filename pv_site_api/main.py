@@ -2,9 +2,9 @@
 import logging
 import os
 
+import httpx
 import pandas as pd
 import sentry_sdk
-import httpx
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,6 +25,7 @@ from ._db_helpers import (
     get_generation_by_sites,
     site_to_pydantic,
 )
+from .enode_auth import EnodeAuth
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -43,9 +44,7 @@ from .pydantic_models import (
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
 from .utils import get_yesterday_midnight
-from .enode_auth import (
-    EnodeAuth,
-)
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -98,7 +97,7 @@ app.add_middleware(
 )
 
 auth = EnodeAuth()
-enode_client = httpx.Client(auth = auth) 
+enode_client = httpx.Client(auth=auth)
 
 # name the api
 # test that the routes are there on swagger
@@ -359,7 +358,6 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
-
 
 
 # get_status: get the status of the system
