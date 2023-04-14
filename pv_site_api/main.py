@@ -3,10 +3,10 @@ import asyncio
 import logging
 import os
 
-import httpx
 import pandas as pd
 import sentry_sdk
 import structlog
+import httpx
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,6 +31,7 @@ from ._db_helpers import (
 )
 from .auth import Auth
 from .cache import cache_response
+from .enode_auth import EnodeAuth
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -50,6 +51,9 @@ from .pydantic_models import (
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
 from .utils import get_inverters_list, get_yesterday_midnight
+from .enode_auth import (
+    EnodeAuth,
+)
 
 load_dotenv()
 
@@ -111,6 +115,8 @@ auth = Auth(
     api_audience=os.getenv("AUTH0_API_AUDIENCE"),
     algorithm=os.getenv("AUTH0_ALGORITHM"),
 )
+auth = EnodeAuth()
+enode_client = httpx.Client(auth=auth)
 
 # name the api
 # test that the routes are there on swagger
@@ -422,6 +428,11 @@ def get_pv_estimate_clearsky_many_sites(
     return res
 
 
+@app.get("/test_enode")
+def test_enode():
+    enode_client.get("https://enode-api.production.enode.io/random")
+
+
 # @app.get("/enode_token")
 # def get_enode_token(session: Session = Depends(get_session)):
 #     token = get_enode_access_token()
@@ -458,7 +469,7 @@ async def get_inverters_by_site(
     if int(os.environ["FAKE"]):
         return make_fake_inverters()
 
-    inverter_ids = [inverter.inverter_uuid for inverter in _get_inverters_by_site(site_uuid)]
+    inverter_ids = [inverter.client_id for inverter in _get_inverters_by_site(session, site_uuid)]
 
     return await get_inverters_list(session, inverter_ids)
 

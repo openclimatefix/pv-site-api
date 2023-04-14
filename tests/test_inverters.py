@@ -3,19 +3,9 @@
 from pv_site_api.pydantic_models import Inverters
 
 
-def test_get_inverters_fake(client, fake):
-    response = client.get("/inverters")
-    assert response.status_code == 200
-
-    inverters = Inverters(**response.json())
-    assert len(inverters.inverters) > 0
-
-
-def test_get_inverters(client, httpx_mock, clients):
-    httpx_mock.add_response(url="https://enode-api.production.enode.io/inverters", json=["id1"])
-
+def add_response(id, httpx_mock):
     httpx_mock.add_response(
-        url="https://enode-api.production.enode.io/inverters/id1",
+        url=f"https://enode-api.production.enode.io/inverters/{id}",
         json={
             "id": "string",
             "vendor": "EMA",
@@ -38,6 +28,31 @@ def test_get_inverters(client, httpx_mock, clients):
             "location": {"longitude": 10.7197486, "latitude": 59.9173985},
         },
     )
+
+
+def test_get_inverters_from_site(client, sites, inverters, httpx_mock):
+    add_response("id1", httpx_mock)
+    add_response("id2", httpx_mock)
+    add_response("id3", httpx_mock)
+
+    response = client.get(f"/sites/{sites[0].site_uuid}/inverters")
+    assert response.status_code == 200
+
+    response_inverters = Inverters(**response.json())
+    assert len(inverters) == len(response_inverters.inverters)
+
+
+def test_get_inverters_fake(client, fake):
+    response = client.get("/inverters")
+    assert response.status_code == 200
+
+    response_inverters = Inverters(**response.json())
+    assert len(response_inverters.inverters) > 0
+
+
+def test_get_inverters(client, httpx_mock, clients):
+    httpx_mock.add_response(url="https://enode-api.production.enode.io/inverters", json=["id1"])
+    add_response("id1", httpx_mock)
 
     response = client.get("/inverters")
     assert response.status_code == 200
