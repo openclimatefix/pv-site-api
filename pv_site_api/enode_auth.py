@@ -5,13 +5,13 @@ import httpx
 
 def get_enode_access_token() -> str:
     # Replace these with your actual credentials
-    your_client_id = os.getenv("CLIENT_ID") if os.getenv("CLIENT_ID") != None else ""
-    your_client_secret = os.getenv("CLIENT_SECRET") if os.getenv("CLIENT_SECRET") != None else ""
+    client_id = os.getenv("CLIENT_ID") if os.getenv("CLIENT_ID") is not None else ""
+    client_secret = os.getenv("CLIENT_SECRET") if os.getenv("CLIENT_SECRET") is not None else ""
 
     url = "https://oauth.sandbox.enode.io/oauth2/token"
 
     # Encode the client_id and client_secret using Basic Auth
-    auth = httpx.BasicAuth(username=your_client_id, password=your_client_secret)
+    auth = httpx.BasicAuth(username=client_id, password=client_secret)
 
     data = {"grant_type": "client_credentials"}
 
