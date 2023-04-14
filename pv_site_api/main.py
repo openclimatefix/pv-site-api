@@ -96,8 +96,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-auth = EnodeAuth()
-enode_client = httpx.Client(auth=auth)
+enode_client = httpx.Client(auth=EnodeAuth())
 
 # name the api
 # test that the routes are there on swagger
