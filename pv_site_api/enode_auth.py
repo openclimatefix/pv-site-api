@@ -5,8 +5,8 @@ import httpx
 
 def get_enode_access_token() -> str:
     # Replace these with your actual credentials
-    client_id = os.getenv("CLIENT_ID") if os.getenv("CLIENT_ID") is not None else ""
-    client_secret = os.getenv("CLIENT_SECRET") if os.getenv("CLIENT_SECRET") is not None else ""
+    client_id = os.getenv("CLIENT_ID")
+    client_secret = os.getenv("CLIENT_SECRET")
 
     url = "https://oauth.sandbox.enode.io/oauth2/token"
 
