@@ -2,7 +2,6 @@
 import logging
 import os
 
-import httpx
 import pandas as pd
 import sentry_sdk
 from dotenv import load_dotenv
@@ -25,7 +24,6 @@ from ._db_helpers import (
     get_generation_by_sites,
     site_to_pydantic,
 )
-from .enode_auth import EnodeAuth
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
