@@ -361,7 +361,7 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
 auth = EnodeAuth()
 enode_client = httpx.Client(auth = auth) 
 
-
+# Test enode client
 @app.get("/enode_token")
 def test_enode_client():
     return enode_client.get("https://enode-api.production.enode.io/random").json()
