@@ -97,6 +97,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+auth = EnodeAuth()
+enode_client = httpx.Client(auth = auth) 
 
 # name the api
 # test that the routes are there on swagger
@@ -358,13 +360,6 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
 
-auth = EnodeAuth()
-enode_client = httpx.Client(auth = auth) 
-
-# Test enode client
-@app.get("/enode_token")
-def test_enode_client():
-    return enode_client.get("https://enode-api.production.enode.io/random").json()
 
 
 # get_status: get the status of the system
