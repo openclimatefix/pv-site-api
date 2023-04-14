@@ -4,6 +4,7 @@ import os
 
 import pandas as pd
 import sentry_sdk
+import httpx
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,8 +43,9 @@ from .pydantic_models import (
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
 from .utils import get_yesterday_midnight
-from .enode_auth import get_enode_access_token
-
+from .enode_auth import (
+    EnodeAuth,
+)
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -94,6 +96,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # name the api
 # test that the routes are there on swagger
@@ -355,10 +358,14 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
 
-# @app.get("/enode_token")
-# def get_enode_token(session: Session = Depends(get_session)):
-#     token = get_enode_access_token()
-#     return {"token": token}
+auth = EnodeAuth()
+enode_client = httpx.Client(auth = auth) 
+
+
+@app.get("/enode_token")
+def test_enode_client():
+    return enode_client.get("https://enode-api.production.enode.io/random").json()
+
 
 # get_status: get the status of the system
 @app.get("/api_status", response_model=PVSiteAPIStatus)
