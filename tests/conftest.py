@@ -200,5 +200,9 @@ def forecast_values(db_session, sites):
 
 @pytest.fixture()
 def client(config, db_session):
-    app = create_app(config=config, get_session=lambda: db_session)
+    app = create_app(
+        config=config,
+        get_session=lambda: db_session,
+        auth=lambda: None,
+    )
     return TestClient(app)

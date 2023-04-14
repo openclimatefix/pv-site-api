@@ -15,6 +15,11 @@ Site specific API for SBRI project
 
 ### Start the API using uvicorn
 
+    # Make a `.env` file and edit its content.
+    cp -n .env.dist .env
+    # Alternatively, you can set all the environment variables manually.
+
+    # Start the service
     poetry run uvicorn pv_site_api.main:app --reload
 
 

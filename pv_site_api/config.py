@@ -17,6 +17,9 @@ class Config:
         self.ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
         self.CORS_ORIGINS = os.getenv("ORIGINS", "*").split(",")
         self.DB_URL = os.environ["DB_URL"]
+        self.AUTH0_DOMAIN = os.environ["AUTH0_DOMAIN"]
+        self.AUTH0_API_AUDIENCE = os.environ["AUTH0_API_AUDIENCE"]
+        self.AUTH0_ALGORITHM = os.environ["AUTH0_ALGORITHM"]
 
     # The FAKE setting is special because we can't set it once and for all in the tests, it changes
     # with every test. This is why we make it dynamic.

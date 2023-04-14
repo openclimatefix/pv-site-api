@@ -5,7 +5,7 @@ from typing import Callable
 import pandas as pd
 import sentry_sdk
 import structlog
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, JSONResponse
@@ -77,8 +77,10 @@ def _add_cors(app: FastAPI, origins: list[str]) -> None:
     )
 
 
-def _add_site_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> None:
-    @app.get("/sites", response_model=PVSites)
+def _create_site_router(*, is_fake: bool, get_session: Callable, auth: Callable) -> None:
+    router = APIRouter(prefix="/sites", dependencies=[Depends(auth)])
+
+    @router.get("/", response_model=PVSites)
     def get_sites(
         session: Session = Depends(get_session),
     ):
@@ -102,7 +104,7 @@ def _add_site_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> N
         return PVSites(site_list=pv_sites)
 
     # post_pv_actual: sends data to us, and we save to database
-    @app.post("/sites/{site_uuid}/pv_actual")
+    @router.post("/{site_uuid}/pv_actual")
     def post_pv_actual(
         site_uuid: str,
         pv_actual: MultiplePVActual,
@@ -139,7 +141,7 @@ def _add_site_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> N
 
     # Comment this out, until we have security on this
     # # put_site_info: client can update a site
-    # @app.put("/sites/{site_uuid}")
+    # @router.put("/{site_uuid}")
     # def put_site_info(site_info: PVSiteMetadata):
     #     """
     #     ### This route allows a user to update site information for a single site.
@@ -155,7 +157,7 @@ def _add_site_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> N
     #
     #     raise Exception(NotImplemented)
 
-    @app.post("/sites")
+    @router.post("/")
     def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_session)):
         """
         ### This route allows a user to add a site.
@@ -191,7 +193,7 @@ def _add_site_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> N
         session.commit()
 
     # get_pv_actual: the client can read pv data from the past
-    @app.get("/sites/{site_uuid}/pv_actual", response_model=MultiplePVActual)
+    @router.get("/{site_uuid}/pv_actual", response_model=MultiplePVActual)
     def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
         """### This route returns PV readings from a single PV site.
 
@@ -202,7 +204,7 @@ def _add_site_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> N
         """
         return (get_pv_actual_many_sites(site_uuids=site_uuid, session=session))[0]
 
-    @app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
+    @router.get("/pv_actual", response_model=list[MultiplePVActual])
     @cache_response
     def get_pv_actual_many_sites(
         site_uuids: str,
@@ -221,7 +223,7 @@ def _add_site_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> N
         return get_generation_by_sites(session, site_uuids=site_uuids_list, start_utc=start_utc)
 
     # get_forecast: Client gets the forecast for their site
-    @app.get("/sites/{site_uuid}/pv_forecast", response_model=Forecast)
+    @router.get("/{site_uuid}/pv_forecast", response_model=Forecast)
     def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
         """
         ### This route is where you might say the magic happens.
@@ -250,7 +252,7 @@ def _add_site_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> N
 
         return forecasts[0]
 
-    @app.get("/sites/pv_forecast")
+    @router.get("/pv_forecast")
     @cache_response
     def get_pv_forecast_many_sites(
         site_uuids: str,
@@ -276,7 +278,7 @@ def _add_site_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> N
 
         return forecasts
 
-    @app.get("/sites/{site_uuid}/clearsky_estimate", response_model=ClearskyEstimate)
+    @router.get("/{site_uuid}/clearsky_estimate", response_model=ClearskyEstimate)
     @cache_response
     def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_session)):
         """
@@ -331,6 +333,8 @@ def _add_site_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> N
         pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
         res = {"clearsky_estimate": pac.to_dict("records")}
         return res
+
+    return router
 
 
 def _add_base_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> None:
@@ -416,7 +420,7 @@ def _add_base_routes(app: FastAPI, *, is_fake: bool, get_session: Callable) -> N
     app.openapi = custom_openapi
 
 
-def create_app(*, config: Config, get_session: Callable) -> FastAPI:
+def create_app(*, config: Config, get_session: Callable, auth: Callable) -> FastAPI:
     app = FastAPI(docs_url="/swagger", redoc_url=None)
 
     sentry_sdk.init(
@@ -428,6 +432,8 @@ def create_app(*, config: Config, get_session: Callable) -> FastAPI:
     _add_cors(app, origins=config.CORS_ORIGINS)
 
     _add_base_routes(app, is_fake=config.FAKE, get_session=get_session)
-    _add_site_routes(app, is_fake=config.FAKE, get_session=get_session)
+
+    site_router = _create_site_router(is_fake=config.FAKE, get_session=get_session, auth=auth)
+    app.include_router(site_router)
 
     return app
