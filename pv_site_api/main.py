@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, JSONResponse
 from pvlib import irradiance, location, pvsystem
-from pvsite_datamodel.read.site import get_all_sites, get_site_by_uuid, get_sites_by_uuids
+from pvsite_datamodel.read.site import get_all_sites, get_sites_by_uuids
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
@@ -315,6 +315,7 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     clearsky_estimates = get_pv_estimate_clearsky_many_sites([site_uuid], session)
     return clearsky_estimates[0]
 
+
 @app.get("/sites/clearsky_estimate", response_model=list[ClearskyEstimate])
 def get_pv_estimate_clearsky_many_sites(
     site_uuids: str,
@@ -332,7 +333,7 @@ def get_pv_estimate_clearsky_many_sites(
     sites = get_sites_by_uuids(session, site_uuids_list)
     res = []
 
-    for site in sites: 
+    for site in sites:
         loc = location.Location(site.latitude, site.longitude)
 
         # Create DatetimeIndex over four days, with a frequency of 15 minutes.
@@ -365,15 +366,14 @@ def get_pv_estimate_clearsky_many_sites(
             inverter_parameters={"pdc0": site.installed_capacity_kw},
         )
         pac = irr.apply(
-            lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)), axis=1
+            lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)),
+            axis=1,
         )
         pac = pac.reset_index()
         pac = pac.rename(columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
         pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
         res.append({"clearsky_estimate": pac.to_dict("records")})
     return res
-        
-
 
 
 # get_status: get the status of the system

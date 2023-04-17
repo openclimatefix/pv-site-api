@@ -11,7 +11,6 @@ import logging
 import uuid
 from collections import defaultdict
 from typing import Any, Optional
-import pandas as pd
 
 import sqlalchemy as sa
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
