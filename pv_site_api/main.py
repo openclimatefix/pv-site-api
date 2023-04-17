@@ -24,6 +24,7 @@ from ._db_helpers import (
     get_generation_by_sites,
     site_to_pydantic,
 )
+from .auth import Auth
 from .cache import cache_response
 from .fake import (
     fake_site_uuid,
@@ -99,6 +100,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+auth = Auth(
+    domain=os.getenv("AUTH0_DOMAIN"),
+    api_audience=os.getenv("AUTH0_API_AUDIENCE"),
+    algorithm=os.getenv("AUTH0_ALGORITHM"),
+)
+
 # name the api
 # test that the routes are there on swagger
 # Following on from #1 now will be good to set out models
@@ -112,6 +119,7 @@ app.add_middleware(
 @app.get("/sites", response_model=PVSites)
 def get_sites(
     session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
 ):
     """
     ### This route returns a list of the user's PV Sites with metadata for each site.
@@ -139,6 +147,7 @@ def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
     session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
 ):
     """### This route is used to input actual PV generation.
 
@@ -188,7 +197,11 @@ def post_pv_actual(
 
 
 @app.post("/sites")
-def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_session)):
+def post_site_info(
+    site_info: PVSiteMetadata,
+    session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
+):
     """
     ### This route allows a user to add a site.
 
@@ -225,7 +238,11 @@ def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_ses
 
 # get_pv_actual: the client can read pv data from the past
 @app.get("/sites/{site_uuid}/pv_actual", response_model=MultiplePVActual)
-def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
+def get_pv_actual(
+    site_uuid: str,
+    session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
+):
     """### This route returns PV readings from a single PV site.
 
     Currently the route is set to provide a reading
@@ -241,6 +258,7 @@ def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
 def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
 ):
     """
     ### Get the actual power generation for a list of sites.
@@ -257,7 +275,11 @@ def get_pv_actual_many_sites(
 
 # get_forecast: Client gets the forecast for their site
 @app.get("/sites/{site_uuid}/pv_forecast", response_model=Forecast)
-def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
+def get_pv_forecast(
+    site_uuid: str,
+    session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
+):
     """
     ### This route is where you might say the magic happens.
 
@@ -291,6 +313,7 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
 def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
 ):
     """
     ### Get the forecasts for multiple sites.
@@ -315,7 +338,11 @@ def get_pv_forecast_many_sites(
 
 @app.get("/sites/{site_uuid}/clearsky_estimate", response_model=ClearskyEstimate)
 @cache_response
-def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_session)):
+def get_pv_estimate_clearsky(
+    site_uuid: str,
+    session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
+):
     """
     ### Gets a estimate of AC production under a clear sky
     """
