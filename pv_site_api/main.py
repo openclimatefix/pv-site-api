@@ -381,7 +381,7 @@ def get_pv_estimate_clearsky_many_sites(
         pac = pac.rename(columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
         pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
         res.append({"clearsky_estimate": pac.to_dict("records")})
-    
+
     return res
 
 
