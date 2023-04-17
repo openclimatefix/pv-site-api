@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, JSONResponse
 from pvlib import irradiance, location, pvsystem
-from pvsite_datamodel.read.site import get_all_sites, get_sites_by_uuids
+from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
@@ -23,6 +23,7 @@ from ._db_helpers import (
     does_site_exist,
     get_forecasts_by_sites,
     get_generation_by_sites,
+    get_sites_by_uuids,
     site_to_pydantic,
 )
 from .fake import (
