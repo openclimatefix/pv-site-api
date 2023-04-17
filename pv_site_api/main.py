@@ -362,6 +362,32 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     return res
 
 
+@app.get("/sites/clearsky_estimate")
+def get_pv_estimate_clearsky_many_sites(
+    site_uuids: str,
+    session: Session = Depends(get_session),
+):
+    """
+    ### Gets a estimate of AC production under a clear sky for multiple sites.
+    """
+
+    if int(os.environ["FAKE"]):
+        site_uuids_list = [make_fake_site().site_list[0].site_uuid]
+    else:
+        site_uuids_list = site_uuids.split(",")
+
+    start_utc = get_yesterday_midnight()
+    site_uuids_list = site_uuids.split(",")
+
+    logger.debug(f"Loading forecast from {start_utc}")
+
+    forecasts = get_forecasts_by_sites(
+        session, site_uuids=site_uuids_list, start_utc=start_utc, horizon_minutes=0
+    )
+
+    return forecasts
+
+
 # get_status: get the status of the system
 @app.get("/api_status", response_model=PVSiteAPIStatus)
 def get_status(session: Session = Depends(get_session)):
