@@ -11,8 +11,10 @@ from pvsite_datamodel.sqlmodels import (
     ForecastSQL,
     ForecastValueSQL,
     GenerationSQL,
+    InverterSQL,
     SiteSQL,
     StatusSQL,
+    InverterSQL,
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -27,6 +29,11 @@ def _now(autouse=True):
     """Hard-code the time for all tests to make the tests less flaky."""
     with freezegun.freeze_time(2020, 1, 1):
         return datetime.utcnow()
+
+
+@pytest.fixture
+def non_mocked_hosts() -> list:
+    return ["testserver"]
 
 
 @pytest.fixture(scope="session")
@@ -96,6 +103,22 @@ def sites(db_session, clients):
     db_session.commit()
 
     return sites
+
+
+@pytest.fixture()
+def inverters(db_session, sites):
+    """Create some fake inverters"""
+    inverters = []
+    num_inverters = 3
+    for site in sites:
+        for j in range(num_inverters):
+            inverter = InverterSQL(site_uuid=site.site_uuid, client_id="test")
+            inverters.append(inverter)
+
+    db_session.add_all(inverters)
+    db_session.commit()
+
+    return inverters
 
 
 @pytest.fixture()

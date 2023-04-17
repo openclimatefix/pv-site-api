@@ -14,7 +14,7 @@ from typing import Any, Optional
 import sqlalchemy as sa
 import structlog
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
-from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteSQL
+from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, InverterSQL, SiteSQL
 from sqlalchemy.orm import Session, aliased
 
 from .pydantic_models import (
@@ -58,6 +58,12 @@ def _get_forecasts_for_horizon(
     )
 
     return list(session.execute(stmt))
+
+
+def _get_inverters_by_site(session: Session, site_uuid: str) -> list[Row]:
+    query = session.query(InverterSQL).filter(InverterSQL.site_uuid.is_(site_uuid))
+
+    return query.all()
 
 
 def _get_latest_forecast_by_sites(
