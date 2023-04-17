@@ -320,7 +320,7 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     """
     ### Gets a estimate of AC production under a clear sky
     """
-    clearsky_estimates = get_pv_estimate_clearsky_many_sites([site_uuid], session)
+    clearsky_estimates = get_pv_estimate_clearsky_many_sites(site_uuid, session)
     return clearsky_estimates[0]
 
 
