@@ -205,50 +205,10 @@ def get_generation_by_sites(
     return multiple_pv_actuals
 
 
-def get_clearsky_estimates_by_sites(session: Session, site_uuids: list[str]):
-    res = []
+def get_sites_by_uuids(session: Session, site_uuids: list[str]) -> list[PVSiteMetadata]:
     sites = session.query(SiteSQL).where(SiteSQL.site_uuid.in_(site_uuids)).all()
-    for site in sites:
-        loc = site.location.Location(site.latitude, site.longitude)
-
-        # Create DatetimeIndex over four days, with a frequency of 15 minutes.
-        # Starts from midnight yesterday.
-        times = pd.date_range(start=get_yesterday_midnight(), periods=384, freq="15min", tz="UTC")
-        clearsky = loc.get_clearsky(times)
-        solar_position = loc.get_solarposition(times=times)
-
-        # Using default tilt of 0 and orientation of 180 from defaults of PVSystem
-        tilt = site.tilt if site.tilt is not None else 0
-        orientation = site.orientation if site.orientation is not None else 180
-
-        irr = irradiance.get_total_irradiance(
-            surface_tilt=tilt,
-            surface_azimuth=orientation,
-            dni=clearsky["dni"],
-            ghi=clearsky["ghi"],
-            dhi=clearsky["dhi"],
-            solar_zenith=solar_position["apparent_zenith"],
-            solar_azimuth=solar_position["azimuth"],
-        )
-
-        # Value for "gamma_pdc" is set to the fixed temp. coeff. used in PVWatts V1
-        # @TODO: allow differing inverter and module capacities
-        # addressed in https://github.com/openclimatefix/pv-site-api/issues/54
-        pv_system = pvsystem.PVSystem(
-            surface_tilt=tilt,
-            surface_azimuth=orientation,
-            module_parameters={"pdc0": (1.5 * site.installed_capacity_kw), "gamma_pdc": -0.005},
-            inverter_parameters={"pdc0": site.installed_capacity_kw},
-        )
-        pac = irr.apply(
-            lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)),
-            axis=1,
-        )
-        pac = pac.reset_index()
-        pac = pac.rename(columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
-        pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
-        res.append({"clearsky_estimate": pac.to_dict("records")})
-    return res
+    pydantic_sites = [site_to_pydantic(site) for site in sites]
+    return pydantic_sites
 
 
 def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:

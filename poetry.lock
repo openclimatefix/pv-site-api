@@ -1083,24 +1083,20 @@ test = ["pytest", "pytest-cov", "pytest-mock", "pytest-remotedata", "pytest-reru
 
 [[package]]
 name = "pvsite-datamodel"
-version = "0.1.32"
+version = "0.1.25"
 description = "SDK for interacting with the PVSite database"
 category = "main"
 optional = false
-python-versions = "^3.10"
-files = []
-develop = false
+python-versions = ">=3.10,<4.0"
+files = [
+    {file = "pvsite_datamodel-0.1.25-py3-none-any.whl", hash = "sha256:1f886de10eb15eb23af8f798c58cc092869a8e16ded7203093ea4bed19cfd6ea"},
+    {file = "pvsite_datamodel-0.1.25.tar.gz", hash = "sha256:e520f4008e539413e7323343685474a01d0aaace44d2211a2cf87a8ed8cd456e"},
+]
 
 [package.dependencies]
-pandas = "^1.5.3"
-psycopg2-binary = "^2.9.5"
+pandas = ">=1.5.3,<2.0.0"
+psycopg2-binary = ">=2.9.5,<3.0.0"
 sqlalchemy = "1.4.46"
-
-[package.source]
-type = "git"
-url = "https://github.com/openclimatefix/pv-site-datamodel.git"
-reference = "enode-updates"
-resolved_reference = "83e91e390106e76637495de6baeb1e4afe337836"
 
 [[package]]
 name = "pydantic"
@@ -2022,4 +2018,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "e1c35562b90d762280fe10d5e3cccf6cf9caca172a610af18a3694f6bfc41369"
+content-hash = "b1473aaca2a1b486a5b25f858620e2a251dbb0dba1876266aeddc43f7699384b"
