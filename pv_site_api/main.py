@@ -30,6 +30,7 @@ from .fake import (
     make_fake_pv_generation,
     make_fake_site,
     make_fake_status,
+    make_fake_inverters
 )
 from .pydantic_models import (
     ClearskyEstimate,
@@ -360,22 +361,46 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     return res
 
 
-# @app.get("/inverters", response_model=Inverters)
-# def get_inverters(
-#     site_uuids: str,
-#     session: Session = Depends(get_session),
-# ):
-#     """
-#     ### Get the actual power generation for a list of sites.
-#     """
-#     site_uuids_list = site_uuids.split(",")
+@app.get("/inverters")
+def get_inverters(
+    session: Session = Depends(get_session),
+):  
+    if int(os.environ["FAKE"]):
+        return make_fake_inverters()
 
-#     if int(os.environ["FAKE"]):
-#         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
+    # client = ClientSQL(client_uuid=1, client_name="bob")
 
-#     start_utc = get_yesterday_midnight()
+    # site = SiteSQL(
+    #     client_uuid=client.client_uuid,
+    #     client_site_id="123",
+    #     client_site_name="bobby",
+    #     region="grainger",
+    #     dno="x",
+    #     gsp="idk",
+    #     orientation=50,
+    #     tilt=98,
+    #     latitude=45,
+    #     longitude=45,
+    #     capacity_kw=240,
+    #     ml_id=1,  # TODO remove this once https://github.com/openclimatefix/pvsite-datamodel/issues/27 is complete # noqa
+    # )
 
-#     return get_generation_by_sites(session, site_uuids=site_uuids_list, start_utc=start_utc)
+    # add site
+    # session.add(client)
+    # session.add(site)
+    # session.commit()
+
+    # print(session)
+
+    # client = session.query(ClientSQL).first()
+    # assert client is not None
+
+    # siteUUIDs = session.query(ClientSQL, SiteSQL).join(SiteSQL).filter(SiteSQL.client_uuid == ClientSQL.client_uuid)
+    # print(siteUUIDs)
+
+    # inverters = get_inverters_for_client(session=session, client_uuid=client.client_uuid)
+
+    return "hi"
 
 
 # get_status: get the status of the system

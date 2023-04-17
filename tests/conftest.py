@@ -11,6 +11,7 @@ from pvsite_datamodel.sqlmodels import (
     ForecastValueSQL,
     GenerationSQL,
     SiteSQL,
+    InverterSQL
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -87,6 +88,26 @@ def sites(db_session, clients):
     db_session.commit()
 
     return sites
+
+
+@pytest.fixture()
+def inverters(db_session, sites):
+    """Create some fake inverters"""
+    inverters = []
+    num_inverters = 3
+    for site in sites:
+        for j in range(num_inverters):
+            inverter = InverterSQL(
+                site_uuid=site.site_uuid,
+                inverter_id=j,
+                inverter_name=f"inverter_{j}",
+            )
+            inverters.append(inverter)
+
+    db_session.add_all(inverters)
+    db_session.commit()
+
+    return inverters
 
 
 @pytest.fixture()
