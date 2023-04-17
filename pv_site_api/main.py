@@ -334,12 +334,11 @@ def get_pv_estimate_clearsky_many_sites(
     """
 
     if is_fake():
-        fake_sites = make_fake_site()
-        site_uuids_list = [fake_sites.site_list[0].site_uuid]
+        sites = make_fake_site().site_list
     else:
         site_uuids_list = site_uuids.split(",")
+        sites = get_sites_by_uuids(session, site_uuids_list)
 
-    sites = get_sites_by_uuids(session, site_uuids_list)
     res = []
 
     for site in sites:
@@ -382,6 +381,7 @@ def get_pv_estimate_clearsky_many_sites(
         pac = pac.rename(columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
         pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
         res.append({"clearsky_estimate": pac.to_dict("records")})
+    
     return res
 
 
