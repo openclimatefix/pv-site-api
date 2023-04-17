@@ -374,7 +374,6 @@ def get_inverters(
     #     client_uuid=client.client_uuid,
     #     client_site_id="123",
     #     client_site_name="bobby",
-    #     region="grainger",
     #     dno="x",
     #     gsp="idk",
     #     orientation=50,
