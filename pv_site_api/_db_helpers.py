@@ -7,12 +7,12 @@ style.
 """
 
 import datetime as dt
-import logging
 import uuid
 from collections import defaultdict
 from typing import Any, Optional
 
 import sqlalchemy as sa
+import structlog
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteSQL
 from sqlalchemy.orm import Session, aliased
@@ -25,7 +25,7 @@ from .pydantic_models import (
     SiteForecastValues,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.stdlib.get_logger()
 
 
 # Sqlalchemy rows are tricky to type: we use this to make the code more readable.

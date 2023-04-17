@@ -12,10 +12,10 @@ def test_get_fake_status(client, fake):
     assert returned_status.message == "The API is up and running"
 
 
-def test_get_status(client):
+def test_get_status(client, statuses):
     response = client.get("/api_status")
     assert response.status_code == 200
 
     returned_status = PVSiteAPIStatus(**response.json())
-    assert returned_status.status == "ok"
-    assert returned_status.message == "The API is up and running"
+    assert returned_status.status == "my_status 1"
+    assert returned_status.message == "my message 1"

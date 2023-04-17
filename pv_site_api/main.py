@@ -1,5 +1,4 @@
 """Main API Routes"""
-import logging
 import os
 
 import pandas as pd
@@ -26,6 +25,7 @@ from ._db_helpers import (
     get_sites_by_uuids,
     site_to_pydantic,
 )
+from .cache import cache_response
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -72,6 +72,10 @@ def traces_sampler(sampling_context):
         return 0.05
 
 
+def is_fake():
+    return int(os.environ.get("FAKE", 0))
+
+
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN"),
     environment=os.getenv("ENVIRONMENT", "local"),
@@ -114,7 +118,7 @@ def get_sites(
     ### This route returns a list of the user's PV Sites with metadata for each site.
     """
 
-    if int(os.environ["FAKE"]):
+    if is_fake():
         return make_fake_site()
 
     sites = get_all_sites(session=session)
@@ -144,7 +148,7 @@ def post_pv_actual(
     Currently this route does not return anything.
     """
 
-    if int(os.environ["FAKE"]):
+    if is_fake():
         print(f"Got {pv_actual.dict()} for site {site_uuid}")
         print("Not doing anything with it (yet!)")
         return
@@ -176,7 +180,7 @@ def post_pv_actual(
 #
 #     """
 #
-#     if int(os.environ["FAKE"]):
+#     if is_fake():
 #         print(f"Successfully updated {site_info.dict()} for site {site_info.client_site_name}")
 #         print("Not doing anything with it (yet!)")
 #         return
@@ -191,7 +195,7 @@ def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_ses
 
     """
 
-    if int(os.environ["FAKE"]):
+    if is_fake():
         print(f"Successfully added {site_info.dict()} for site {site_info.client_site_name}")
         print("Not doing anything with it (yet!)")
         return
@@ -230,10 +234,11 @@ def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
     To test the route, you can input any number for the site_uuid (ex. 567)
     to generate a list of datetimes and actual kw generation for that site.
     """
-    return (get_pv_actual_many_sites(site_uuid, session))[0]
+    return (get_pv_actual_many_sites(site_uuids=site_uuid, session=session))[0]
 
 
 @app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
+@cache_response
 def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
@@ -243,7 +248,7 @@ def get_pv_actual_many_sites(
     """
     site_uuids_list = site_uuids.split(",")
 
-    if int(os.environ["FAKE"]):
+    if is_fake():
         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
 
     start_utc = get_yesterday_midnight()
@@ -266,7 +271,7 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     You can currently input any number for **site_uuid** (ex. 567),
     and the route returns a sample forecast.
     """
-    if int(os.environ.get("FAKE", 0)):
+    if is_fake():
         return make_fake_forecast(fake_site_uuid)
 
     site_exists = does_site_exist(session, site_uuid)
@@ -274,7 +279,7 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     if not site_exists:
         raise HTTPException(status_code=404)
 
-    forecasts = get_pv_forecast_many_sites(site_uuid, session)
+    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session)
 
     if len(forecasts) == 0:
         return JSONResponse(status_code=204, content="no data")
@@ -283,6 +288,7 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
 
 
 @app.get("/sites/pv_forecast")
+@cache_response
 def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
@@ -293,7 +299,7 @@ def get_pv_forecast_many_sites(
 
     logger.info(f"Getting forecasts for {site_uuids}")
 
-    if int(os.environ.get("FAKE", 0)):
+    if is_fake():
         return [make_fake_forecast(fake_site_uuid)]
 
     start_utc = get_yesterday_midnight()
@@ -309,6 +315,7 @@ def get_pv_forecast_many_sites(
 
 
 @app.get("/sites/{site_uuid}/clearsky_estimate", response_model=ClearskyEstimate)
+@cache_response
 def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_session)):
     """
     ### Gets a estimate of AC production under a clear sky
@@ -326,8 +333,9 @@ def get_pv_estimate_clearsky_many_sites(
     ### Gets a estimate of AC production under a clear sky for multiple sites.
     """
 
-    if int(os.environ["FAKE"]):
-        site_uuids_list = [make_fake_site().site_list[0].site_uuid]
+    if is_fake():
+        fake_sites = make_fake_site()
+        site_uuids_list = [fake_sites.site_list[0].site_uuid]
     else:
         site_uuids_list = site_uuids.split(",")
 
@@ -386,7 +394,7 @@ def get_status(session: Session = Depends(get_session)):
     make sure things are running smoothly.
     """
 
-    if os.environ["FAKE"]:
+    if is_fake():
         return make_fake_status()
 
     status = get_latest_status(session=session)
@@ -458,10 +466,3 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi
-
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
-        format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
-    )

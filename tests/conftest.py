@@ -2,6 +2,7 @@
 import os
 from datetime import datetime, timedelta
 
+import freezegun
 import pytest
 from fastapi.testclient import TestClient
 from pvsite_datamodel.sqlmodels import (
@@ -11,6 +12,7 @@ from pvsite_datamodel.sqlmodels import (
     ForecastValueSQL,
     GenerationSQL,
     SiteSQL,
+    StatusSQL,
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -18,6 +20,13 @@ from testcontainers.postgres import PostgresContainer
 
 from pv_site_api.main import app
 from pv_site_api.session import get_session
+
+
+@pytest.fixture
+def _now(autouse=True):
+    """Hard-code the time for all tests to make the tests less flaky."""
+    with freezegun.freeze_time(2020, 1, 1):
+        return datetime.utcnow()
 
 
 @pytest.fixture(scope="session")
@@ -112,13 +121,26 @@ def generations(db_session, sites):
 
 
 @pytest.fixture()
-def fake():
+def statuses(db_session):
+    all_statuses = [
+        StatusSQL(
+            status=f"my_status {i}",
+            message=f"my message {i}",
+        )
+        for i in range(2)
+    ]
+    db_session.add_all(all_statuses)
+    db_session.commit()
+
+    return all_statuses
+
+
+@pytest.fixture()
+def fake(monkeypatch):
     """Set up ENV VAR FAKE to 1"""
-    os.environ["FAKE"] = "1"
-
-    yield
-
-    os.environ["FAKE"] = "0"
+    with monkeypatch.context() as m:
+        m.setenv("FAKE", "1")
+        yield
 
 
 @pytest.fixture()
