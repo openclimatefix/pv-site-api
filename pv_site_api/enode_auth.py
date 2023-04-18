@@ -2,9 +2,6 @@ import os
 
 import httpx
 
-
-
-
 class EnodeAuth(httpx.Auth):
     def __init__(self, access_token):
         self.access_token = access_token
@@ -14,7 +11,7 @@ class EnodeAuth(httpx.Auth):
         request.headers["Authorization"] = f"Bearer {self.access_token}"
         response = yield request
 
-        if response.status_code == 404:
+        if response.status_code == 401:
             # The access token is no longer valid, refresh it
             token_response = yield self._build_refresh_request()
             self._update_access_token(token_response)
