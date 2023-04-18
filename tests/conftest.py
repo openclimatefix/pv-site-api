@@ -99,8 +99,7 @@ def inverters(db_session, sites):
         for j in range(num_inverters):
             inverter = InverterSQL(
                 site_uuid=site.site_uuid,
-                inverter_id=j,
-                inverter_name=f"inverter_{j}",
+                client_id="test"
             )
             inverters.append(inverter)
 
@@ -151,7 +150,8 @@ def forecast_values(db_session, sites):
     num_forecasts = 10
     num_values_per_forecast = 11
 
-    timestamps = [datetime.utcnow() - timedelta(minutes=10 * i) for i in range(num_forecasts)]
+    timestamps = [datetime.utcnow() - timedelta(minutes=10 * i)
+                  for i in range(num_forecasts)]
 
     # To make things trickier we make a second forecast at the same for one of the timestamps.
     timestamps = timestamps + timestamps[-1:]

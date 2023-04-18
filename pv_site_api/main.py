@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 import pv_site_api
 
 from ._db_helpers import (
+    _get_inverters_by_site,
     does_site_exist,
     get_forecasts_by_sites,
     get_generation_by_sites,
@@ -30,7 +31,7 @@ from .fake import (
     make_fake_pv_generation,
     make_fake_site,
     make_fake_status,
-    make_fake_inverters
+    make_fake_inverters,
 )
 from .pydantic_models import (
     ClearskyEstimate,
@@ -39,11 +40,15 @@ from .pydantic_models import (
     PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
-    Inverters
+    Inverters,
+    InverterValues,
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
 from .utils import get_yesterday_midnight
+import httpx
+import json
+import asyncio
 
 load_dotenv()
 
@@ -190,8 +195,7 @@ def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_ses
     """
 
     if int(os.environ["FAKE"]):
-        print(
-            f"Successfully added {site_info.dict()} for site {site_info.client_site_name}")
+        print(f"Successfully added {site_info.dict()} for site {site_info.client_site_name}")
         print("Not doing anything with it (yet!)")
         return
 
@@ -321,8 +325,7 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
 
     # Create DatetimeIndex over four days, with a frequency of 15 minutes.
     # Starts from midnight yesterday.
-    times = pd.date_range(start=get_yesterday_midnight(),
-                          periods=384, freq="15min", tz="UTC")
+    times = pd.date_range(start=get_yesterday_midnight(), periods=384, freq="15min", tz="UTC")
     clearsky = loc.get_clearsky(times)
     solar_position = loc.get_solarposition(times=times)
 
@@ -346,60 +349,65 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     pv_system = pvsystem.PVSystem(
         surface_tilt=tilt,
         surface_azimuth=orientation,
-        module_parameters={
-            "pdc0": (1.5 * site.installed_capacity_kw), "gamma_pdc": -0.005},
+        module_parameters={"pdc0": (1.5 * site.installed_capacity_kw), "gamma_pdc": -0.005},
         inverter_parameters={"pdc0": site.installed_capacity_kw},
     )
     pac = irr.apply(
         lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)), axis=1
     )
     pac = pac.reset_index()
-    pac = pac.rename(
-        columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
+    pac = pac.rename(columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
     pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
 
 
-@app.get("/inverters")
-def get_inverters(
-    session: Session = Depends(get_session),
-):  
+async def get_inverters_helper(session, inverter_ids):
     if int(os.environ["FAKE"]):
         return make_fake_inverters()
 
-    # client = ClientSQL(client_uuid=1, client_name="bob")
+    client = session.query(ClientSQL).first()
+    assert client is not None
 
-    # site = SiteSQL(
-    #     client_uuid=client.client_uuid,
-    #     client_site_id="123",
-    #     client_site_name="bobby",
-    #     dno="x",
-    #     gsp="idk",
-    #     orientation=50,
-    #     tilt=98,
-    #     latitude=45,
-    #     longitude=45,
-    #     capacity_kw=240,
-    #     ml_id=1,  # TODO remove this once https://github.com/openclimatefix/pvsite-datamodel/issues/27 is complete # noqa
-    # )
+    async with httpx.AsyncClient() as httpxClient:
+        headers = {"Enode-User-Id": client.client_uuid}
+        if not inverter_ids.length:
+            return None
+        inverters_raw = await asyncio.gather(
+            *[
+                httpxClient.get(
+                    f"https://enode-api.production.enode.io/inverters/{id}", headers=headers
+                )
+                for id in inverter_ids
+            ]
+        )
+        inverters = [InverterValues(**inverter_raw.json()) for inverter_raw in inverters_raw]
 
-    # add site
-    # session.add(client)
-    # session.add(site)
-    # session.commit()
+    return Inverters(inverters)
 
-    # print(session)
 
-    # client = session.query(ClientSQL).first()
-    # assert client is not None
+@app.get("/inverters")
+async def get_inverters(
+    session: Session = Depends(get_session),
+):
+    async with httpx.AsyncClient() as httpxClient:
+        headers = {"Enode-User-Id": client.client_uuid}
+        r = await httpxClient.get(
+            "https://enode-api.production.enode.io/inverters", headers=headers
+        ).json()
+        inverter_ids = [str(value) for value in r]
 
-    # siteUUIDs = session.query(ClientSQL, SiteSQL).join(SiteSQL).filter(SiteSQL.client_uuid == ClientSQL.client_uuid)
-    # print(siteUUIDs)
+    return get_inverters_helper(session, inverter_ids)
 
-    # inverters = get_inverters_for_client(session=session, client_uuid=client.client_uuid)
 
-    return "hi"
+@app.get("/sites/{site_uuid}/inverters")
+async def get_inverters(
+    site_uuid: str,
+    session: Session = Depends(get_session),
+):
+    inverter_ids = [inverter.inverter_uuid for inverter in _get_inverters_by_site(site_uuid)]
+
+    return get_inverters_helper(session, inverter_ids)
 
 
 # get_status: get the status of the system
