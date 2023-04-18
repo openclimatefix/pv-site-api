@@ -35,4 +35,3 @@ class EnodeAuth(httpx.Auth):
     def _update_access_token(self, response):
         response.read()
         self.access_token = response.json()["access_token"]
-        print(f"New access token: {self.access_token}")
