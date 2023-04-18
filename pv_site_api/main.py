@@ -1,7 +1,9 @@
 """Main API Routes"""
+import asyncio
 import logging
 import os
 
+import httpx
 import pandas as pd
 import sentry_sdk
 from dotenv import load_dotenv
@@ -28,27 +30,24 @@ from ._db_helpers import (
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
+    make_fake_inverters,
     make_fake_pv_generation,
     make_fake_site,
     make_fake_status,
-    make_fake_inverters,
 )
 from .pydantic_models import (
     ClearskyEstimate,
     Forecast,
+    Inverters,
+    InverterValues,
     MultiplePVActual,
     PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
-    Inverters,
-    InverterValues,
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
 from .utils import get_yesterday_midnight
-import httpx
-import json
-import asyncio
 
 load_dotenv()
 
@@ -390,6 +389,9 @@ async def get_inverters_helper(session, inverter_ids):
 async def get_inverters(
     session: Session = Depends(get_session),
 ):
+    client = session.query(ClientSQL).first()
+    assert client is not None
+
     async with httpx.AsyncClient() as httpxClient:
         headers = {"Enode-User-Id": client.client_uuid}
         r = await httpxClient.get(
@@ -401,7 +403,7 @@ async def get_inverters(
 
 
 @app.get("/sites/{site_uuid}/inverters")
-async def get_inverters(
+async def get_inverters_by_site(
     site_uuid: str,
     session: Session = Depends(get_session),
 ):

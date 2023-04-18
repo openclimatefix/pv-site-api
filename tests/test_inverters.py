@@ -10,6 +10,7 @@ def test_get_inverters_fake(client, fake):
     inverters = Inverters(**response.json())
     assert len(inverters.inverters) > 0
 
+
 # def test_get_inverters(db_session, client, forecast_values):
 #     response = client.get(f"/sites/{site_uuid}/clearsky_estimate")
 #     assert response.status_code == 200

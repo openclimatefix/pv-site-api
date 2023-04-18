@@ -10,8 +10,8 @@ from pvsite_datamodel.sqlmodels import (
     ForecastSQL,
     ForecastValueSQL,
     GenerationSQL,
+    InverterSQL,
     SiteSQL,
-    InverterSQL
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -97,10 +97,7 @@ def inverters(db_session, sites):
     num_inverters = 3
     for site in sites:
         for j in range(num_inverters):
-            inverter = InverterSQL(
-                site_uuid=site.site_uuid,
-                client_id="test"
-            )
+            inverter = InverterSQL(site_uuid=site.site_uuid, client_id="test")
             inverters.append(inverter)
 
     db_session.add_all(inverters)
@@ -150,8 +147,7 @@ def forecast_values(db_session, sites):
     num_forecasts = 10
     num_values_per_forecast = 11
 
-    timestamps = [datetime.utcnow() - timedelta(minutes=10 * i)
-                  for i in range(num_forecasts)]
+    timestamps = [datetime.utcnow() - timedelta(minutes=10 * i) for i in range(num_forecasts)]
 
     # To make things trickier we make a second forecast at the same for one of the timestamps.
     timestamps = timestamps + timestamps[-1:]

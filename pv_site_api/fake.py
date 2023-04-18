@@ -6,22 +6,23 @@ import pandas as pd
 
 from .pydantic_models import (
     Forecast,
+    InverterInformation,
+    InverterLocation,
+    InverterProductionState,
+    Inverters,
+    InverterValues,
     MultiplePVActual,
     PVActualValue,
     PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
     SiteForecastValues,
-    InverterValues,
-    Inverters,
-    InverterProductionState,
-    InverterLocation,
-    InverterInformation
 )
 from .utils import make_fake_intensity
 
 fake_site_uuid = "b97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 fake_client_uuid = "c97f68cd-50e0-49bb-a850-108d4a9f7b7e"
+
 
 def make_fake_inverters() -> Inverters:
     """Make fake inverters"""
@@ -32,27 +33,18 @@ def make_fake_inverters() -> Inverters:
         lastSeen="never",
         isReachable="false",
         productionState=InverterProductionState(
-            productionRate=0.1,
-            isProducing=False,
-            totalLifetimeProduction=0.5,
-            lastUpdated="never"
+            productionRate=0.1, isProducing=False, totalLifetimeProduction=0.5, lastUpdated="never"
         ),
         information=InverterInformation(
-            id="0",
-            brand="tesla",
-            model="x",
-            siteName="ocf",
-            installationDate="1-23-4567"
+            id="0", brand="tesla", model="x", siteName="ocf", installationDate="1-23-4567"
         ),
-        location=InverterLocation(
-            latitude=0.0,
-            longitude=0.1    
-        )
+        location=InverterLocation(latitude=0.0, longitude=0.1),
     )
     inverters_list = Inverters(
         inverters=[inverter],
     )
     return inverters_list
+
 
 def make_fake_site() -> PVSites:
     """Make a fake site"""
