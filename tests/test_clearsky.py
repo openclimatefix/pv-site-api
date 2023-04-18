@@ -29,7 +29,7 @@ def test_get_clearsky(db_session, client, sites):
     assert len(clearsky_estimate.clearsky_estimate) > 0
 
 
-def test_get_forecast_many_sites(db_session, client, sites):
+def test_get_clearsky_many_sites(db_session, client, sites):
     site_uuids = [str(s.site_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
 
