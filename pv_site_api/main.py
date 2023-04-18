@@ -322,7 +322,7 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     """
     site_exists = does_site_exist(session, site_uuid)
 
-    if not site_exists:
+    if not site_exists and not is_fake():
         raise HTTPException(status_code=404)
 
     clearsky_estimates = get_pv_estimate_clearsky_many_sites(site_uuid, session)
