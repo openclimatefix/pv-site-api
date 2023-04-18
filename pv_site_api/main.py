@@ -2,7 +2,6 @@
 import logging
 import os
 
-import httpx
 import pandas as pd
 import sentry_sdk
 from dotenv import load_dotenv
@@ -18,7 +17,6 @@ from pvsite_datamodel.write.generation import insert_generation_values
 from sqlalchemy.orm import Session
 
 import pv_site_api
-from pv_site_api.enode_auth import EnodeAuth
 
 from ._db_helpers import (
     does_site_exist,
@@ -95,9 +93,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Uncomment once environment variables are set for enode
-enode_client = httpx.Client(auth=EnodeAuth("abc"))
 
 # name the api
 # test that the routes are there on swagger
@@ -358,12 +353,6 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
-
-
-@app.get("/test_enode")
-def test_enode():
-    enode_client.get("https://enode-api.production.enode.io/random")
-
 
 # get_status: get the status of the system
 @app.get("/api_status", response_model=PVSiteAPIStatus)
