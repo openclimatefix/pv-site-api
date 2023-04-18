@@ -354,6 +354,7 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
 
+
 # get_status: get the status of the system
 @app.get("/api_status", response_model=PVSiteAPIStatus)
 def get_status(session: Session = Depends(get_session)):
