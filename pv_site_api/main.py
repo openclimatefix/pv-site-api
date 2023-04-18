@@ -2,9 +2,9 @@
 import logging
 import os
 
+import httpx
 import pandas as pd
 import sentry_sdk
-import httpx
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -359,9 +359,11 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
 
-@app.get("/test_enode") 
+
+@app.get("/test_enode")
 def test_enode():
-    enode_client.get("https://enode-api.production.enode.io/random"); 
+    enode_client.get("https://enode-api.production.enode.io/random")
+
 
 # get_status: get the status of the system
 @app.get("/api_status", response_model=PVSiteAPIStatus)

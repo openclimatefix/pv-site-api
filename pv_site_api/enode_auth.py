@@ -2,6 +2,7 @@ import os
 
 import httpx
 
+
 class EnodeAuth(httpx.Auth):
     def __init__(self, access_token):
         self.access_token = access_token
@@ -11,7 +12,7 @@ class EnodeAuth(httpx.Auth):
         request.headers["Authorization"] = f"Bearer {self.access_token}"
         response = yield request
 
-        if response.status_code == 401:
+        if response.status_code == 404:
             # The access token is no longer valid, refresh it
             token_response = yield self._build_refresh_request()
             self._update_access_token(token_response)
@@ -20,18 +21,17 @@ class EnodeAuth(httpx.Auth):
             # Resend the request with the new access token
             response = yield request
         return response
-    
-    
+
     def _build_refresh_request(self):
         # TODO: Add environment variables
         client_id = os.getenv("CLIENT_ID")
         client_secret = os.getenv("CLIENT_SECRET")
-        basic_auth = httpx.BasicAuth(client_id, client_secret); 
+        basic_auth = httpx.BasicAuth(client_id, client_secret)
         url = os.getenv("ENODE_TOKEN_URL")
-        data = {"grant_type": "client_credentials"} 
+        data = {"grant_type": "client_credentials"}
         request = next(basic_auth.auth_flow(httpx.Request("POST", url, data=data)))
         return request
-    
+
     def _update_access_token(self, response):
         response.read()
         self.access_token = response.json()["access_token"]
