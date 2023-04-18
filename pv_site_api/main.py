@@ -351,8 +351,8 @@ def get_pv_estimate_clearsky_many_sites(
         solar_position = loc.get_solarposition(times=times)
 
         # Using default tilt of 0 and orientation of 180 from defaults of PVSystem
-        tilt = site.tilt if site.tilt is not None else 0
-        orientation = site.orientation if site.orientation is not None else 180
+        tilt = site.tilt or 0
+        orientation = site.orientation or 180
 
         irr = irradiance.get_total_irradiance(
             surface_tilt=tilt,
