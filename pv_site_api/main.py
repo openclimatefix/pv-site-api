@@ -372,6 +372,7 @@ async def get_inverters_helper(session, inverter_ids):
         headers = {"Enode-User-Id": client.client_uuid}
         if not inverter_ids.length:
             return None
+
         inverters_raw = await asyncio.gather(
             *[
                 httpxClient.get(
