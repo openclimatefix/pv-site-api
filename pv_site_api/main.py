@@ -399,7 +399,7 @@ async def get_inverters(
         ).json()
         inverter_ids = [str(value) for value in r]
 
-    return get_inverters_helper(session, inverter_ids)
+    return await get_inverters_helper(session, inverter_ids)
 
 
 @app.get("/sites/{site_uuid}/inverters")
