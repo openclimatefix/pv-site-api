@@ -1,6 +1,6 @@
 def test_get_enode_link_fake(client, fake):
     params = {"redirect_uri": "https://example.org"}
-    response = client.get(f"/enode/link", params=params)
+    response = client.get("/enode/link", params=params)
     assert response.status_code == 200
     assert len(response.json()) > 0
 
