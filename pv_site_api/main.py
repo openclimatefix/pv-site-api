@@ -409,7 +409,7 @@ async def get_inverters_by_site(
 ):
     inverter_ids = [inverter.inverter_uuid for inverter in _get_inverters_by_site(site_uuid)]
 
-    return get_inverters_helper(session, inverter_ids)
+    return await get_inverters_helper(session, inverter_ids)
 
 
 # get_status: get the status of the system
