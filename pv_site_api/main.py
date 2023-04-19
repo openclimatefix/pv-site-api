@@ -351,7 +351,7 @@ def get_pv_estimate_clearsky(
         site_exists = does_site_exist(session, site_uuid)
         if not site_exists:
             raise HTTPException(status_code=404)
-    
+
     clearsky_estimates = get_pv_estimate_clearsky_many_sites(site_uuid, session)
     return clearsky_estimates[0]
 
