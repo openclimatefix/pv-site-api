@@ -66,6 +66,7 @@ def clients(db_session):
 
 @pytest.fixture
 def non_mocked_hosts() -> list:
+    """Prevent TestClient fixture from being mocked"""
     return ["testserver"]
 
 
