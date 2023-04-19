@@ -64,6 +64,11 @@ def clients(db_session):
     return clients
 
 
+@pytest.fixture
+def non_mocked_hosts() -> list:
+    return ["testserver"]
+
+
 @pytest.fixture()
 def sites(db_session, clients):
     """Create some fake sites"""

@@ -2,6 +2,7 @@
 import logging
 import os
 
+import httpx
 import pandas as pd
 import sentry_sdk
 from dotenv import load_dotenv
@@ -26,6 +27,7 @@ from ._db_helpers import (
 )
 from .fake import (
     fake_site_uuid,
+    make_fake_enode_link,
     make_fake_forecast,
     make_fake_pv_generation,
     make_fake_site,
@@ -353,6 +355,26 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
+
+
+@app.get("/enode/link")
+def get_enode_link(redirect_uri: str, session: Session = Depends(get_session)):
+    """
+    ### Returns a URL from Enode that starts a user's Enode link flow.
+    """
+    if int(os.environ["FAKE"]):
+        return make_fake_enode_link()
+
+    client = session.query(ClientSQL).first()
+    assert client is not None
+
+    with httpx.Client() as httpx_client:
+        data = {"vendorType": "inverter", "redirectUri": redirect_uri}
+        res = httpx_client.post(
+            f"https://enode-api.production.enode.io/users/{client.client_uuid}/link", data=data
+        ).json()
+
+    return res["linkUrl"]
 
 
 # get_status: get the status of the system
