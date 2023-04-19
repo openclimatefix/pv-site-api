@@ -1,8 +1,9 @@
 def test_get_enode_link_fake(client, fake):
     params = {"redirect_uri": "https://example.org"}
-    response = client.get("/enode/link", params=params)
-    assert response.status_code == 200
-    assert len(response.json()) > 0
+    response = client.get("/enode/link", params=params, follow_redirects=False)
+
+    assert response.status_code == 307
+    assert len(response.headers["location"]) > 0
 
 
 def test_get_enode_link(client, clients, httpx_mock):
@@ -14,7 +15,11 @@ def test_get_enode_link(client, clients, httpx_mock):
     )
 
     params = {"redirect_uri": "https://example.org"}
-    response = client.get("/enode/link", params=params)
+    response = client.get(
+        "/enode/link",
+        params=params,
+        follow_redirects=False,
+    )
 
-    assert response.status_code == 200
-    assert response.json() == test_enode_link_uri
+    assert response.status_code == 307
+    assert response.headers["location"] == test_enode_link_uri

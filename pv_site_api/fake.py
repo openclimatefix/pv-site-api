@@ -88,6 +88,6 @@ def make_fake_status() -> PVSiteAPIStatus:
     return pv_api_status
 
 
-def make_fake_enode_link() -> str:
+def make_fake_enode_link_url() -> str:
     """Make fake Enode link URL"""
     return "https://enode.com"
