@@ -1,7 +1,8 @@
 """ Test for main app """
 
-from pv_site_api.pydantic_models import Inverters
 import httpx
+
+from pv_site_api.pydantic_models import Inverters
 
 
 def test_get_inverters_fake(client, fake):

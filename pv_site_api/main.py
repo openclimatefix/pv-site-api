@@ -44,7 +44,7 @@ from .pydantic_models import (
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
-from .utils import get_yesterday_midnight, get_inverters_list
+from .utils import get_inverters_list, get_yesterday_midnight
 
 load_dotenv()
 

@@ -1,15 +1,13 @@
 """ make fake intensity"""
-import math
-import httpx
 import asyncio
+import math
 from datetime import datetime, timedelta, timezone
 from typing import List
+
+import httpx
 from pvsite_datamodel.sqlmodels import ClientSQL
 
-from .pydantic_models import (
-    Inverters,
-    InverterValues,
-)
+from .pydantic_models import Inverters, InverterValues
 
 TOTAL_MINUTES_IN_ONE_DAY = 24 * 60
 
