@@ -357,6 +357,7 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
 
+
 @app.get("/inverters")
 async def get_inverters(
     session: Session = Depends(get_session),

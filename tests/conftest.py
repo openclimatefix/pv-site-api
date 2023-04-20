@@ -25,6 +25,7 @@ from pv_site_api.session import get_session
 def non_mocked_hosts():
     return ["testserver"]
 
+
 @pytest.fixture(scope="session")
 def engine():
     """Make database engine"""

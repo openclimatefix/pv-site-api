@@ -14,7 +14,7 @@ def test_get_inverters_fake(client, fake):
 
 def test_get_inverters(httpx_mock):
     httpx_mock.add_response(url="https://enode-api.production.enode.io/inverters")
-    
+
     with httpx.Client() as client:
         response = client.get("https://enode-api.production.enode.io/inverters")
     assert response.status_code == 200

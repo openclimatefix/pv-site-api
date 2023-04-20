@@ -13,6 +13,7 @@ from .pydantic_models import (
 
 TOTAL_MINUTES_IN_ONE_DAY = 24 * 60
 
+
 async def get_inverters_list(session, inverter_ids):
     client = session.query(ClientSQL).first()
     assert client is not None
@@ -27,10 +28,11 @@ async def get_inverters_list(session, inverter_ids):
                 for id in inverter_ids
             ]
         )
-    
+
     inverters = [InverterValues(**inverter_raw.json()) for inverter_raw in inverters_raw]
 
     return Inverters(inverters)
+
 
 def make_fake_intensity(datetime_utc: datetime) -> float:
     """
