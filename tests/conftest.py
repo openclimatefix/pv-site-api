@@ -21,8 +21,8 @@ from pv_site_api.main import app
 from pv_site_api.session import get_session
 
 
-@pytest.fixture
-def non_mocked_hosts() -> list:
+@pytest.fixture()
+def non_mocked_hosts():
     return ["testserver"]
 
 @pytest.fixture(scope="session")
