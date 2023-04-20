@@ -27,18 +27,18 @@ fake_client_uuid = "c97f68cd-50e0-49bb-a850-108d4a9f7b7e"
 def make_fake_inverters() -> Inverters:
     """Make fake inverters"""
     inverter = InverterValues(
-        id="0",
-        vendor="Test",
-        chargingLocationId="0",
-        lastSeen="never",
-        isReachable="false",
+        id="string",
+        vendor="EMA",
+        chargingLocationId="8d90101b-3f2f-462a-bbb4-1ed320d33bbe",
+        lastSeen="2020-04-07T17:04:26Z",
+        isReachable=True,
         productionState=InverterProductionState(
-            productionRate=0.1, isProducing=False, totalLifetimeProduction=0.5, lastUpdated="never"
+            productionRate=0, isProducing=True, totalLifetimeProduction=100152.56, lastUpdated="2020-04-07T17:04:26Z"
         ),
         information=InverterInformation(
-            id="0", brand="tesla", model="x", siteName="ocf", installationDate="1-23-4567"
+            id="string", brand="EMA", model="Sunny Boy", siteName="Sunny Plant", installationDate="2020-04-07T17:04:26Z"
         ),
-        location=InverterLocation(latitude=0.0, longitude=0.1),
+        location=InverterLocation(latitude=10.7197486, longitude=59.9173985),
     )
     inverters_list = Inverters(
         inverters=[inverter],

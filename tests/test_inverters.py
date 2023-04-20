@@ -1,6 +1,7 @@
 """ Test for main app """
 
 from pv_site_api.pydantic_models import Inverters
+import httpx
 
 
 def test_get_inverters_fake(client, fake):
@@ -11,9 +12,9 @@ def test_get_inverters_fake(client, fake):
     assert len(inverters.inverters) > 0
 
 
-# def test_get_inverters(db_session, client, forecast_values):
-#     response = client.get(f"/sites/{site_uuid}/clearsky_estimate")
-#     assert response.status_code == 200
-
-#     clearsky_estimate = ClearskyEstimate(**response.json())
-#     assert len(clearsky_estimate.clearsky_estimate) > 0
+def test_get_inverters(httpx_mock):
+    httpx_mock.add_response(url="https://enode-api.production.enode.io/inverters")
+    
+    with httpx.Client() as client:
+        response = client.get("https://enode-api.production.enode.io/inverters")
+    assert response.status_code == 200

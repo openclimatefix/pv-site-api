@@ -158,7 +158,7 @@ class InverterValues(BaseModel):
     lastSeen: str = Field(
         ..., description="The last time the solar inverter was successfully communicated with"
     )
-    isReachable: str = Field(
+    isReachable: bool = Field(
         ...,
         description="Whether live data from the solar inverter is currently reachable from Enode.",
     )

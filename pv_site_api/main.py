@@ -1,5 +1,4 @@
 """Main API Routes"""
-import asyncio
 import logging
 import os
 
@@ -38,8 +37,6 @@ from .fake import (
 from .pydantic_models import (
     ClearskyEstimate,
     Forecast,
-    Inverters,
-    InverterValues,
     MultiplePVActual,
     PVSiteAPIStatus,
     PVSiteMetadata,
@@ -47,7 +44,7 @@ from .pydantic_models import (
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
-from .utils import get_yesterday_midnight
+from .utils import get_yesterday_midnight, get_inverters_list
 
 load_dotenv()
 
@@ -360,36 +357,13 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
 
-
-async def get_inverters_helper(session, inverter_ids):
-    if int(os.environ["FAKE"]):
-        return make_fake_inverters()
-
-    client = session.query(ClientSQL).first()
-    assert client is not None
-
-    async with httpx.AsyncClient() as httpxClient:
-        headers = {"Enode-User-Id": client.client_uuid}
-        if not inverter_ids.length:
-            return None
-
-        inverters_raw = await asyncio.gather(
-            *[
-                httpxClient.get(
-                    f"https://enode-api.production.enode.io/inverters/{id}", headers=headers
-                )
-                for id in inverter_ids
-            ]
-        )
-        inverters = [InverterValues(**inverter_raw.json()) for inverter_raw in inverters_raw]
-
-    return Inverters(inverters)
-
-
 @app.get("/inverters")
 async def get_inverters(
     session: Session = Depends(get_session),
 ):
+    if int(os.environ["FAKE"]):
+        return make_fake_inverters()
+
     client = session.query(ClientSQL).first()
     assert client is not None
 
@@ -400,7 +374,7 @@ async def get_inverters(
         ).json()
         inverter_ids = [str(value) for value in r]
 
-    return await get_inverters_helper(session, inverter_ids)
+    return await get_inverters_list(session, inverter_ids)
 
 
 @app.get("/sites/{site_uuid}/inverters")
@@ -408,9 +382,12 @@ async def get_inverters_by_site(
     site_uuid: str,
     session: Session = Depends(get_session),
 ):
+    if int(os.environ["FAKE"]):
+        return make_fake_inverters()
+
     inverter_ids = [inverter.inverter_uuid for inverter in _get_inverters_by_site(site_uuid)]
 
-    return await get_inverters_helper(session, inverter_ids)
+    return await get_inverters_list(session, inverter_ids)
 
 
 # get_status: get the status of the system
