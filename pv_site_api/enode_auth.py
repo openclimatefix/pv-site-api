@@ -4,13 +4,15 @@ import httpx
 
 
 class EnodeAuth(httpx.Auth):
-    def __init__(self, client_id: str, client_secret: str,  enode_token_url: str, access_token: Optional[str] = None):
+    def __init__(
+        self, client_id: str, client_secret: str, token_url: str, access_token: Optional[str] = None
+    ):
         self._client_id = client_id
         self._client_secret = client_secret
-        self._enode_token_url = enode_token_url
+        self._token_url = token_url
         self._access_token = access_token
-        
-    def auth_flow(self, request):
+
+    def auth_flow(self, request: httpx.Request):
         # Add the Authorization header to the request using the current access token
         request.headers["Authorization"] = f"Bearer {self.access_token}"
         response = yield request
@@ -29,8 +31,8 @@ class EnodeAuth(httpx.Auth):
         basic_auth = httpx.BasicAuth(self._client_id, self._client_secret)
 
         data = {"grant_type": "client_credentials"}
-        request = next(basic_auth.auth_flow(httpx.Request("POST", self._enode_token_url, data=data)))
-        return request  
+        request = next(basic_auth.auth_flow(httpx.Request("POST", self._token_url, data=data)))
+        return request
 
     def _update_access_token(self, response):
         response.read()
