@@ -204,6 +204,12 @@ def get_generation_by_sites(
     return multiple_pv_actuals
 
 
+def get_sites_by_uuids(session: Session, site_uuids: list[str]) -> list[PVSiteMetadata]:
+    sites = session.query(SiteSQL).where(SiteSQL.site_uuid.in_(site_uuids)).all()
+    pydantic_sites = [site_to_pydantic(site) for site in sites]
+    return pydantic_sites
+
+
 def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
     """Converts a SiteSQL object into a PVSiteMetadata object."""
     pv_site = PVSiteMetadata(

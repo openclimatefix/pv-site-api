@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, JSONResponse
 from pvlib import irradiance, location, pvsystem
-from pvsite_datamodel.read.site import get_all_sites, get_site_by_uuid
+from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
@@ -22,6 +22,7 @@ from ._db_helpers import (
     does_site_exist,
     get_forecasts_by_sites,
     get_generation_by_sites,
+    get_sites_by_uuids,
     site_to_pydantic,
 )
 from .auth import Auth
@@ -346,53 +347,73 @@ def get_pv_estimate_clearsky(
     """
     ### Gets a estimate of AC production under a clear sky
     """
-    if is_fake():
-        fake_sites = make_fake_site()
-        site = fake_sites.site_list[0]
-    else:
+    if not is_fake():
         site_exists = does_site_exist(session, site_uuid)
         if not site_exists:
             raise HTTPException(status_code=404)
-        site = site_to_pydantic(get_site_by_uuid(session, site_uuid))
 
-    loc = location.Location(site.latitude, site.longitude)
+    clearsky_estimates = get_pv_estimate_clearsky_many_sites(site_uuid, session)
+    return clearsky_estimates[0]
 
-    # Create DatetimeIndex over four days, with a frequency of 15 minutes.
-    # Starts from midnight yesterday.
-    times = pd.date_range(start=get_yesterday_midnight(), periods=384, freq="15min", tz="UTC")
-    clearsky = loc.get_clearsky(times)
-    solar_position = loc.get_solarposition(times=times)
 
-    # Using default tilt of 0 and orientation of 180 from defaults of PVSystem
-    tilt = site.tilt if site.tilt is not None else 0
-    orientation = site.orientation if site.orientation is not None else 180
+@app.get("/sites/clearsky_estimate", response_model=list[ClearskyEstimate])
+def get_pv_estimate_clearsky_many_sites(
+    site_uuids: str,
+    session: Session = Depends(get_session),
+):
+    """
+    ### Gets a estimate of AC production under a clear sky for multiple sites.
+    """
 
-    irr = irradiance.get_total_irradiance(
-        surface_tilt=tilt,
-        surface_azimuth=orientation,
-        dni=clearsky["dni"],
-        ghi=clearsky["ghi"],
-        dhi=clearsky["dhi"],
-        solar_zenith=solar_position["apparent_zenith"],
-        solar_azimuth=solar_position["azimuth"],
-    )
+    if is_fake():
+        sites = make_fake_site().site_list
+    else:
+        site_uuids_list = site_uuids.split(",")
+        sites = get_sites_by_uuids(session, site_uuids_list)
 
-    # Value for "gamma_pdc" is set to the fixed temp. coeff. used in PVWatts V1
-    # @TODO: allow differing inverter and module capacities
-    # addressed in https://github.com/openclimatefix/pv-site-api/issues/54
-    pv_system = pvsystem.PVSystem(
-        surface_tilt=tilt,
-        surface_azimuth=orientation,
-        module_parameters={"pdc0": (1.5 * site.installed_capacity_kw), "gamma_pdc": -0.005},
-        inverter_parameters={"pdc0": site.installed_capacity_kw},
-    )
-    pac = irr.apply(
-        lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)), axis=1
-    )
-    pac = pac.reset_index()
-    pac = pac.rename(columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
-    pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
-    res = {"clearsky_estimate": pac.to_dict("records")}
+    res = []
+
+    for site in sites:
+        loc = location.Location(site.latitude, site.longitude)
+
+        # Create DatetimeIndex over four days, with a frequency of 15 minutes.
+        # Starts from midnight yesterday.
+        times = pd.date_range(start=get_yesterday_midnight(), periods=384, freq="15min", tz="UTC")
+        clearsky = loc.get_clearsky(times)
+        solar_position = loc.get_solarposition(times=times)
+
+        # Using default tilt of 0 and orientation of 180 from defaults of PVSystem
+        tilt = site.tilt or 0
+        orientation = site.orientation or 180
+
+        irr = irradiance.get_total_irradiance(
+            surface_tilt=tilt,
+            surface_azimuth=orientation,
+            dni=clearsky["dni"],
+            ghi=clearsky["ghi"],
+            dhi=clearsky["dhi"],
+            solar_zenith=solar_position["apparent_zenith"],
+            solar_azimuth=solar_position["azimuth"],
+        )
+
+        # Value for "gamma_pdc" is set to the fixed temp. coeff. used in PVWatts V1
+        # @TODO: allow differing inverter and module capacities
+        # addressed in https://github.com/openclimatefix/pv-site-api/issues/54
+        pv_system = pvsystem.PVSystem(
+            surface_tilt=tilt,
+            surface_azimuth=orientation,
+            module_parameters={"pdc0": (1.5 * site.installed_capacity_kw), "gamma_pdc": -0.005},
+            inverter_parameters={"pdc0": site.installed_capacity_kw},
+        )
+        pac = irr.apply(
+            lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)),
+            axis=1,
+        )
+        pac = pac.reset_index()
+        pac = pac.rename(columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
+        pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
+        res.append({"clearsky_estimate": pac.to_dict("records")})
+
     return res
 
 
