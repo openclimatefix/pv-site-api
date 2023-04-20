@@ -33,10 +33,17 @@ def make_fake_inverters() -> Inverters:
         lastSeen="2020-04-07T17:04:26Z",
         isReachable=True,
         productionState=InverterProductionState(
-            productionRate=0, isProducing=True, totalLifetimeProduction=100152.56, lastUpdated="2020-04-07T17:04:26Z"
+            productionRate=0, 
+            isProducing=True, 
+            totalLifetimeProduction=100152.56, 
+            lastUpdated="2020-04-07T17:04:26Z"
         ),
         information=InverterInformation(
-            id="string", brand="EMA", model="Sunny Boy", siteName="Sunny Plant", installationDate="2020-04-07T17:04:26Z"
+            id="string", 
+            brand="EMA", 
+            model="Sunny Boy", 
+            siteName="Sunny Plant", 
+            installationDate="2020-04-07T17:04:26Z"
         ),
         location=InverterLocation(latitude=10.7197486, longitude=59.9173985),
     )
