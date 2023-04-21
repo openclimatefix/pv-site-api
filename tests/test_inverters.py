@@ -1,7 +1,5 @@
 """ Test for main app """
 
-import httpx
-
 from pv_site_api.pydantic_models import (
     Inverters,
 )
