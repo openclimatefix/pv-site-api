@@ -17,7 +17,7 @@ async def get_inverters_list(session, inverter_ids):
     assert client is not None
 
     async with httpx.AsyncClient() as httpxClient:
-        headers = {"Enode-User-Id": client.client_uuid}
+        headers = {"Enode-User-Id": str(client.client_uuid)}
         inverters_raw = await asyncio.gather(
             *[
                 httpxClient.get(
@@ -29,7 +29,7 @@ async def get_inverters_list(session, inverter_ids):
 
     inverters = [InverterValues(**inverter_raw.json()) for inverter_raw in inverters_raw]
 
-    return Inverters(inverters)
+    return Inverters(inverters=inverters)
 
 
 def make_fake_intensity(datetime_utc: datetime) -> float:

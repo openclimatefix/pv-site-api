@@ -369,10 +369,10 @@ async def get_inverters(
     assert client is not None
 
     async with httpx.AsyncClient() as httpxClient:
-        headers = {"Enode-User-Id": client.client_uuid}
-        r = await httpxClient.get(
+        headers = {"Enode-User-Id": str(client.client_uuid)}
+        r = (await httpxClient.get(
             "https://enode-api.production.enode.io/inverters", headers=headers
-        ).json()
+        )).json()
         inverter_ids = [str(value) for value in r]
 
     return await get_inverters_list(session, inverter_ids)
