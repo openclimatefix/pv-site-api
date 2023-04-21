@@ -388,7 +388,7 @@ async def get_inverters_by_site(
     if int(os.environ["FAKE"]):
         return make_fake_inverters()
 
-    inverter_ids = [inverter.inverter_uuid for inverter in _get_inverters_by_site(site_uuid)]
+    inverter_ids = [inverter.client_id for inverter in _get_inverters_by_site(session, site_uuid)]
 
     return await get_inverters_list(session, inverter_ids)
 

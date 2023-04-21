@@ -56,7 +56,7 @@ def _get_forecasts_for_horizon(
 
 
 def _get_inverters_by_site(session: Session, site_uuid: str) -> list[Row]:
-    query = session.query(InverterSQL).filter(InverterSQL.site_uuid.is_(site_uuid))
+    query = session.query(InverterSQL).filter(InverterSQL.site_uuid == site_uuid)
 
     return query.all()
 

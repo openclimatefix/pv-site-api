@@ -114,12 +114,12 @@ class ClearskyEstimate(BaseModel):
 class InverterProductionState(BaseModel):
     """Production State data for an inverter"""
 
-    productionRate: float = Field(..., description="The current production rate in kW")
-    isProducing: bool = Field(
+    productionRate: Optional[float] = Field(..., description="The current production rate in kW")
+    isProducing: Optional[bool] = Field(
         ..., description="Whether the solar inverter is actively producing energy or not"
     )
-    totalLifetimeProduction: float = Field(..., description="The total lifetime production in kWh")
-    lastUpdated: str = Field(
+    totalLifetimeProduction: Optional[float] = Field(..., description="The total lifetime production in kWh")
+    lastUpdated: Optional[str] = Field(
         ..., description="ISO8601 UTC timestamp of last received production state update"
     )
 
@@ -140,8 +140,8 @@ class InverterInformation(BaseModel):
 class InverterLocation(BaseModel):
     """ "Longitude and Latitude of inverter"""
 
-    longitude: float = Field(..., description="Longitude in degrees")
-    latitude: float = Field(..., description="Latitude in degrees")
+    longitude: Optional[float] = Field(..., description="Longitude in degrees")
+    latitude: Optional[float] = Field(..., description="Latitude in degrees")
 
 
 class InverterValues(BaseModel):
@@ -151,7 +151,7 @@ class InverterValues(BaseModel):
     vendor: str = Field(
         ..., description="One of EMA ENPHASE FRONIUS GOODWE GROWATT HUAWEI SMA SOLAREDGE SOLIS"
     )
-    chargingLocationId: str = Field(
+    chargingLocationId: Optional[str] = Field(
         ...,
         description="ID of the charging location the solar inverter is currently positioned at.",
     )
