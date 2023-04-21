@@ -2,6 +2,7 @@
 import logging
 import os
 
+import httpx
 import pandas as pd
 import sentry_sdk
 from dotenv import load_dotenv
@@ -19,6 +20,7 @@ from sqlalchemy.orm import Session
 import pv_site_api
 
 from ._db_helpers import (
+    _get_inverters_by_site,
     does_site_exist,
     get_forecasts_by_sites,
     get_generation_by_sites,
@@ -27,6 +29,7 @@ from ._db_helpers import (
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
+    make_fake_inverters,
     make_fake_pv_generation,
     make_fake_site,
     make_fake_status,
@@ -41,7 +44,7 @@ from .pydantic_models import (
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
-from .utils import get_yesterday_midnight
+from .utils import get_inverters_list, get_yesterday_midnight
 
 load_dotenv()
 
@@ -353,6 +356,41 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
+
+
+@app.get("/inverters")
+async def get_inverters(
+    session: Session = Depends(get_session),
+):
+    if int(os.environ["FAKE"]):
+        return make_fake_inverters()
+
+    client = session.query(ClientSQL).first()
+    assert client is not None
+
+    async with httpx.AsyncClient() as httpxClient:
+        headers = {"Enode-User-Id": str(client.client_uuid)}
+        r = (
+            await httpxClient.get(
+                "https://enode-api.production.enode.io/inverters", headers=headers
+            )
+        ).json()
+        inverter_ids = [str(value) for value in r]
+
+    return await get_inverters_list(session, inverter_ids)
+
+
+@app.get("/sites/{site_uuid}/inverters")
+async def get_inverters_by_site(
+    site_uuid: str,
+    session: Session = Depends(get_session),
+):
+    if int(os.environ["FAKE"]):
+        return make_fake_inverters()
+
+    inverter_ids = [inverter.client_id for inverter in _get_inverters_by_site(session, site_uuid)]
+
+    return await get_inverters_list(session, inverter_ids)
 
 
 # get_status: get the status of the system

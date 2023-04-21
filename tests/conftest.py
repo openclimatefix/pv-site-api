@@ -10,6 +10,7 @@ from pvsite_datamodel.sqlmodels import (
     ForecastSQL,
     ForecastValueSQL,
     GenerationSQL,
+    InverterSQL,
     SiteSQL,
 )
 from sqlalchemy import create_engine
@@ -18,6 +19,11 @@ from testcontainers.postgres import PostgresContainer
 
 from pv_site_api.main import app
 from pv_site_api.session import get_session
+
+
+@pytest.fixture()
+def non_mocked_hosts():
+    return ["testserver"]
 
 
 @pytest.fixture(scope="session")
@@ -87,6 +93,21 @@ def sites(db_session, clients):
     db_session.commit()
 
     return sites
+
+
+@pytest.fixture()
+def inverters(db_session, sites):
+    """Create some fake inverters for site 0"""
+    inverters = []
+    num_inverters = 3
+    for j in range(num_inverters):
+        inverter = InverterSQL(site_uuid=sites[0].site_uuid, client_id=f"id{j+1}")
+        inverters.append(inverter)
+
+    db_session.add_all(inverters)
+    db_session.commit()
+
+    return inverters
 
 
 @pytest.fixture()

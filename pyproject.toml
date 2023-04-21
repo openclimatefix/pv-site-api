@@ -14,7 +14,7 @@ psycopg2-binary = "^2.9.5"
 sqlalchemy = "^1.4.46"
 pvsite-datamodel = "^0.1.33"
 fastapi = "^0.92.0"
-httpx = "^0.23.3"
+httpx = "^0.24.0"
 sentry-sdk = "^1.16.0"
 pvlib = "^0.9.5"
 
@@ -26,6 +26,7 @@ pytest = "^7.2.1"
 pytest-cov = "^4.0.0"
 testcontainers-postgres = "^0.0.1rc1"
 ipython = "^8.11.0"
+pytest-httpx = "^0.22.0"
 
 [build-system]
 requires = ["poetry-core"]
