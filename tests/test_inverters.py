@@ -2,6 +2,7 @@
 
 from pv_site_api.pydantic_models import Inverters
 
+
 def add_response(id, httpx_mock):
     httpx_mock.add_response(
         url=f"https://enode-api.production.enode.io/inverters/{id}",
@@ -30,10 +31,10 @@ def add_response(id, httpx_mock):
 
 
 def test_get_inverters_from_site(client, sites, inverters, httpx_mock):
-    add_response('id1', httpx_mock)
-    add_response('id2', httpx_mock)
-    add_response('id3', httpx_mock)
-    
+    add_response("id1", httpx_mock)
+    add_response("id2", httpx_mock)
+    add_response("id3", httpx_mock)
+
     response = client.get(f"/sites/{sites[0].site_uuid}/inverters")
     assert response.status_code == 200
 
@@ -51,7 +52,7 @@ def test_get_inverters_fake(client, fake):
 
 def test_get_inverters(client, httpx_mock, clients):
     httpx_mock.add_response(url="https://enode-api.production.enode.io/inverters", json=["id1"])
-    add_response('id1', httpx_mock)
+    add_response("id1", httpx_mock)
 
     response = client.get("/inverters")
     assert response.status_code == 200
