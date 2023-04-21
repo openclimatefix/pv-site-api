@@ -2,6 +2,7 @@
 
 from pv_site_api.pydantic_models import Inverters
 
+
 def test_get_inverters_from_site(client, sites, inverters, httpx_mock):
     httpx_mock.add_response(
         url="https://enode-api.production.enode.io/inverters/id1",
@@ -27,7 +28,7 @@ def test_get_inverters_from_site(client, sites, inverters, httpx_mock):
             "location": {"longitude": 10.7197486, "latitude": 59.9173985},
         },
     )
-    
+
     httpx_mock.add_response(
         url="https://enode-api.production.enode.io/inverters/id2",
         json={
@@ -77,7 +78,7 @@ def test_get_inverters_from_site(client, sites, inverters, httpx_mock):
             "location": {"longitude": 10.7197486, "latitude": 59.9173985},
         },
     )
-    
+
     response = client.get(f"/sites/{sites[0].site_uuid}/inverters")
     assert response.status_code == 200
 

@@ -118,7 +118,9 @@ class InverterProductionState(BaseModel):
     isProducing: Optional[bool] = Field(
         ..., description="Whether the solar inverter is actively producing energy or not"
     )
-    totalLifetimeProduction: Optional[float] = Field(..., description="The total lifetime production in kWh")
+    totalLifetimeProduction: Optional[float] = Field(
+        ..., description="The total lifetime production in kWh"
+    )
     lastUpdated: Optional[str] = Field(
         ..., description="ISO8601 UTC timestamp of last received production state update"
     )
