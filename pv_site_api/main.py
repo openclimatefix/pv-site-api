@@ -190,7 +190,7 @@ def put_site_info(
     site_uuid: str,
     site_info: PVSiteMetadata,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth)
+    auth: Auth = Depends(auth),
 ):
     """
     ### This route allows a user to update a site's information.
@@ -207,7 +207,11 @@ def put_site_info(
     assert client is not None
 
     # get the site to update
-    site = session.query(SiteSQL).filter_by(client_uuid=client.client_uuid, site_uuid=site_uuid).first()
+    site = (
+        session.query(SiteSQL)
+        .filter_by(client_uuid=client.client_uuid, site_uuid=site_uuid)
+        .first()
+    )
     if site is None:
         raise HTTPException(status_code=404, detail="Site not found")
 
@@ -226,7 +230,6 @@ def put_site_info(
     # commit changes to database
     session.commit()
     return site
-    
 
 
 @app.post("/sites")

@@ -1,6 +1,7 @@
 """ Test for main app """
 import json
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from pvsite_datamodel.sqlmodels import SiteSQL
 
@@ -72,7 +73,7 @@ def test_post_site(db_session, client, clients):
     assert sites[0].site_uuid is not None
 
 
-def test_post_site_and_update(db_session):
+def test_post_site_and_update(db_session, client):
     pv_site = PVSiteMetadata(
         site_uuid=str(uuid4()),
         client_uuid="eeee-eeee",
@@ -91,7 +92,7 @@ def test_post_site_and_update(db_session):
 
     pv_site_dict = json.loads(pv_site.json())
 
-    response = client.post(f"sites/", json=pv_site_dict)
+    response = client.post("sites/", json=pv_site_dict)
     assert response.status_code == 200, response.text
 
     pv_site.orientation = 100
@@ -104,4 +105,3 @@ def test_post_site_and_update(db_session):
     assert len(sites) == 1
     assert sites[0].site_uuid == pv_site.site_uuid
     assert sites[0].orientation == pv_site.orientation
-
