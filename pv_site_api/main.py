@@ -185,19 +185,48 @@ def post_pv_actual(
 
 # Comment this out, until we have security on this
 # # put_site_info: client can update a site
-# @app.put("/sites/{site_uuid}")
-# def put_site_info(site_info: PVSiteMetadata):
-#     """
-#     ### This route allows a user to update site information for a single site.
-#
-#     """
-#
-#     if is_fake():
-#         print(f"Successfully updated {site_info.dict()} for site {site_info.client_site_name}")
-#         print("Not doing anything with it (yet!)")
-#         return
-#
-#     raise Exception(NotImplemented)
+@app.put("/sites/{site_uuid}")
+def put_site_info(
+    site_uuid: str,
+    site_info: PVSiteMetadata,
+    session: Session = Depends(get_session),
+    auth: Auth = Depends(auth)
+):
+    """
+    ### This route allows a user to update a site's information.
+
+    """
+
+    if is_fake():
+        print(f"Successfully updated site {site_uuid} with {site_info.dict()}")
+        print("Not doing anything with it (yet!)")
+        return
+
+    # @TODO: get client corresponding to auth
+    client = session.query(ClientSQL).first()
+    assert client is not None
+
+    # get the site to update
+    site = session.query(SiteSQL).filter_by(client_uuid=client.client_uuid, site_uuid=site_uuid).first()
+    if site is None:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    # update site information
+    site.client_site_id = site_info.client_site_id
+    site.client_site_name = site_info.client_site_name
+    site.region = site_info.region
+    site.dno = site_info.dno
+    site.gsp = site_info.gsp
+    site.orientation = site_info.orientation
+    site.tilt = site_info.tilt
+    site.latitude = site_info.latitude
+    site.longitude = site_info.longitude
+    site.capacity_kw = site_info.installed_capacity_kw
+
+    # commit changes to database
+    session.commit()
+    return site
+    
 
 
 @app.post("/sites")
@@ -216,7 +245,7 @@ def post_site_info(
         print("Not doing anything with it (yet!)")
         return
 
-    # client uuid from name
+    # @TODO: get client corresponding to auth
     client = session.query(ClientSQL).first()
     assert client is not None
 

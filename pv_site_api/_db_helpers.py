@@ -65,6 +65,7 @@ def _get_inverters_by_site(session: Session, site_uuid: str) -> list[Row]:
 
     return query.all()
 
+
 def _get_latest_forecast_by_sites(
     session: Session, site_uuids: list[str], start_utc: Optional[dt.datetime] = None
 ) -> list[Row]:

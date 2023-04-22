@@ -27,6 +27,7 @@ from pv_site_api.session import get_session
 def non_mocked_hosts():
     return ["testserver"]
 
+
 @pytest.fixture
 def _now(autouse=True):
     """Hard-code the time for all tests to make the tests less flaky."""
