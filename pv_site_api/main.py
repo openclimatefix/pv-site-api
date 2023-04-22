@@ -1,17 +1,17 @@
 """Main API Routes"""
-import logging
 import os
 
 import httpx
 import pandas as pd
 import sentry_sdk
+import structlog
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, JSONResponse
 from pvlib import irradiance, location, pvsystem
-from pvsite_datamodel.read.site import get_all_sites, get_site_by_uuid
+from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
@@ -24,8 +24,11 @@ from ._db_helpers import (
     does_site_exist,
     get_forecasts_by_sites,
     get_generation_by_sites,
+    get_sites_by_uuids,
     site_to_pydantic,
 )
+from .auth import Auth
+from .cache import cache_response
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -48,7 +51,7 @@ from .utils import get_inverters_list, get_yesterday_midnight
 
 load_dotenv()
 
-logger = logging.getLogger(__name__)
+logger = structlog.stdlib.get_logger()
 
 
 def traces_sampler(sampling_context):
@@ -71,6 +74,10 @@ def traces_sampler(sampling_context):
     else:
         # Default sample rate
         return 0.05
+
+
+def is_fake():
+    return int(os.environ.get("FAKE", 0))
 
 
 sentry_sdk.init(
@@ -97,6 +104,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+auth = Auth(
+    domain=os.getenv("AUTH0_DOMAIN"),
+    api_audience=os.getenv("AUTH0_API_AUDIENCE"),
+    algorithm=os.getenv("AUTH0_ALGORITHM"),
+)
+
 # name the api
 # test that the routes are there on swagger
 # Following on from #1 now will be good to set out models
@@ -110,17 +123,20 @@ app.add_middleware(
 @app.get("/sites", response_model=PVSites)
 def get_sites(
     session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
 ):
     """
     ### This route returns a list of the user's PV Sites with metadata for each site.
     """
 
-    if int(os.environ["FAKE"]):
+    if is_fake():
         return make_fake_site()
 
     sites = get_all_sites(session=session)
 
     assert len(sites) > 0
+
+    logger.debug(f"Found {len(sites)} sites")
 
     pv_sites = []
     for site in sites:
@@ -135,6 +151,7 @@ def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
     session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
 ):
     """### This route is used to input actual PV generation.
 
@@ -143,7 +160,7 @@ def post_pv_actual(
     Currently this route does not return anything.
     """
 
-    if int(os.environ["FAKE"]):
+    if is_fake():
         print(f"Got {pv_actual.dict()} for site {site_uuid}")
         print("Not doing anything with it (yet!)")
         return
@@ -175,7 +192,7 @@ def post_pv_actual(
 #
 #     """
 #
-#     if int(os.environ["FAKE"]):
+#     if is_fake():
 #         print(f"Successfully updated {site_info.dict()} for site {site_info.client_site_name}")
 #         print("Not doing anything with it (yet!)")
 #         return
@@ -184,13 +201,17 @@ def post_pv_actual(
 
 
 @app.post("/sites")
-def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_session)):
+def post_site_info(
+    site_info: PVSiteMetadata,
+    session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
+):
     """
     ### This route allows a user to add a site.
 
     """
 
-    if int(os.environ["FAKE"]):
+    if is_fake():
         print(f"Successfully added {site_info.dict()} for site {site_info.client_site_name}")
         print("Not doing anything with it (yet!)")
         return
@@ -200,7 +221,6 @@ def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_ses
     assert client is not None
 
     site = SiteSQL(
-        site_uuid=site_info.site_uuid,
         client_uuid=client.client_uuid,
         client_site_id=site_info.client_site_id,
         client_site_name=site_info.client_site_name,
@@ -222,7 +242,11 @@ def post_site_info(site_info: PVSiteMetadata, session: Session = Depends(get_ses
 
 # get_pv_actual: the client can read pv data from the past
 @app.get("/sites/{site_uuid}/pv_actual", response_model=MultiplePVActual)
-def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
+def get_pv_actual(
+    site_uuid: str,
+    session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
+):
     """### This route returns PV readings from a single PV site.
 
     Currently the route is set to provide a reading
@@ -230,20 +254,22 @@ def get_pv_actual(site_uuid: str, session: Session = Depends(get_session)):
     To test the route, you can input any number for the site_uuid (ex. 567)
     to generate a list of datetimes and actual kw generation for that site.
     """
-    return (get_pv_actual_many_sites(site_uuid, session))[0]
+    return (get_pv_actual_many_sites(site_uuids=site_uuid, session=session))[0]
 
 
 @app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
+@cache_response
 def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
 ):
     """
     ### Get the actual power generation for a list of sites.
     """
     site_uuids_list = site_uuids.split(",")
 
-    if int(os.environ["FAKE"]):
+    if is_fake():
         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
 
     start_utc = get_yesterday_midnight()
@@ -253,7 +279,11 @@ def get_pv_actual_many_sites(
 
 # get_forecast: Client gets the forecast for their site
 @app.get("/sites/{site_uuid}/pv_forecast", response_model=Forecast)
-def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
+def get_pv_forecast(
+    site_uuid: str,
+    session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
+):
     """
     ### This route is where you might say the magic happens.
 
@@ -266,7 +296,7 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     You can currently input any number for **site_uuid** (ex. 567),
     and the route returns a sample forecast.
     """
-    if int(os.environ.get("FAKE", 0)):
+    if is_fake():
         return make_fake_forecast(fake_site_uuid)
 
     site_exists = does_site_exist(session, site_uuid)
@@ -274,7 +304,7 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
     if not site_exists:
         raise HTTPException(status_code=404)
 
-    forecasts = get_pv_forecast_many_sites(site_uuid, session)
+    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session)
 
     if len(forecasts) == 0:
         return JSONResponse(status_code=204, content="no data")
@@ -283,18 +313,25 @@ def get_pv_forecast(site_uuid: str, session: Session = Depends(get_session)):
 
 
 @app.get("/sites/pv_forecast")
+@cache_response
 def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
 ):
     """
     ### Get the forecasts for multiple sites.
     """
-    if int(os.environ.get("FAKE", 0)):
+
+    logger.info(f"Getting forecasts for {site_uuids}")
+
+    if is_fake():
         return [make_fake_forecast(fake_site_uuid)]
 
     start_utc = get_yesterday_midnight()
     site_uuids_list = site_uuids.split(",")
+
+    logger.debug(f"Loading forecast from {start_utc}")
 
     forecasts = get_forecasts_by_sites(
         session, site_uuids=site_uuids_list, start_utc=start_utc, horizon_minutes=0
@@ -304,57 +341,82 @@ def get_pv_forecast_many_sites(
 
 
 @app.get("/sites/{site_uuid}/clearsky_estimate", response_model=ClearskyEstimate)
-def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_session)):
+@cache_response
+def get_pv_estimate_clearsky(
+    site_uuid: str,
+    session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
+):
     """
     ### Gets a estimate of AC production under a clear sky
     """
-    if int(os.environ["FAKE"]):
-        fake_sites = make_fake_site()
-        site = fake_sites.site_list[0]
-    else:
+    if not is_fake():
         site_exists = does_site_exist(session, site_uuid)
         if not site_exists:
             raise HTTPException(status_code=404)
-        site = site_to_pydantic(get_site_by_uuid(session, site_uuid))
 
-    loc = location.Location(site.latitude, site.longitude)
+    clearsky_estimates = get_pv_estimate_clearsky_many_sites(site_uuid, session)
+    return clearsky_estimates[0]
 
-    # Create DatetimeIndex over four days, with a frequency of 15 minutes.
-    # Starts from midnight yesterday.
-    times = pd.date_range(start=get_yesterday_midnight(), periods=384, freq="15min", tz="UTC")
-    clearsky = loc.get_clearsky(times)
-    solar_position = loc.get_solarposition(times=times)
 
-    # Using default tilt of 0 and orientation of 180 from defaults of PVSystem
-    tilt = site.tilt if site.tilt is not None else 0
-    orientation = site.orientation if site.orientation is not None else 180
+@app.get("/sites/clearsky_estimate", response_model=list[ClearskyEstimate])
+def get_pv_estimate_clearsky_many_sites(
+    site_uuids: str,
+    session: Session = Depends(get_session),
+):
+    """
+    ### Gets a estimate of AC production under a clear sky for multiple sites.
+    """
 
-    irr = irradiance.get_total_irradiance(
-        surface_tilt=tilt,
-        surface_azimuth=orientation,
-        dni=clearsky["dni"],
-        ghi=clearsky["ghi"],
-        dhi=clearsky["dhi"],
-        solar_zenith=solar_position["apparent_zenith"],
-        solar_azimuth=solar_position["azimuth"],
-    )
+    if is_fake():
+        sites = make_fake_site().site_list
+    else:
+        site_uuids_list = site_uuids.split(",")
+        sites = get_sites_by_uuids(session, site_uuids_list)
 
-    # Value for "gamma_pdc" is set to the fixed temp. coeff. used in PVWatts V1
-    # @TODO: allow differing inverter and module capacities
-    # addressed in https://github.com/openclimatefix/pv-site-api/issues/54
-    pv_system = pvsystem.PVSystem(
-        surface_tilt=tilt,
-        surface_azimuth=orientation,
-        module_parameters={"pdc0": (1.5 * site.installed_capacity_kw), "gamma_pdc": -0.005},
-        inverter_parameters={"pdc0": site.installed_capacity_kw},
-    )
-    pac = irr.apply(
-        lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)), axis=1
-    )
-    pac = pac.reset_index()
-    pac = pac.rename(columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
-    pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
-    res = {"clearsky_estimate": pac.to_dict("records")}
+    res = []
+
+    for site in sites:
+        loc = location.Location(site.latitude, site.longitude)
+
+        # Create DatetimeIndex over four days, with a frequency of 15 minutes.
+        # Starts from midnight yesterday.
+        times = pd.date_range(start=get_yesterday_midnight(), periods=384, freq="15min", tz="UTC")
+        clearsky = loc.get_clearsky(times)
+        solar_position = loc.get_solarposition(times=times)
+
+        # Using default tilt of 0 and orientation of 180 from defaults of PVSystem
+        tilt = site.tilt or 0
+        orientation = site.orientation or 180
+
+        irr = irradiance.get_total_irradiance(
+            surface_tilt=tilt,
+            surface_azimuth=orientation,
+            dni=clearsky["dni"],
+            ghi=clearsky["ghi"],
+            dhi=clearsky["dhi"],
+            solar_zenith=solar_position["apparent_zenith"],
+            solar_azimuth=solar_position["azimuth"],
+        )
+
+        # Value for "gamma_pdc" is set to the fixed temp. coeff. used in PVWatts V1
+        # @TODO: allow differing inverter and module capacities
+        # addressed in https://github.com/openclimatefix/pv-site-api/issues/54
+        pv_system = pvsystem.PVSystem(
+            surface_tilt=tilt,
+            surface_azimuth=orientation,
+            module_parameters={"pdc0": (1.5 * site.installed_capacity_kw), "gamma_pdc": -0.005},
+            inverter_parameters={"pdc0": site.installed_capacity_kw},
+        )
+        pac = irr.apply(
+            lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)),
+            axis=1,
+        )
+        pac = pac.reset_index()
+        pac = pac.rename(columns={"index": "target_datetime_utc", 0: "clearsky_generation_kw"})
+        pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
+        res.append({"clearsky_estimate": pac.to_dict("records")})
+
     return res
 
 
@@ -402,7 +464,7 @@ def get_status(session: Session = Depends(get_session)):
     make sure things are running smoothly.
     """
 
-    if os.environ["FAKE"]:
+    if is_fake():
         return make_fake_status()
 
     status = get_latest_status(session=session)
@@ -474,10 +536,3 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi
-
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
-        format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
-    )
