@@ -120,3 +120,8 @@ def make_fake_status() -> PVSiteAPIStatus:
         message="The API is up and running",
     )
     return pv_api_status
+
+
+def make_fake_enode_link_url() -> str:
+    """Make fake Enode link URL"""
+    return "https://enode.com"

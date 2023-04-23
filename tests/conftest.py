@@ -31,11 +31,6 @@ def _now(autouse=True):
         return datetime.utcnow()
 
 
-@pytest.fixture
-def non_mocked_hosts() -> list:
-    return ["testserver"]
-
-
 @pytest.fixture(scope="session")
 def engine():
     """Make database engine"""
@@ -78,6 +73,12 @@ def clients(db_session):
     db_session.add_all(clients)
     db_session.commit()
     return clients
+
+
+@pytest.fixture
+def non_mocked_hosts() -> list:
+    """Prevent TestClient fixture from being mocked"""
+    return ["testserver"]
 
 
 @pytest.fixture()
