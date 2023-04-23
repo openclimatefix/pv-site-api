@@ -207,7 +207,6 @@ def put_site_info(
     client = session.query(ClientSQL).first()
     assert client is not None
 
-    # get the site to update
     site = (
         session.query(SiteSQL)
         .filter_by(client_uuid=client.client_uuid, site_uuid=site_uuid)
@@ -216,7 +215,6 @@ def put_site_info(
     if site is None:
         raise HTTPException(status_code=404, detail="Site not found")
 
-    # update site information
     site.client_site_id = site_info.client_site_id
     site.client_site_name = site_info.client_site_name
     site.region = site_info.region
@@ -228,7 +226,6 @@ def put_site_info(
     site.longitude = site_info.longitude
     site.capacity_kw = site_info.installed_capacity_kw
 
-    # commit changes to database
     session.commit()
     return site
 
