@@ -23,8 +23,9 @@ from pv_site_api.main import app, auth
 from pv_site_api.session import get_session
 
 
-@pytest.fixture()
-def non_mocked_hosts():
+@pytest.fixture
+def non_mocked_hosts() -> list:
+    """Prevent TestClient fixture from being mocked"""
     return ["testserver"]
 
 
