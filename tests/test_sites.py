@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from pvsite_datamodel.sqlmodels import SiteSQL
+from pvsite_datamodel.read.site import get_site_by_client_site_id
 
 from pv_site_api.pydantic_models import PVSiteMetadata, PVSites
 
@@ -49,7 +50,7 @@ def test_put_site_fake(client, fake):
 def test_post_site(db_session, client, clients):
     # make site object
     pv_site = PVSiteMetadata(
-        client_name="test_client",
+        client_name="test_client_1",
         client_site_id=1,
         client_site_name="the site name",
         region="the site's region",
@@ -73,12 +74,11 @@ def test_post_site(db_session, client, clients):
     assert sites[0].site_uuid is not None
 
 
-def test_post_site_and_update(db_session, client):
+def test_post_site_and_update(db_session, client, clients):
     pv_site = PVSiteMetadata(
-        site_uuid=str(uuid4()),
-        client_name="the site name",
+        client_name="test_client_1",
         client_uuid="eeee-eeee",
-        client_site_id="the site id used by the user",
+        client_site_id=34,
         client_site_name="the site name",
         region="the site's region",
         dno="the site's dno",
@@ -96,13 +96,17 @@ def test_post_site_and_update(db_session, client):
     response = client.post("/sites", json=pv_site_dict)
     assert response.status_code == 200, response.text
 
-    pv_site.orientation = 100
+    sites = db_session.query(SiteSQL).all()
+    assert len(sites) == 1
+
+    pv_site.orientation = 97
+    pv_site.tilt=127
     pv_site_dict = json.loads(pv_site.json())
 
-    response = client.put(f"/sites/{pv_site.site_uuid}", json=pv_site_dict)
+    site_uuid = sites[0].site_uuid
+    response = client.put(f"/sites/{site_uuid}", json=pv_site_dict)
     assert response.status_code == 200, response.text
 
     sites = db_session.query(SiteSQL).all()
-    assert len(sites) == 1
-    assert sites[0].site_uuid == pv_site.site_uuid
     assert sites[0].orientation == pv_site.orientation
+    assert sites[0].tilt == pv_site.tilt
