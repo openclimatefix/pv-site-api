@@ -1,10 +1,8 @@
 """ Test for main app """
 import json
 from datetime import datetime, timezone
-from uuid import uuid4
 
 from pvsite_datamodel.sqlmodels import SiteSQL
-from pvsite_datamodel.read.site import get_site_by_client_site_id
 
 from pv_site_api.pydantic_models import PVSiteMetadata, PVSites
 
@@ -100,7 +98,7 @@ def test_post_site_and_update(db_session, client, clients):
     assert len(sites) == 1
 
     pv_site.orientation = 97
-    pv_site.tilt=127
+    pv_site.tilt = 127
     pv_site_dict = json.loads(pv_site.json())
 
     site_uuid = sites[0].site_uuid
