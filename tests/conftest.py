@@ -21,11 +21,6 @@ from pv_site_api.main import app
 from pv_site_api.session import get_session
 
 
-@pytest.fixture()
-def non_mocked_hosts():
-    return ["testserver"]
-
-
 @pytest.fixture(scope="session")
 def engine():
     """Make database engine"""
@@ -68,6 +63,12 @@ def clients(db_session):
     db_session.add_all(clients)
     db_session.commit()
     return clients
+
+
+@pytest.fixture
+def non_mocked_hosts() -> list:
+    """Prevent TestClient fixture from being mocked"""
+    return ["testserver"]
 
 
 @pytest.fixture()

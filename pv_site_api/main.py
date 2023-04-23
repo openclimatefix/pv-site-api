@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from pvlib import irradiance, location, pvsystem
 from pvsite_datamodel.read.site import get_all_sites, get_site_by_uuid
 from pvsite_datamodel.read.status import get_latest_status
@@ -28,6 +28,7 @@ from ._db_helpers import (
 )
 from .fake import (
     fake_site_uuid,
+    make_fake_enode_link_url,
     make_fake_forecast,
     make_fake_inverters,
     make_fake_pv_generation,
@@ -356,6 +357,26 @@ def get_pv_estimate_clearsky(site_uuid: str, session: Session = Depends(get_sess
     pac["target_datetime_utc"] = pac["target_datetime_utc"].dt.tz_convert(None)
     res = {"clearsky_estimate": pac.to_dict("records")}
     return res
+
+
+@app.get("/enode/link", response_class=RedirectResponse)
+def get_enode_link(redirect_uri: str, session: Session = Depends(get_session)):
+    """
+    ### Returns a URL from Enode that starts a user's Enode link flow.
+    """
+    if int(os.environ["FAKE"]):
+        return make_fake_enode_link_url()
+
+    client = session.query(ClientSQL).first()
+    assert client is not None
+
+    with httpx.Client() as httpx_client:
+        data = {"vendorType": "inverter", "redirectUri": redirect_uri}
+        res = httpx_client.post(
+            f"https://enode-api.production.enode.io/users/{client.client_uuid}/link", data=data
+        ).json()
+
+    return res["linkUrl"]
 
 
 @app.get("/inverters")
