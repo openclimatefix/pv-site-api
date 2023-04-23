@@ -93,7 +93,7 @@ def test_post_site_and_update(db_session, client):
 
     pv_site_dict = json.loads(pv_site.json())
 
-    response = client.post("sites/", json=pv_site_dict)
+    response = client.post("sites", json=pv_site_dict)
     assert response.status_code == 200, response.text
 
     pv_site.orientation = 100
