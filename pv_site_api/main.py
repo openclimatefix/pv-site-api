@@ -458,7 +458,7 @@ def get_enode_link(redirect_uri: str, session: Session = Depends(get_session)):
     """
     ### Returns a URL from Enode that starts a user's Enode link flow.
     """
-    if int(os.environ["FAKE"]):
+    if is_fake():
         return make_fake_enode_link_url()
 
     client = session.query(ClientSQL).first()
