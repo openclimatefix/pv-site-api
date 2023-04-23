@@ -134,7 +134,7 @@ class InverterInformation(BaseModel):
     model: str = Field(..., description="Solar inverter model")
     siteName: str = Field(
         ...,
-        description="Name of the site, as set by the user on the device/vendor. If no user-specified name is available, we construct a fallback name using the vendor/device/model names.",
+        description="Name of the site, as set by the user on the device/vendor.",
     )
     installationDate: str = Field(..., description="Solar inverter installation date")
 
@@ -155,14 +155,14 @@ class InverterValues(BaseModel):
     )
     chargingLocationId: Optional[str] = Field(
         ...,
-        description="ID of the charging location the solar inverter is currently positioned at (if any).",
+        description="ID of the charging location the solar inverter is currently positioned at.",
     )
     lastSeen: str = Field(
         ..., description="The last time the solar inverter was successfully communicated with"
     )
     isReachable: bool = Field(
         ...,
-        description="Whether live data from the solar inverter is currently reachable from Enode's perspective. This 'reachability' may refer to reading from a cache operated by the solar inverter's cloud service if that service has determined that its cache is valid.",
+        description="Whether live data from the solar inverter is currently reachable",
     )
     productionState: InverterProductionState = Field(
         ..., description="Descriptive information about the production state"

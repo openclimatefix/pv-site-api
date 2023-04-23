@@ -1,12 +1,10 @@
 """Main API Routes"""
-import asyncio
-import logging
 import os
 
+import httpx
 import pandas as pd
 import sentry_sdk
 import structlog
-import httpx
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from pvlib import irradiance, location, pvsystem
 from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
-from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
+from pvsite_datamodel.sqlmodels import ClientSQL, InverterSQL, SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
 from sqlalchemy.orm import Session
 
@@ -52,21 +50,10 @@ from .pydantic_models import (
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
 from .utils import get_inverters_list, get_yesterday_midnight
-from .enode_auth import (
-    EnodeAuth,
-)
 
 load_dotenv()
 
 logger = structlog.stdlib.get_logger()
-
-enode_auth = EnodeAuth(
-    os.getenv("ENODE_CLIENT_ID", ""),
-    os.getenv("ENODE_CLIENT_SECRET", ""),
-    os.getenv("ENODE_TOKEN_URL", ""),
-)
-
-enode_api_base_url = os.getenv("ENODE_API_BASE_URL", "https://enode-api.sandbox.enode.io")
 
 
 def traces_sampler(sampling_context):
@@ -124,7 +111,14 @@ auth = Auth(
     api_audience=os.getenv("AUTH0_API_AUDIENCE"),
     algorithm=os.getenv("AUTH0_ALGORITHM"),
 )
-auth = EnodeAuth()
+
+enode_auth = EnodeAuth(
+    os.getenv("ENODE_CLIENT_ID", ""),
+    os.getenv("ENODE_CLIENT_SECRET", ""),
+    os.getenv("ENODE_TOKEN_URL", "https://oauth.sandbox.enode.io/oauth2/token"),
+)
+
+enode_api_base_url = os.getenv("ENODE_API_BASE_URL", "https://enode-api.sandbox.enode.io")
 
 # name the api
 # test that the routes are there on swagger
@@ -408,6 +402,7 @@ def get_pv_estimate_clearsky(
 def get_pv_estimate_clearsky_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
 ):
     """
     ### Gets a estimate of AC production under a clear sky for multiple sites.
@@ -466,7 +461,9 @@ def get_pv_estimate_clearsky_many_sites(
 
 
 @app.get("/enode/link", response_class=RedirectResponse)
-def get_enode_link(redirect_uri: str, session: Session = Depends(get_session)):
+def get_enode_link(
+    redirect_uri: str, session: Session = Depends(get_session), auth: Auth = Depends(auth)
+):
     """
     ### Returns a URL from Enode that starts a user's Enode link flow.
     """
@@ -486,6 +483,7 @@ def get_enode_link(redirect_uri: str, session: Session = Depends(get_session)):
 @app.get("/enode/inverters")
 async def get_inverters(
     session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
 ):
     if is_fake():
         return make_fake_inverters()
@@ -504,9 +502,10 @@ async def get_inverters(
 
 
 @app.get("/sites/{site_uuid}/inverters")
-async def get_inverters_by_site(
+async def get_inverters_for_site(
     site_uuid: str,
     session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
 ):
     if is_fake():
         return make_fake_inverters()
@@ -524,6 +523,39 @@ async def get_inverters_by_site(
     return await get_inverters_list(
         client.client_uuid, inverter_ids, enode_auth, enode_api_base_url
     )
+
+
+@app.post("/sites/{site_uuid}/inverters")
+def post_inverters_for_site(
+    site_uuid: str,
+    client_ids: list[str],
+    session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
+):
+    if is_fake():
+        print(f"Successfully changed inverters for {site_uuid}")
+        print("Not doing anything with it (yet!)")
+        return
+
+    # @TODO: get client corresponding to auth
+    client = session.query(ClientSQL).first()
+    assert client is not None
+
+    site = (
+        session.query(SiteSQL)
+        .filter_by(client_uuid=client.client_uuid, site_uuid=site_uuid)
+        .first()
+    )
+    if site is None:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    site.inverters.clear()
+
+    for client_id in client_ids:
+        site.inverters.append(InverterSQL(site_uuid=site_uuid, client_id=client_id))
+
+    session.add(site)
+    session.commit()
 
 
 # get_status: get the status of the system

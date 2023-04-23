@@ -14,7 +14,6 @@ from pvsite_datamodel.sqlmodels import (
     InverterSQL,
     SiteSQL,
     StatusSQL,
-    InverterSQL,
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
