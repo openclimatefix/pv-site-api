@@ -30,6 +30,7 @@ testcontainers-postgres = "^0.0.1rc1"
 ipython = "^8.11.0"
 freezegun = "^1.2.2"
 pytest-httpx = "^0.22.0"
+freezegun = "^1.2.2"
 
 [build-system]
 requires = ["poetry-core"]

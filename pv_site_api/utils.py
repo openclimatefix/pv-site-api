@@ -1,33 +1,28 @@
 """ make fake intensity"""
 import asyncio
 import math
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List
 
 import httpx
-from pvsite_datamodel.sqlmodels import ClientSQL
 
+from .enode_auth import EnodeAuth
 from .pydantic_models import Inverters, InverterValues
 
 TOTAL_MINUTES_IN_ONE_DAY = 24 * 60
 
 
-async def get_inverters_list(session, inverter_ids):
-    client = session.query(ClientSQL).first()
-    assert client is not None
-
-    async with httpx.AsyncClient() as httpxClient:
-        headers = {"Enode-User-Id": str(client.client_uuid)}
+async def get_inverters_list(
+    client_uuid: uuid.UUID, inverter_ids: list[str], enode_auth: EnodeAuth, enode_api_base_url: str
+) -> Inverters:
+    async with httpx.AsyncClient(base_url=enode_api_base_url, auth=enode_auth) as httpx_client:
+        headers = {"Enode-User-Id": str(client_uuid)}
         inverters_raw = await asyncio.gather(
-            *[
-                httpxClient.get(
-                    f"https://enode-api.production.enode.io/inverters/{id}", headers=headers
-                )
-                for id in inverter_ids
-            ]
+            *[httpx_client.get(f"/inverters/{id}", headers=headers) for id in inverter_ids]
         )
-    inverters = [InverterValues(**(inverter_raw.json())) for inverter_raw in inverters_raw]
 
+    inverters = [InverterValues(**(inverter_raw.json())) for inverter_raw in inverters_raw]
     return Inverters(inverters=inverters)
 
 

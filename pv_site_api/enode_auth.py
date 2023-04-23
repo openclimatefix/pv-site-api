@@ -14,7 +14,7 @@ class EnodeAuth(httpx.Auth):
 
     def auth_flow(self, request: httpx.Request):
         # Add the Authorization header to the request using the current access token
-        request.headers["Authorization"] = f"Bearer {self.access_token}"
+        request.headers["Authorization"] = f"Bearer {self._access_token}"
         response = yield request
 
         if response.status_code == 401:
@@ -22,7 +22,7 @@ class EnodeAuth(httpx.Auth):
             token_response = yield self._build_refresh_request()
             self._update_access_token(token_response)
             # Update the request's Authorization header with the new access token
-            request.headers["Authorization"] = f"Bearer {self.access_token}"
+            request.headers["Authorization"] = f"Bearer {self._access_token}"
             # Resend the request with the new access token
             response = yield request
         return response
@@ -36,4 +36,4 @@ class EnodeAuth(httpx.Auth):
 
     def _update_access_token(self, response):
         response.read()
-        self.access_token = response.json()["access_token"]
+        self._access_token = response.json()["access_token"]

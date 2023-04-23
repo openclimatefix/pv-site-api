@@ -60,6 +60,14 @@ load_dotenv()
 
 logger = structlog.stdlib.get_logger()
 
+enode_auth = EnodeAuth(
+    os.getenv("ENODE_CLIENT_ID", ""),
+    os.getenv("ENODE_CLIENT_SECRET", ""),
+    os.getenv("ENODE_TOKEN_URL", ""),
+)
+
+enode_api_base_url = os.getenv("ENODE_API_BASE_URL", "https://enode-api.sandbox.enode.io")
+
 
 def traces_sampler(sampling_context):
     """
@@ -117,7 +125,6 @@ auth = Auth(
     algorithm=os.getenv("AUTH0_ALGORITHM"),
 )
 auth = EnodeAuth()
-enode_client = httpx.Client(auth=auth)
 
 # name the api
 # test that the routes are there on swagger
@@ -194,19 +201,48 @@ def post_pv_actual(
 
 # Comment this out, until we have security on this
 # # put_site_info: client can update a site
-# @app.put("/sites/{site_uuid}")
-# def put_site_info(site_info: PVSiteMetadata):
-#     """
-#     ### This route allows a user to update site information for a single site.
-#
-#     """
-#
-#     if is_fake():
-#         print(f"Successfully updated {site_info.dict()} for site {site_info.client_site_name}")
-#         print("Not doing anything with it (yet!)")
-#         return
-#
-#     raise Exception(NotImplemented)
+@app.put("/sites/{site_uuid}")
+def put_site_info(
+    site_uuid: str,
+    site_info: PVSiteMetadata,
+    session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
+):
+    """
+    ### This route allows a user to update a site's information.
+
+    """
+
+    if is_fake():
+        print(f"Successfully updated site {site_uuid} with {site_info.dict()}")
+        print("Not doing anything with it (yet!)")
+        return
+
+    # @TODO: get client corresponding to auth
+    client = session.query(ClientSQL).first()
+    assert client is not None
+
+    site = (
+        session.query(SiteSQL)
+        .filter_by(client_uuid=client.client_uuid, site_uuid=site_uuid)
+        .first()
+    )
+    if site is None:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    site.client_site_id = site_info.client_site_id
+    site.client_site_name = site_info.client_site_name
+    site.region = site_info.region
+    site.dno = site_info.dno
+    site.gsp = site_info.gsp
+    site.orientation = site_info.orientation
+    site.tilt = site_info.tilt
+    site.latitude = site_info.latitude
+    site.longitude = site_info.longitude
+    site.capacity_kw = site_info.installed_capacity_kw
+
+    session.commit()
+    return site
 
 
 @app.post("/sites")
@@ -225,7 +261,7 @@ def post_site_info(
         print("Not doing anything with it (yet!)")
         return
 
-    # client uuid from name
+    # @TODO: get client corresponding to auth
     client = session.query(ClientSQL).first()
     assert client is not None
 
@@ -434,41 +470,37 @@ def get_enode_link(redirect_uri: str, session: Session = Depends(get_session)):
     """
     ### Returns a URL from Enode that starts a user's Enode link flow.
     """
-    if int(os.environ["FAKE"]):
+    if is_fake():
         return make_fake_enode_link_url()
 
     client = session.query(ClientSQL).first()
     assert client is not None
 
-    with httpx.Client() as httpx_client:
+    with httpx.Client(base_url=enode_api_base_url, auth=enode_auth) as httpx_client:
         data = {"vendorType": "inverter", "redirectUri": redirect_uri}
-        res = httpx_client.post(
-            f"https://enode-api.production.enode.io/users/{client.client_uuid}/link", data=data
-        ).json()
+        res = httpx_client.post(f"/users/{client.client_uuid}/link", data=data).json()
 
     return res["linkUrl"]
 
 
-@app.get("/inverters")
+@app.get("/enode/inverters")
 async def get_inverters(
     session: Session = Depends(get_session),
 ):
-    if int(os.environ["FAKE"]):
+    if is_fake():
         return make_fake_inverters()
 
     client = session.query(ClientSQL).first()
     assert client is not None
 
-    async with httpx.AsyncClient() as httpxClient:
+    async with httpx.AsyncClient(base_url=enode_api_base_url, auth=enode_auth) as httpx_client:
         headers = {"Enode-User-Id": str(client.client_uuid)}
-        r = (
-            await httpxClient.get(
-                "https://enode-api.production.enode.io/inverters", headers=headers
-            )
-        ).json()
-        inverter_ids = [str(value) for value in r]
+        response_json = (await httpx_client.get("/inverters", headers=headers)).json()
+        inverter_ids = [str(inverter_id) for inverter_id in response_json]
 
-    return await get_inverters_list(session, inverter_ids)
+    return await get_inverters_list(
+        client.client_uuid, inverter_ids, enode_auth, enode_api_base_url
+    )
 
 
 @app.get("/sites/{site_uuid}/inverters")
@@ -476,12 +508,22 @@ async def get_inverters_by_site(
     site_uuid: str,
     session: Session = Depends(get_session),
 ):
-    if int(os.environ["FAKE"]):
+    if is_fake():
         return make_fake_inverters()
+
+    site_exists = does_site_exist(session, site_uuid)
+
+    if not site_exists:
+        raise HTTPException(status_code=404)
+
+    client = session.query(ClientSQL).first()
+    assert client is not None
 
     inverter_ids = [inverter.client_id for inverter in _get_inverters_by_site(session, site_uuid)]
 
-    return await get_inverters_list(session, inverter_ids)
+    return await get_inverters_list(
+        client.client_uuid, inverter_ids, enode_auth, enode_api_base_url
+    )
 
 
 # get_status: get the status of the system

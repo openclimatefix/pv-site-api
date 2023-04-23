@@ -25,6 +25,12 @@ from pv_site_api.session import get_session
 
 
 @pytest.fixture
+def non_mocked_hosts() -> list:
+    """Prevent TestClient fixture from being mocked"""
+    return ["testserver"]
+
+
+@pytest.fixture
 def _now(autouse=True):
     """Hard-code the time for all tests to make the tests less flaky."""
     with freezegun.freeze_time(2020, 1, 1):
@@ -73,12 +79,6 @@ def clients(db_session):
     db_session.add_all(clients)
     db_session.commit()
     return clients
-
-
-@pytest.fixture
-def non_mocked_hosts() -> list:
-    """Prevent TestClient fixture from being mocked"""
-    return ["testserver"]
 
 
 @pytest.fixture()
