@@ -76,7 +76,7 @@ def test_post_site(db_session, client, clients):
 def test_post_site_and_update(db_session, client):
     pv_site = PVSiteMetadata(
         site_uuid=str(uuid4()),
-        client_name="the site name"
+        client_name="the site name",
         client_uuid="eeee-eeee",
         client_site_id="the site id used by the user",
         client_site_name="the site name",
