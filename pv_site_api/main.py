@@ -456,7 +456,7 @@ def get_pv_estimate_clearsky_many_sites(
 async def get_inverters(
     session: Session = Depends(get_session),
 ):
-    if int(os.environ["FAKE"]):
+    if is_fake():
         return make_fake_inverters()
 
     client = session.query(ClientSQL).first()
