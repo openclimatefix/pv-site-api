@@ -1,8 +1,9 @@
 """
 Test the Enode authentication HTTPX auth class.
 """
-import pytest
 import httpx
+import pytest
+
 from pv_site_api.enode_auth import EnodeAuth
 
 TOKEN_URL = "https://example.com/token"
@@ -23,7 +24,7 @@ def test_enode_auth(enode_auth):
     request = httpx.Request("GET", f"{enode_base_url}/inverters")
     gen = enode_auth.auth_flow(request)
     authenticated_request = next(gen)
-    assert authenticated_request.headers["Authorization"] == f"Bearer None"
+    assert authenticated_request.headers["Authorization"] == "Bearer None"
 
     refresh_request = gen.send(httpx.Response(401))
     assert (
