@@ -32,7 +32,7 @@ def make_fake_site() -> PVSites:
         latitude=50,
         longitude=0,
         inverter_capacity_kw=1,
-        module_capacity_kw=1.3
+        module_capacity_kw=1.3,
     )
     pv_site_list = PVSites(
         site_list=[pv_site],

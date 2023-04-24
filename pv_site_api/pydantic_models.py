@@ -39,7 +39,9 @@ class PVSiteMetadata(BaseModel):
     latitude: float = Field(..., description="The site's latitude", ge=-90, le=90)
     longitude: float = Field(..., description="The site's longitude", ge=-180, le=180)
     inverter_capacity_kw: float = Field(..., description="The site's inverter capacity in kw", ge=0)
-    module_capacity_kw: float = Field(..., description="The site's PV module nameplate capacity in kw", ge=0)
+    module_capacity_kw: float = Field(
+        ..., description="The site's PV module nameplate capacity in kw", ge=0
+    )
 
 
 # post_pv_actual
