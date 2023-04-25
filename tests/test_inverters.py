@@ -6,18 +6,18 @@ from pv_site_api.pydantic_models import Inverters
 enode_api_base_url = os.getenv("ENODE_API_BASE_URL", "https://enode-api.sandbox.enode.io")
 
 
-def test_post_inverters_for_site_fake(client, sites, fake):
+def test_put_inverters_for_site_fake(client, sites, fake):
     test_inverter_client_id = "6c078ca2-2e75-40c8-9a7f-288bd0b70065"
     json = [test_inverter_client_id]
-    response = client.post(f"/sites/{sites[0].site_uuid}/inverters", json=json)
+    response = client.put(f"/sites/{sites[0].site_uuid}/inverters", json=json)
 
     assert response.status_code == 200
 
 
-def test_post_inverters_for_site(client, sites, httpx_mock):
+def test_put_inverters_for_site(client, sites, httpx_mock):
     test_inverter_client_id = "6c078ca2-2e75-40c8-9a7f-288bd0b70065"
     json = [test_inverter_client_id]
-    response = client.post(f"/sites/{sites[0].site_uuid}/inverters", json=json)
+    response = client.put(f"/sites/{sites[0].site_uuid}/inverters", json=json)
     assert response.status_code == 200
 
     mock_inverter_response(test_inverter_client_id, httpx_mock)
@@ -27,11 +27,11 @@ def test_post_inverters_for_site(client, sites, httpx_mock):
     assert response.json()["inverters"][0]["id"] == test_inverter_client_id
 
 
-def test_post_inverters_for_nonexistant_site(client, sites):
+def test_put_inverters_for_nonexistant_site(client, sites):
     nonexistant_site_uuid = "1cd11139-790a-46c0-8849-0c7c8e810ba5"
     test_inverter_client_id = "6c078ca2-2e75-40c8-9a7f-288bd0b70065"
     json = [test_inverter_client_id]
-    response = client.post(f"/sites/{nonexistant_site_uuid}/inverters", json=json)
+    response = client.put(f"/sites/{nonexistant_site_uuid}/inverters", json=json)
     assert response.status_code == 404
 
 

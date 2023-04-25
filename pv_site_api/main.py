@@ -525,8 +525,8 @@ async def get_inverters_for_site(
     )
 
 
-@app.post("/sites/{site_uuid}/inverters")
-def post_inverters_for_site(
+@app.put("/sites/{site_uuid}/inverters")
+def put_inverters_for_site(
     site_uuid: str,
     client_ids: list[str],
     session: Session = Depends(get_session),
