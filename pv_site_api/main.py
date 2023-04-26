@@ -387,7 +387,7 @@ def get_pv_estimate_clearsky_many_sites(
         tilt = site.tilt or 0
         orientation = site.orientation or 180
 
-        module_capacity = site.module_capacity_kw or site.inverter_capacity_kw * 1.3
+        module_capacity = site.module_capacity_kw or site.inverter_capacity_kw * 1.5
 
         irr = irradiance.get_total_irradiance(
             surface_tilt=tilt,
