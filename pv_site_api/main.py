@@ -459,9 +459,9 @@ def get_pv_estimate_clearsky_many_sites(
     return res
 
 
-@app.get("/enode/link", response_class=RedirectResponse)
+@app.get("/enode/link")
 def get_enode_link(
-    redirect_uri: str, session: Session = Depends(get_session), auth: Auth = Depends(auth)
+    redirect_uri: str, session: Session = Depends(get_session), auth: Auth = Depends(auth),
 ):
     """
     ### Returns a URL from Enode that starts a user's Enode link flow.
