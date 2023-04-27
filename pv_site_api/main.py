@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pvlib import irradiance, location, pvsystem
 from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
@@ -461,7 +461,9 @@ def get_pv_estimate_clearsky_many_sites(
 
 @app.get("/enode/link")
 def get_enode_link(
-    redirect_uri: str, session: Session = Depends(get_session), auth: Auth = Depends(auth),
+    redirect_uri: str,
+    session: Session = Depends(get_session),
+    auth: Auth = Depends(auth),
 ):
     """
     ### Returns a URL from Enode that starts a user's Enode link flow.
