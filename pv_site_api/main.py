@@ -193,8 +193,6 @@ def post_pv_actual(
     session.commit()
 
 
-# Comment this out, until we have security on this
-# # put_site_info: client can update a site
 @app.put("/sites/{site_uuid}")
 def put_site_info(
     site_uuid: str,
@@ -208,11 +206,11 @@ def put_site_info(
     """
 
     if is_fake():
-        print(f"Successfully updated site {site_uuid} with {site_info.dict()}")
-        print("Not doing anything with it (yet!)")
+        print(f"Fake: would update site {site_uuid} with {site_info.dict()}")
         return
 
     # @TODO: get client corresponding to auth
+    # See: https://github.com/openclimatefix/pv-site-api/issues/90
     client = session.query(ClientSQL).first()
     assert client is not None
 
@@ -256,6 +254,7 @@ def post_site_info(
         return
 
     # @TODO: get client corresponding to auth
+    # See: https://github.com/openclimatefix/pv-site-api/issues/90
     client = session.query(ClientSQL).first()
     assert client is not None
 
@@ -470,6 +469,8 @@ def get_enode_link(
     if is_fake():
         return make_fake_enode_link_url()
 
+    # @TODO: get client corresponding to auth
+    # See: https://github.com/openclimatefix/pv-site-api/issues/90
     client = session.query(ClientSQL).first()
     assert client is not None
 
@@ -488,6 +489,8 @@ async def get_inverters(
     if is_fake():
         return make_fake_inverters()
 
+    # @TODO: get client corresponding to auth
+    # See: https://github.com/openclimatefix/pv-site-api/issues/90
     client = session.query(ClientSQL).first()
     assert client is not None
 
@@ -515,6 +518,8 @@ async def get_inverters_for_site(
     if not site_exists:
         raise HTTPException(status_code=404)
 
+    # @TODO: get client corresponding to auth
+    # See: https://github.com/openclimatefix/pv-site-api/issues/90
     client = session.query(ClientSQL).first()
     assert client is not None
 
@@ -538,6 +543,7 @@ def put_inverters_for_site(
         return
 
     # @TODO: get client corresponding to auth
+    # See: https://github.com/openclimatefix/pv-site-api/issues/90
     client = session.query(ClientSQL).first()
     assert client is not None
 

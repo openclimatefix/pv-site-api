@@ -110,9 +110,10 @@ def inverters(db_session, sites):
     """Create some fake inverters for site 0"""
     inverters = []
     num_inverters = 3
-    for j in range(num_inverters):
-        inverter = InverterSQL(site_uuid=sites[0].site_uuid, client_id=f"id{j+1}")
-        inverters.append(inverter)
+    inverters = [
+        InverterSQL(site_uuid=sites[0].site_uuid, client_id=f"id{j+1}")
+        for j in range(num_inverters)
+    ]
 
     db_session.add_all(inverters)
     db_session.commit()
