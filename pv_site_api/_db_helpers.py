@@ -13,6 +13,7 @@ from typing import Any, Optional
 
 import sqlalchemy as sa
 import structlog
+from fastapi import Depends
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, InverterSQL, SiteSQL
 from sqlalchemy.orm import Session, aliased
@@ -24,6 +25,7 @@ from .pydantic_models import (
     PVSiteMetadata,
     SiteForecastValues,
 )
+from .session import get_session
 
 logger = structlog.stdlib.get_logger()
 
@@ -58,12 +60,6 @@ def _get_forecasts_for_horizon(
     )
 
     return list(session.execute(stmt))
-
-
-def _get_inverters_by_site(session: Session, site_uuid: str) -> list[Row]:
-    query = session.query(InverterSQL).filter(InverterSQL.site_uuid == site_uuid)
-
-    return query.all()
 
 
 def _get_latest_forecast_by_sites(
@@ -240,3 +236,14 @@ def does_site_exist(session: Session, site_uuid: str) -> bool:
         session.execute(sa.select(SiteSQL).where(SiteSQL.site_uuid == site_uuid)).one_or_none()
         is not None
     )
+
+
+def get_inverters_for_site(
+    site_uuid: str, session: Session = Depends(get_session)
+) -> list[Row] | None:
+    """Path dependency to get a list of inverters for a site, or None if the site doesn't exist"""
+    if not does_site_exist(session, site_uuid):
+        return None
+
+    query = session.query(InverterSQL).filter(InverterSQL.site_uuid == site_uuid)
+    return query.all()

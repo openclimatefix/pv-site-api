@@ -1,6 +1,10 @@
 import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pvsite_datamodel.sqlmodels import ClientSQL
+from sqlalchemy.orm import Session
+
+from .session import get_session
 
 token_auth_scheme = HTTPBearer()
 
@@ -15,7 +19,11 @@ class Auth:
 
         self._jwks_client = jwt.PyJWKClient(f"https://{domain}/.well-known/jwks.json")
 
-    def __call__(self, auth_credentials: HTTPAuthorizationCredentials = Depends(token_auth_scheme)):
+    def __call__(
+        self,
+        auth_credentials: HTTPAuthorizationCredentials = Depends(token_auth_scheme),
+        session: Session = Depends(get_session),
+    ):
         token = auth_credentials.credentials
 
         try:
@@ -24,7 +32,7 @@ class Auth:
             raise HTTPException(status_code=401, detail=str(e))
 
         try:
-            payload = jwt.decode(
+            jwt.decode(
                 token,
                 signing_key,
                 algorithms=self._algorithm,
@@ -34,4 +42,11 @@ class Auth:
         except Exception as e:
             raise HTTPException(status_code=401, detail=str(e))
 
-        return payload
+        if session is None:
+            return None
+
+        # @TODO: get client corresponding to auth
+        # See: https://github.com/openclimatefix/pv-site-api/issues/90
+        client = session.query(ClientSQL).first()
+        assert client is not None
+        return client

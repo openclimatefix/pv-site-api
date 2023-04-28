@@ -108,7 +108,6 @@ def sites(db_session, clients):
 @pytest.fixture()
 def inverters(db_session, sites):
     """Create some fake inverters for site 0"""
-    inverters = []
     num_inverters = 3
     inverters = [
         InverterSQL(site_uuid=sites[0].site_uuid, client_id=f"id{j+1}")
@@ -210,7 +209,7 @@ def forecast_values(db_session, sites):
 
 
 @pytest.fixture()
-def client(db_session):
+def client(db_session, clients):
     app.dependency_overrides[get_session] = lambda: db_session
-    app.dependency_overrides[auth] = lambda: None
+    app.dependency_overrides[auth] = lambda: clients[0]
     return TestClient(app)

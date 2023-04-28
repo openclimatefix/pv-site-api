@@ -10,7 +10,7 @@ TOKEN_URL = "https://example.com/token"
 CLIENT_ID = "ocf"
 CLIENT_SECRET = "secret"
 
-enode_base_url = "https://enode.com/api"
+test_enode_base_url = "https://enode.com/api"
 
 
 @pytest.fixture
@@ -20,9 +20,9 @@ def enode_auth():
     return enode_auth
 
 
-def test_enode_auth(enode_auth):
-    request = httpx.Request("GET", f"{enode_base_url}/inverters")
-    gen = enode_auth.auth_flow(request)
+def test_enode_auth_sync(enode_auth):
+    request = httpx.Request("GET", f"{test_enode_base_url}/inverters")
+    gen = enode_auth.sync_auth_flow(request)
     authenticated_request = next(gen)
     assert authenticated_request.headers["Authorization"] == "Bearer None"
 
@@ -38,9 +38,9 @@ def test_enode_auth(enode_auth):
     assert authenticated_request.headers["Authorization"] == f"Bearer {test_access_token}"
 
     try:
-        gen.send(httpx.Response(200, json=["id1"]))
-    except StopIteration as e:
-        assert isinstance(e.value, httpx.Response) and e.value.json()[0] == "id1"
+        next(gen)
+    except StopIteration:
+        pass
     else:
         # The generator should exit
         assert False
