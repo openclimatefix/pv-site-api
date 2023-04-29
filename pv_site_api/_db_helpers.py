@@ -15,13 +15,20 @@ import sqlalchemy as sa
 import structlog
 from fastapi import Depends
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
-from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, InverterSQL, SiteSQL
+from pvsite_datamodel.sqlmodels import (
+    ClientSQL,
+    ForecastSQL,
+    ForecastValueSQL,
+    InverterSQL,
+    SiteSQL,
+)
 from sqlalchemy.orm import Session, aliased
 
 from .pydantic_models import (
     Forecast,
     MultiplePVActual,
     PVActualValue,
+    PVClientMetadata,
     PVSiteMetadata,
     SiteForecastValues,
 )
@@ -228,6 +235,14 @@ def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
         created_utc=site.created_utc,
     )
     return pv_site
+
+
+def client_to_pydantic(client: ClientSQL) -> PVClientMetadata:
+    """Converts a ClientSQL object into a PVClientMetadata object."""
+    pv_client = PVClientMetadata(
+        client_uuid=str(client.client_uuid), client_name=client.client_name
+    )
+    return pv_client
 
 
 def does_site_exist(session: Session, site_uuid: str) -> bool:

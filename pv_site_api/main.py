@@ -280,7 +280,7 @@ def get_pv_actual(
     To test the route, you can input any number for the site_uuid (ex. 567)
     to generate a list of datetimes and actual kw generation for that site.
     """
-    return (get_pv_actual_many_sites(site_uuids=site_uuid, session=session))[0]
+    return (get_pv_actual_many_sites(site_uuids=site_uuid, session=session, auth=auth))[0]
 
 
 @app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
@@ -330,7 +330,7 @@ def get_pv_forecast(
     if not site_exists:
         raise HTTPException(status_code=404)
 
-    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session)
+    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session, auth=auth)
 
     if len(forecasts) == 0:
         return JSONResponse(status_code=204, content="no data")
@@ -380,7 +380,7 @@ def get_pv_estimate_clearsky(
         if not site_exists:
             raise HTTPException(status_code=404)
 
-    clearsky_estimates = get_pv_estimate_clearsky_many_sites(site_uuid, session)
+    clearsky_estimates = get_pv_estimate_clearsky_many_sites(site_uuid, session, auth=auth)
     return clearsky_estimates[0]
 
 

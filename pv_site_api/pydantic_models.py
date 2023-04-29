@@ -41,6 +41,13 @@ class PVSiteMetadata(BaseModel):
     installed_capacity_kw: float = Field(..., description="The site's capacity in kw", ge=0)
 
 
+class PVClientMetadata(BaseModel):
+    """Client metadata"""
+
+    client_uuid: str = Field(..., description="Unique internal ID for client.")
+    client_name: str = Field(..., description="Name for the client.")
+
+
 # post_pv_actual
 # get_pv_actual_date
 # posting data too the database
