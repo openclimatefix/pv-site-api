@@ -257,7 +257,8 @@ def post_site_info(
         tilt=site_info.tilt,
         latitude=site_info.latitude,
         longitude=site_info.longitude,
-        capacity_kw=site_info.installed_capacity_kw,
+        inverter_capacity_kw=site_info.inverter_capacity_kw,
+        module_capacity_kw=site_info.module_capacity_kw,
         ml_id=1,  # TODO remove this once https://github.com/openclimatefix/pvsite-datamodel/issues/27 is complete # noqa
     )
 
@@ -415,6 +416,9 @@ def get_pv_estimate_clearsky_many_sites(
         tilt = site.tilt or 0
         orientation = site.orientation or 180
 
+        # Using default DC overloading factor of 1.3
+        module_capacity = site.module_capacity_kw or site.inverter_capacity_kw * 1.3
+
         irr = irradiance.get_total_irradiance(
             surface_tilt=tilt,
             surface_azimuth=orientation,
@@ -431,8 +435,8 @@ def get_pv_estimate_clearsky_many_sites(
         pv_system = pvsystem.PVSystem(
             surface_tilt=tilt,
             surface_azimuth=orientation,
-            module_parameters={"pdc0": (1.5 * site.installed_capacity_kw), "gamma_pdc": -0.005},
-            inverter_parameters={"pdc0": site.installed_capacity_kw},
+            module_parameters={"pdc0": module_capacity, "gamma_pdc": -0.005},
+            inverter_parameters={"pdc0": site.inverter_capacity_kw},
         )
         pac = irr.apply(
             lambda row: pv_system.get_ac("pvwatts", pv_system.pvwatts_dc(row["poa_global"], 25)),
