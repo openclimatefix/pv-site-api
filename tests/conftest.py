@@ -2,7 +2,6 @@
 import os
 from datetime import datetime, timedelta
 
-import pytest_httpx
 import freezegun
 import pytest
 from fastapi.testclient import TestClient
@@ -22,7 +21,6 @@ from testcontainers.postgres import PostgresContainer
 
 from pv_site_api.main import app, auth
 from pv_site_api.session import get_session
-
 
 enode_token_url = os.getenv("ENODE_TOKEN_URL", "https://oauth.sandbox.enode.io/oauth2/token")
 
