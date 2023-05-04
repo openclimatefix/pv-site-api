@@ -463,6 +463,8 @@ def get_enode_link(
     if is_fake():
         return make_fake_enode_link_url()
 
+    logger.info(f"Getting Enode Link URL for {auth.client_uuid}")
+
     with httpx.Client(base_url=enode_api_base_url, auth=enode_auth) as httpx_client:
         data = {"vendorType": "inverter", "redirectUri": redirect_uri}
         res = httpx_client.post(f"/users/{auth.client_uuid}/link", data=data).json()

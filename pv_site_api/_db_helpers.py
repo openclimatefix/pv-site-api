@@ -262,4 +262,8 @@ def get_inverters_for_site(
         return None
 
     query = session.query(InverterSQL).filter(InverterSQL.site_uuid == site_uuid)
-    return query.all()
+    inverters = query.all()
+
+    logger.info(f"Found {len(inverters)} inverters for site {site_uuid}")
+
+    return inverters
