@@ -60,7 +60,7 @@ def test_post_site(db_session, client, clients):
         latitude=50,
         longitude=0,
         inverter_capacity_kw=1,
-        module_capacity_kw=1.2,
+        module_capacity_kw=1.3,
         created_utc=datetime.now(timezone.utc).isoformat(),
     )
 
@@ -87,7 +87,8 @@ def test_update_site_fake(fake, sites, client, clients):
         tilt=90,
         latitude=50,
         longitude=0,
-        installed_capacity_kw=1,
+        inverter_capacity_kw=1,
+        module_capacity_kw=1.3,
         created_utc=datetime.now(timezone.utc).isoformat(),
     )
 
@@ -111,7 +112,8 @@ def test_post_site_and_update(db_session, client, clients):
         tilt=90,
         latitude=50,
         longitude=0,
-        installed_capacity_kw=1,
+        inverter_capacity_kw=1,
+        module_capacity_kw=1.3,
         created_utc=datetime.now(timezone.utc).isoformat(),
     )
 
@@ -149,7 +151,8 @@ def test_update_nonexistant_site(sites, client, clients):
         tilt=90,
         latitude=50,
         longitude=0,
-        installed_capacity_kw=1,
+        inverter_capacity_kw=1,
+        module_capacity_kw=1.3,
         created_utc=datetime.now(timezone.utc).isoformat(),
     )
 

@@ -4,6 +4,7 @@ from typing import Any
 
 import httpx
 import pandas as pd
+import sentry_sdk
 import structlog
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
@@ -82,11 +83,11 @@ def is_fake():
     return int(os.environ.get("FAKE", 0))
 
 
-# sentry_sdk.init(
-#     dsn=os.getenv("SENTRY_DSN"),
-#     environment=os.getenv("ENVIRONMENT", "local"),
-#     traces_sampler=traces_sampler,
-# )
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    environment=os.getenv("ENVIRONMENT", "local"),
+    traces_sampler=traces_sampler,
+)
 
 app = FastAPI(docs_url="/swagger", redoc_url=None)
 
@@ -224,7 +225,8 @@ def put_site_info(
     site.tilt = site_info.tilt
     site.latitude = site_info.latitude
     site.longitude = site_info.longitude
-    site.capacity_kw = site_info.installed_capacity_kw
+    site.inverter_capacity_kw = site_info.inverter_capacity_kw
+    site.module_capacity_kw = site_info.module_capacity_kw
 
     session.commit()
     return site
