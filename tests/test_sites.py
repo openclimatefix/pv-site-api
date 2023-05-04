@@ -35,7 +35,8 @@ def test_post_site_fake(client, fake):
         tilt=90,
         latitude=50,
         longitude=0,
-        installed_capacity_kw=1,
+        inverter_capacity_kw=1,
+        module_capacity_kw=1.3,
         created_utc=datetime.now(timezone.utc).isoformat(),
     )
 
@@ -58,7 +59,8 @@ def test_post_site(db_session, client, clients):
         tilt=90,
         latitude=50,
         longitude=0,
-        installed_capacity_kw=1,
+        inverter_capacity_kw=1,
+        module_capacity_kw=1.2,
         created_utc=datetime.now(timezone.utc).isoformat(),
     )
 

@@ -93,7 +93,8 @@ def sites(db_session, clients):
                 client_site_name=f"site_{j}",
                 latitude=51,
                 longitude=3,
-                capacity_kw=4,
+                inverter_capacity_kw=4,
+                module_capacity_kw=4.3,
                 ml_id=i * num_sites + j,
             )
 
