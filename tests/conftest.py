@@ -2,6 +2,7 @@
 import os
 from datetime import datetime, timedelta
 
+import pytest_httpx
 import freezegun
 import pytest
 from fastapi.testclient import TestClient
@@ -21,6 +22,9 @@ from testcontainers.postgres import PostgresContainer
 
 from pv_site_api.main import app, auth
 from pv_site_api.session import get_session
+
+
+enode_token_url = os.getenv("ENODE_TOKEN_URL", "https://oauth.sandbox.enode.io/oauth2/token")
 
 
 @pytest.fixture
@@ -69,6 +73,16 @@ def db_session(engine):
         session.flush()
 
     engine.dispose()
+
+
+@pytest.fixture()
+def mock_enode_auth(httpx_mock):
+    """Adds mocked response for Enode authentication"""
+    httpx_mock.add_response(
+        url=enode_token_url,
+        # Ensure token expires immediately so that every test must go through Enode auth
+        json={"access_token": "test.test", "expires_in": 1, "scope": "", "token_type": "bearer"},
+    )
 
 
 @pytest.fixture()

@@ -11,7 +11,7 @@ def test_get_enode_link_fake(client, fake):
     assert len(response.json()) > 0
 
 
-def test_get_enode_link(client, clients, httpx_mock):
+def test_get_enode_link(client, clients, httpx_mock, mock_enode_auth):
     test_enode_link_uri = "https://example.com"
 
     httpx_mock.add_response(

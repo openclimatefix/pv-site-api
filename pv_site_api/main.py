@@ -3,6 +3,7 @@ import os
 from typing import Any
 
 import httpx
+from httpx_auth import OAuth2ClientCredentials
 import pandas as pd
 import sentry_sdk
 import structlog
@@ -30,7 +31,6 @@ from ._db_helpers import (
 )
 from .auth import Auth
 from .cache import cache_response
-from .enode_auth import EnodeAuth
 from .fake import (
     fake_site_uuid,
     make_fake_enode_link_url,
@@ -113,10 +113,10 @@ auth = Auth(
     algorithm=os.getenv("AUTH0_ALGORITHM"),
 )
 
-enode_auth = EnodeAuth(
-    os.getenv("ENODE_CLIENT_ID", ""),
-    os.getenv("ENODE_CLIENT_SECRET", ""),
-    os.getenv("ENODE_TOKEN_URL", "https://oauth.sandbox.enode.io/oauth2/token"),
+enode_auth = OAuth2ClientCredentials(
+    token_url=os.getenv("ENODE_TOKEN_URL", "https://oauth.sandbox.enode.io/oauth2/token"),
+    client_id=os.getenv("ENODE_CLIENT_ID", ""),
+    client_secret=os.getenv("ENODE_CLIENT_SECRET", ""),
 )
 
 enode_api_base_url = os.getenv("ENODE_API_BASE_URL", "https://enode-api.sandbox.enode.io")

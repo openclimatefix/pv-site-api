@@ -7,14 +7,13 @@ from typing import List
 
 import httpx
 
-from .enode_auth import EnodeAuth
 from .pydantic_models import Inverters, InverterValues
 
 TOTAL_MINUTES_IN_ONE_DAY = 24 * 60
 
 
 async def get_inverters_list(
-    client_uuid: uuid.UUID, inverter_ids: list[str], enode_auth: EnodeAuth, enode_api_base_url: str
+    client_uuid: uuid.UUID, inverter_ids: list[str], enode_auth: httpx.Auth, enode_api_base_url: str
 ) -> Inverters:
     async with httpx.AsyncClient(base_url=enode_api_base_url, auth=enode_auth) as httpx_client:
         headers = {"Enode-User-Id": str(client_uuid)}

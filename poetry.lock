@@ -748,6 +748,24 @@ http2 = ["h2 (>=3,<5)"]
 socks = ["socksio (>=1.0.0,<2.0.0)"]
 
 [[package]]
+name = "httpx-auth"
+version = "0.17.0"
+description = "Authentication for HTTPX"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "httpx_auth-0.17.0-py3-none-any.whl", hash = "sha256:5358f2938f8843179dc681cea34626d3589b312bb021425f2cd4a4fbc316e92c"},
+    {file = "httpx_auth-0.17.0.tar.gz", hash = "sha256:4e297113804ac3ee316d12a9596bc05e4dd592d2bf0809e5b4dab496d8a35b13"},
+]
+
+[package.dependencies]
+httpx = ">=0.24.0,<0.25.0"
+
+[package.extras]
+testing = ["pyjwt (>=2.0.0,<3.0.0)", "pytest-cov (>=4.0.0,<5.0.0)", "pytest-httpx (>=0.22.0,<0.23.0)"]
+
+[[package]]
 name = "idna"
 version = "3.4"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -2171,4 +2189,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "10e0de9302cd41354256267e337c7355c47dd8a30123480d24e0a4766d35f967"
+content-hash = "871a7e84a57d37e04219e9fb9388a29678bff03ddf5ddb8bb2ac8acee74b4f17"

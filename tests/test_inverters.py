@@ -14,7 +14,7 @@ def test_put_inverters_for_site_fake(client, sites, fake):
     assert response.status_code == 200
 
 
-def test_put_inverters_for_site(client, sites, httpx_mock):
+def test_put_inverters_for_site(client, sites, httpx_mock, mock_enode_auth):
     test_inverter_client_id = "6c078ca2-2e75-40c8-9a7f-288bd0b70065"
     json = [test_inverter_client_id]
     response = client.put(f"/sites/{sites[0].site_uuid}/inverters", json=json)
@@ -40,7 +40,7 @@ def test_get_inverters_for_site_fake(client, sites, inverters, fake):
     assert response.status_code == 200
 
 
-def test_get_inverters_for_site(client, sites, inverters, httpx_mock):
+def test_get_inverters_for_site(client, sites, inverters, httpx_mock, mock_enode_auth):
     mock_inverter_response("id1", httpx_mock)
     mock_inverter_response("id2", httpx_mock)
     mock_inverter_response("id3", httpx_mock)
@@ -66,7 +66,7 @@ def test_get_enode_inverters_fake(client, fake):
     assert len(response_inverters.inverters) > 0
 
 
-def test_get_enode_inverters(client, httpx_mock, clients):
+def test_get_enode_inverters(client, httpx_mock, clients, mock_enode_auth):
     httpx_mock.add_response(url=f"{enode_api_base_url}/inverters", json=["id1"])
     mock_inverter_response("id1", httpx_mock)
 
