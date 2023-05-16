@@ -115,8 +115,8 @@ auth = Auth(
 
 enode_auth = OAuth2ClientCredentials(
     token_url=os.getenv("ENODE_TOKEN_URL", "https://oauth.sandbox.enode.io/oauth2/token"),
-    client_id=os.getenv("ENODE_CLIENT_ID", ""),
-    client_secret=os.getenv("ENODE_CLIENT_SECRET", ""),
+    client_id=os.getenv("ENODE_CLIENT_ID", "test_id"),
+    client_secret=os.getenv("ENODE_CLIENT_SECRET", "test_secret"),
 )
 
 enode_api_base_url = os.getenv("ENODE_API_BASE_URL", "https://enode-api.sandbox.enode.io")
