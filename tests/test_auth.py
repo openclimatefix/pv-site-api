@@ -10,6 +10,7 @@ from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
 from pv_site_api.auth import Auth
+from pv_site_api.session import get_session
 
 # Use symetric algo for simplicity.
 ALGO = "HS256"
@@ -37,10 +38,11 @@ def auth(monkeypatch):
 
 
 @pytest.fixture
-def trivial_client(auth):
+def trivial_client(db_session, auth):
     """A client with only one restricted route."""
 
     app = FastAPI()
+    app.dependency_overrides[get_session] = lambda: db_session
 
     # Add a route that depends on authorization.
     @app.get("/route", dependencies=[Depends(auth)])
@@ -54,7 +56,7 @@ def _make_header(token):
     return {"Authorization": f"Bearer {token}"}
 
 
-def test_auth_happy_path(trivial_client):
+def test_auth_happy_path(clients, trivial_client):
     token = jwt.encode(
         {"aud": API_AUDIENCE, "iss": f"https://{DOMAIN}/"},
         SECRET,

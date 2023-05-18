@@ -13,17 +13,26 @@ from typing import Any, Optional
 
 import sqlalchemy as sa
 import structlog
+from fastapi import Depends
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
-from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteSQL
+from pvsite_datamodel.sqlmodels import (
+    ClientSQL,
+    ForecastSQL,
+    ForecastValueSQL,
+    InverterSQL,
+    SiteSQL,
+)
 from sqlalchemy.orm import Session, aliased
 
 from .pydantic_models import (
     Forecast,
     MultiplePVActual,
     PVActualValue,
+    PVClientMetadata,
     PVSiteMetadata,
     SiteForecastValues,
 )
+from .session import get_session
 
 logger = structlog.stdlib.get_logger()
 
@@ -229,9 +238,32 @@ def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
     return pv_site
 
 
+def client_to_pydantic(client: ClientSQL) -> PVClientMetadata:
+    """Converts a ClientSQL object into a PVClientMetadata object."""
+    pv_client = PVClientMetadata(
+        client_uuid=str(client.client_uuid), client_name=client.client_name
+    )
+    return pv_client
+
+
 def does_site_exist(session: Session, site_uuid: str) -> bool:
     """Checks if a site exists."""
     return (
         session.execute(sa.select(SiteSQL).where(SiteSQL.site_uuid == site_uuid)).one_or_none()
         is not None
     )
+
+
+def get_inverters_for_site(
+    site_uuid: str, session: Session = Depends(get_session)
+) -> list[Row] | None:
+    """Path dependency to get a list of inverters for a site, or None if the site doesn't exist"""
+    if not does_site_exist(session, site_uuid):
+        return None
+
+    query = session.query(InverterSQL).filter(InverterSQL.site_uuid == site_uuid)
+    inverters = query.all()
+
+    logger.info(f"Found {len(inverters)} inverters for site {site_uuid}")
+
+    return inverters

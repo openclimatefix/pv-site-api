@@ -44,6 +44,13 @@ class PVSiteMetadata(BaseModel):
     )
 
 
+class PVClientMetadata(BaseModel):
+    """Client metadata"""
+
+    client_uuid: str = Field(..., description="Unique internal ID for client.")
+    client_name: str = Field(..., description="Name for the client.")
+
+
 # post_pv_actual
 # get_pv_actual_date
 # posting data too the database
@@ -112,3 +119,71 @@ class ClearskyEstimate(BaseModel):
     clearsky_estimate: List[ClearskyEstimateValues] = Field(
         ..., description="List of times and clearsky estimate"
     )
+
+
+class InverterProductionState(BaseModel):
+    """Production State data for an inverter"""
+
+    productionRate: Optional[float] = Field(..., description="The current production rate in kW")
+    isProducing: Optional[bool] = Field(
+        ..., description="Whether the solar inverter is actively producing energy or not"
+    )
+    totalLifetimeProduction: Optional[float] = Field(
+        ..., description="The total lifetime production in kWh"
+    )
+    lastUpdated: Optional[str] = Field(
+        ..., description="ISO8601 UTC timestamp of last received production state update"
+    )
+
+
+class InverterInformation(BaseModel):
+    """ "Inverter information"""
+
+    id: str = Field(..., description="Solar inverter vendor ID")
+    brand: str = Field(..., description="Solar inverter brand")
+    model: str = Field(..., description="Solar inverter model")
+    siteName: str = Field(
+        ...,
+        description="Name of the site, as set by the user on the device/vendor.",
+    )
+    installationDate: str = Field(..., description="Solar inverter installation date")
+
+
+class InverterLocation(BaseModel):
+    """ "Longitude and Latitude of inverter"""
+
+    longitude: Optional[float] = Field(..., description="Longitude in degrees")
+    latitude: Optional[float] = Field(..., description="Latitude in degrees")
+
+
+class InverterValues(BaseModel):
+    """Inverter Data for a site"""
+
+    id: str = Field(..., description="Solar Inverter ID")
+    vendor: str = Field(
+        ..., description="One of EMA ENPHASE FRONIUS GOODWE GROWATT HUAWEI SMA SOLAREDGE SOLIS"
+    )
+    chargingLocationId: Optional[str] = Field(
+        ...,
+        description="ID of the charging location the solar inverter is currently positioned at.",
+    )
+    lastSeen: str = Field(
+        ..., description="The last time the solar inverter was successfully communicated with"
+    )
+    isReachable: bool = Field(
+        ...,
+        description="Whether live data from the solar inverter is currently reachable",
+    )
+    productionState: InverterProductionState = Field(
+        ..., description="Descriptive information about the production state"
+    )
+    information: InverterInformation = Field(
+        ..., description="Descriptive information about the solar inverter"
+    )
+    location: InverterLocation = Field(..., description="Solar inverter's GPS coordinates")
+
+
+class Inverters(BaseModel):
+    """Return all Inverter Data"""
+
+    inverters: List[InverterValues] = Field(..., description="List of inverter data")

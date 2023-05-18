@@ -6,6 +6,8 @@ from functools import wraps
 
 import structlog
 
+from ._db_helpers import client_to_pydantic
+
 logger = structlog.stdlib.get_logger()
 
 CACHE_TIME_SECONDS = 120
@@ -42,6 +44,11 @@ def cache_response(func):
         for var in ["session", "user"]:
             if var in route_variables:
                 route_variables.pop(var)
+
+        # translate authenticated client to serializable type
+        route_variables["auth"] = (
+            route_variables["auth"] and client_to_pydantic(route_variables["auth"]).json()
+        )
 
         # make into string
         route_variables = json.dumps(route_variables)

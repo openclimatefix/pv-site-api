@@ -11,6 +11,7 @@ from pvsite_datamodel.sqlmodels import (
     ForecastSQL,
     ForecastValueSQL,
     GenerationSQL,
+    InverterSQL,
     SiteSQL,
     StatusSQL,
 )
@@ -20,6 +21,14 @@ from testcontainers.postgres import PostgresContainer
 
 from pv_site_api.main import app, auth
 from pv_site_api.session import get_session
+
+enode_token_url = os.getenv("ENODE_TOKEN_URL", "https://oauth.sandbox.enode.io/oauth2/token")
+
+
+@pytest.fixture
+def non_mocked_hosts() -> list:
+    """Prevent TestClient fixture from being mocked"""
+    return ["testserver"]
 
 
 @pytest.fixture
@@ -65,6 +74,16 @@ def db_session(engine):
 
 
 @pytest.fixture()
+def mock_enode_auth(httpx_mock):
+    """Adds mocked response for Enode authentication"""
+    httpx_mock.add_response(
+        url=enode_token_url,
+        # Ensure token expires immediately so that every test must go through Enode auth
+        json={"access_token": "test.test", "expires_in": 1, "scope": "", "token_type": "bearer"},
+    )
+
+
+@pytest.fixture()
 def clients(db_session):
     """Make fake client sql"""
     clients = [ClientSQL(client_name=f"test_client_{i}") for i in range(2)]
@@ -97,6 +116,21 @@ def sites(db_session, clients):
     db_session.commit()
 
     return sites
+
+
+@pytest.fixture()
+def inverters(db_session, sites):
+    """Create some fake inverters for site 0"""
+    num_inverters = 3
+    inverters = [
+        InverterSQL(site_uuid=sites[0].site_uuid, client_id=f"id{j+1}")
+        for j in range(num_inverters)
+    ]
+
+    db_session.add_all(inverters)
+    db_session.commit()
+
+    return inverters
 
 
 @pytest.fixture()
@@ -188,7 +222,7 @@ def forecast_values(db_session, sites):
 
 
 @pytest.fixture()
-def client(db_session):
+def client(db_session, clients):
     app.dependency_overrides[get_session] = lambda: db_session
-    app.dependency_overrides[auth] = lambda: None
+    app.dependency_overrides[auth] = lambda: clients[0]
     return TestClient(app)

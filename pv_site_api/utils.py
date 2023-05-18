@@ -1,14 +1,33 @@
 """ make fake intensity"""
+import asyncio
 import math
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List
+
+import httpx
+
+from .pydantic_models import Inverters, InverterValues
 
 TOTAL_MINUTES_IN_ONE_DAY = 24 * 60
 
 
+async def get_inverters_list(
+    client_uuid: uuid.UUID, inverter_ids: list[str], enode_auth: httpx.Auth, enode_api_base_url: str
+) -> Inverters:
+    async with httpx.AsyncClient(base_url=enode_api_base_url, auth=enode_auth) as httpx_client:
+        headers = {"Enode-User-Id": str(client_uuid)}
+        inverters_raw = await asyncio.gather(
+            *[httpx_client.get(f"/inverters/{id}", headers=headers) for id in inverter_ids]
+        )
+
+    inverters = [InverterValues(**(inverter_raw.json())) for inverter_raw in inverters_raw]
+    return Inverters(inverters=inverters)
+
+
 def make_fake_intensity(datetime_utc: datetime) -> float:
     """
-    Make a fake intesnity value based on the time of the day
+    Make a fake intensity value based on the time of the day
 
     :param datetime_utc:
     :return: intensity, between 0 and 1

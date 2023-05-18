@@ -1,6 +1,8 @@
 """Main API Routes"""
 import os
+from typing import Any
 
+import httpx
 import pandas as pd
 import sentry_sdk
 import structlog
@@ -9,10 +11,11 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, JSONResponse
+from httpx_auth import OAuth2ClientCredentials
 from pvlib import irradiance, location, pvsystem
 from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
-from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
+from pvsite_datamodel.sqlmodels import ClientSQL, InverterSQL, SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
 from sqlalchemy.orm import Session
 
@@ -22,6 +25,7 @@ from ._db_helpers import (
     does_site_exist,
     get_forecasts_by_sites,
     get_generation_by_sites,
+    get_inverters_for_site,
     get_sites_by_uuids,
     site_to_pydantic,
 )
@@ -29,7 +33,9 @@ from .auth import Auth
 from .cache import cache_response
 from .fake import (
     fake_site_uuid,
+    make_fake_enode_link_url,
     make_fake_forecast,
+    make_fake_inverters,
     make_fake_pv_generation,
     make_fake_site,
     make_fake_status,
@@ -37,6 +43,7 @@ from .fake import (
 from .pydantic_models import (
     ClearskyEstimate,
     Forecast,
+    Inverters,
     MultiplePVActual,
     PVSiteAPIStatus,
     PVSiteMetadata,
@@ -44,7 +51,7 @@ from .pydantic_models import (
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
-from .utils import get_yesterday_midnight
+from .utils import get_inverters_list, get_yesterday_midnight
 
 load_dotenv()
 
@@ -107,6 +114,14 @@ auth = Auth(
     algorithm=os.getenv("AUTH0_ALGORITHM"),
 )
 
+enode_auth = OAuth2ClientCredentials(
+    token_url=os.getenv("ENODE_TOKEN_URL", "https://oauth.sandbox.enode.io/oauth2/token"),
+    client_id=os.getenv("ENODE_CLIENT_ID", "test_id"),
+    client_secret=os.getenv("ENODE_CLIENT_SECRET", "test_secret"),
+)
+
+enode_api_base_url = os.getenv("ENODE_API_BASE_URL", "https://enode-api.sandbox.enode.io")
+
 # name the api
 # test that the routes are there on swagger
 # Following on from #1 now will be good to set out models
@@ -120,7 +135,7 @@ auth = Auth(
 @app.get("/sites", response_model=PVSites)
 def get_sites(
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: Any = Depends(auth),
 ):
     """
     ### This route returns a list of the user's PV Sites with metadata for each site.
@@ -148,7 +163,7 @@ def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: Any = Depends(auth),
 ):
     """### This route is used to input actual PV generation.
 
@@ -180,28 +195,49 @@ def post_pv_actual(
     session.commit()
 
 
-# Comment this out, until we have security on this
-# # put_site_info: client can update a site
-# @app.put("/sites/{site_uuid}")
-# def put_site_info(site_info: PVSiteMetadata):
-#     """
-#     ### This route allows a user to update site information for a single site.
-#
-#     """
-#
-#     if is_fake():
-#         print(f"Successfully updated {site_info.dict()} for site {site_info.client_site_name}")
-#         print("Not doing anything with it (yet!)")
-#         return
-#
-#     raise Exception(NotImplemented)
+@app.put("/sites/{site_uuid}")
+def put_site_info(
+    site_uuid: str,
+    site_info: PVSiteMetadata,
+    session: Session = Depends(get_session),
+    auth: Any = Depends(auth),
+):
+    """
+    ### This route allows a user to update a site's information.
+
+    """
+
+    if is_fake():
+        print(f"Fake: would update site {site_uuid} with {site_info.dict()}")
+        return
+
+    site = (
+        session.query(SiteSQL).filter_by(client_uuid=auth.client_uuid, site_uuid=site_uuid).first()
+    )
+    if site is None:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    site.client_site_id = site_info.client_site_id
+    site.client_site_name = site_info.client_site_name
+    site.region = site_info.region
+    site.dno = site_info.dno
+    site.gsp = site_info.gsp
+    site.orientation = site_info.orientation
+    site.tilt = site_info.tilt
+    site.latitude = site_info.latitude
+    site.longitude = site_info.longitude
+    site.inverter_capacity_kw = site_info.inverter_capacity_kw
+    site.module_capacity_kw = site_info.module_capacity_kw
+
+    session.commit()
+    return site
 
 
 @app.post("/sites")
 def post_site_info(
     site_info: PVSiteMetadata,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: Any = Depends(auth),
 ):
     """
     ### This route allows a user to add a site.
@@ -213,12 +249,8 @@ def post_site_info(
         print("Not doing anything with it (yet!)")
         return
 
-    # client uuid from name
-    client = session.query(ClientSQL).first()
-    assert client is not None
-
     site = SiteSQL(
-        client_uuid=client.client_uuid,
+        client_uuid=auth.client_uuid,
         client_site_id=site_info.client_site_id,
         client_site_name=site_info.client_site_name,
         region=site_info.region,
@@ -243,7 +275,7 @@ def post_site_info(
 def get_pv_actual(
     site_uuid: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: Any = Depends(auth),
 ):
     """### This route returns PV readings from a single PV site.
 
@@ -252,7 +284,7 @@ def get_pv_actual(
     To test the route, you can input any number for the site_uuid (ex. 567)
     to generate a list of datetimes and actual kw generation for that site.
     """
-    return (get_pv_actual_many_sites(site_uuids=site_uuid, session=session))[0]
+    return (get_pv_actual_many_sites(site_uuids=site_uuid, session=session, auth=auth))[0]
 
 
 @app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
@@ -260,7 +292,7 @@ def get_pv_actual(
 def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: Any = Depends(auth),
 ):
     """
     ### Get the actual power generation for a list of sites.
@@ -280,7 +312,7 @@ def get_pv_actual_many_sites(
 def get_pv_forecast(
     site_uuid: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: Any = Depends(auth),
 ):
     """
     ### This route is where you might say the magic happens.
@@ -302,7 +334,7 @@ def get_pv_forecast(
     if not site_exists:
         raise HTTPException(status_code=404)
 
-    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session)
+    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session, auth=auth)
 
     if len(forecasts) == 0:
         return JSONResponse(status_code=204, content="no data")
@@ -315,12 +347,11 @@ def get_pv_forecast(
 def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: ClientSQL = Depends(auth),
 ):
     """
     ### Get the forecasts for multiple sites.
     """
-
     logger.info(f"Getting forecasts for {site_uuids}")
 
     if is_fake():
@@ -343,7 +374,7 @@ def get_pv_forecast_many_sites(
 def get_pv_estimate_clearsky(
     site_uuid: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: Any = Depends(auth),
 ):
     """
     ### Gets a estimate of AC production under a clear sky
@@ -353,7 +384,7 @@ def get_pv_estimate_clearsky(
         if not site_exists:
             raise HTTPException(status_code=404)
 
-    clearsky_estimates = get_pv_estimate_clearsky_many_sites(site_uuid, session)
+    clearsky_estimates = get_pv_estimate_clearsky_many_sites(site_uuid, session, auth=auth)
     return clearsky_estimates[0]
 
 
@@ -361,6 +392,7 @@ def get_pv_estimate_clearsky(
 def get_pv_estimate_clearsky_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
+    auth: Any = Depends(auth),
 ):
     """
     ### Gets a estimate of AC production under a clear sky for multiple sites.
@@ -419,6 +451,91 @@ def get_pv_estimate_clearsky_many_sites(
         res.append({"clearsky_estimate": pac.to_dict("records")})
 
     return res
+
+
+@app.get("/enode/link")
+def get_enode_link(
+    redirect_uri: str,
+    auth: Any = Depends(auth),
+):
+    """
+    ### Returns a URL from Enode that starts a user's Enode link flow.
+    """
+    if is_fake():
+        return make_fake_enode_link_url()
+
+    logger.info(f"Getting Enode Link URL for {auth.client_uuid}")
+
+    with httpx.Client(base_url=enode_api_base_url, auth=enode_auth) as httpx_client:
+        data = {"vendorType": "inverter", "redirectUri": redirect_uri}
+        res = httpx_client.post(f"/users/{auth.client_uuid}/link", data=data).json()
+
+    return res["linkUrl"]
+
+
+@app.get("/enode/inverters")
+async def get_inverters(
+    session: Session = Depends(get_session),
+    auth: Any = Depends(auth),
+):
+    if is_fake():
+        return make_fake_inverters()
+
+    async with httpx.AsyncClient(base_url=enode_api_base_url, auth=enode_auth) as httpx_client:
+        headers = {"Enode-User-Id": str(auth.client_uuid)}
+        response = await httpx_client.get("/inverters", headers=headers)
+        if response.status_code == 401:
+            return Inverters(inverters=[])
+
+        inverter_ids = [str(inverter_id) for inverter_id in response.json()]
+
+    return await get_inverters_list(auth.client_uuid, inverter_ids, enode_auth, enode_api_base_url)
+
+
+@app.get("/sites/{site_uuid}/inverters")
+async def get_inverters_data_for_site(
+    inverters: list[Any] | None = Depends(get_inverters_for_site),
+    auth: Any = Depends(auth),
+):
+    if is_fake():
+        return make_fake_inverters()
+
+    if inverters is None:
+        raise HTTPException(status_code=404)
+
+    inverter_ids = [inverter.client_id for inverter in inverters]
+
+    return await get_inverters_list(auth.client_uuid, inverter_ids, enode_auth, enode_api_base_url)
+
+
+@app.put("/sites/{site_uuid}/inverters")
+def put_inverters_for_site(
+    site_uuid: str,
+    client_ids: list[str],
+    session: Session = Depends(get_session),
+    auth: Any = Depends(auth),
+):
+    """
+    ### Updates a site's inverters with a list of inverter client ids (`client_ids`)
+    """
+    if is_fake():
+        print(f"Successfully changed inverters for {site_uuid}")
+        print("Not doing anything with it (yet!)")
+        return
+
+    site = (
+        session.query(SiteSQL).filter_by(client_uuid=auth.client_uuid, site_uuid=site_uuid).first()
+    )
+    if site is None:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    site.inverters.clear()
+
+    for client_id in client_ids:
+        site.inverters.append(InverterSQL(site_uuid=site_uuid, client_id=client_id))
+
+    session.add(site)
+    session.commit()
 
 
 # get_status: get the status of the system
