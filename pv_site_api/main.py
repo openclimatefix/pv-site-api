@@ -43,11 +43,11 @@ from .fake import (
 from .pydantic_models import (
     ClearskyEstimate,
     Forecast,
+    Inverters,
     MultiplePVActual,
     PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
-    Inverters,
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
