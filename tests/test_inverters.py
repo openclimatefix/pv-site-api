@@ -77,6 +77,18 @@ def test_get_enode_inverters(client, httpx_mock, clients, mock_enode_auth):
     assert len(inverters.inverters) > 0
 
 
+def test_get_enode_inverters_for_nonexistant_user(client, httpx_mock, clients, mock_enode_auth):
+    httpx_mock.add_response(
+        url=f"{enode_api_base_url}/inverters", status_code=401, json={"error": "err"}
+    )
+
+    response = client.get("/enode/inverters")
+    assert response.status_code == 200
+
+    inverters = Inverters(**response.json())
+    assert len(inverters.inverters) == 0
+
+
 def mock_inverter_response(id, httpx_mock):
     httpx_mock.add_response(
         url=f"{enode_api_base_url}/inverters/{id}",

@@ -47,6 +47,7 @@ from .pydantic_models import (
     PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
+    Inverters,
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
@@ -482,8 +483,11 @@ async def get_inverters(
 
     async with httpx.AsyncClient(base_url=enode_api_base_url, auth=enode_auth) as httpx_client:
         headers = {"Enode-User-Id": str(auth.client_uuid)}
-        response_json = (await httpx_client.get("/inverters", headers=headers)).json()
-        inverter_ids = [str(inverter_id) for inverter_id in response_json]
+        response = await httpx_client.get("/inverters", headers=headers)
+        if response.status_code == 401:
+            return Inverters(inverters=[])
+
+        inverter_ids = [str(inverter_id) for inverter_id in response.json()]
 
     return await get_inverters_list(auth.client_uuid, inverter_ids, enode_auth, enode_api_base_url)
 
