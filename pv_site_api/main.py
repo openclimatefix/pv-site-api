@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pvlib import irradiance, location, pvsystem
 from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
@@ -263,7 +263,7 @@ def get_pv_actual(
     actuals = get_pv_actual_many_sites(site_uuids=site_uuid, session=session)
 
     if len(actuals) == 0:
-        return JSONResponse(status_code=204, content="no data")
+        return Response(status_code=204)
 
     return actuals[0]
 
@@ -318,7 +318,7 @@ def get_pv_forecast(
     forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session)
 
     if len(forecasts) == 0:
-        return JSONResponse(status_code=204, content="no data")
+        return Response(status_code=204)
 
     return forecasts[0]
 
