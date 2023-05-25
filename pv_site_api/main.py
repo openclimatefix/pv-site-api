@@ -252,7 +252,20 @@ def get_pv_actual(
     To test the route, you can input any number for the site_uuid (ex. 567)
     to generate a list of datetimes and actual kw generation for that site.
     """
-    return (get_pv_actual_many_sites(site_uuids=site_uuid, session=session))[0]
+    if is_fake():
+        return make_fake_pv_generation(fake_site_uuid)
+
+    site_exists = does_site_exist(session, site_uuid)
+
+    if not site_exists:
+        raise HTTPException(status_code=404)
+
+    actuals = get_pv_actual_many_sites(site_uuids=site_uuid, session=session)
+
+    if len(actuals) == 0:
+        return JSONResponse(status_code=204, content="no data")
+
+    return actuals[0]
 
 
 @app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
