@@ -43,7 +43,7 @@ def test_put_site_fake(client, fake):
     pv_site_dict = json.loads(pv_site.json())
 
     response = client.post("/sites", json=pv_site_dict)
-    assert response.status_code == 200, response.text
+    assert response.status_code == 201, response.text
 
 
 def test_put_site(db_session, client, clients):
@@ -67,7 +67,7 @@ def test_put_site(db_session, client, clients):
     pv_site_dict = json.loads(pv_site.json())
 
     response = client.post("/sites", json=pv_site_dict)
-    assert response.status_code == 200, response.text
+    assert response.status_code == 201, response.text
 
     sites = db_session.query(SiteSQL).all()
     assert len(sites) == 1
