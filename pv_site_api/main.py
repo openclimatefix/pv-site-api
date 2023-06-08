@@ -197,7 +197,7 @@ def post_pv_actual(
 #     raise Exception(NotImplemented)
 
 
-@app.post("/sites")
+@app.post("/sites", status_code=201)
 def post_site_info(
     site_info: PVSiteMetadata,
     session: Session = Depends(get_session),
@@ -236,6 +236,8 @@ def post_site_info(
     # add site
     session.add(site)
     session.commit()
+
+    return site_to_pydantic(site)
 
 
 # get_pv_actual: the client can read pv data from the past
