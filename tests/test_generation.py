@@ -1,9 +1,10 @@
 """ Test for main app """
 
 import json
+import uuid
 from datetime import datetime, timezone
 
-from pvsite_datamodel.sqlmodels import GenerationSQL
+from pvsite_datamodel.sqlmodels import GenerationSQL, SiteSQL
 
 from pv_site_api.pydantic_models import MultiplePVActual, PVActualValue
 
@@ -86,3 +87,20 @@ def test_post_pv_actual(db_session, client, sites):
     generations = db_session.query(GenerationSQL).all()
     assert len(generations) == 1
     assert str(generations[0].site_uuid) == str(pv_actual_iteration.site_uuid)
+
+
+def test_pv_actual_no_data(db_session, client, clients):
+    # Make a brand new site.
+    site = SiteSQL(client_uuid=clients[0].client_uuid, ml_id=123)
+    db_session.add(site)
+    db_session.commit()
+
+    # Get forecasts from that site with no actuals.
+    resp = client.get(f"/sites/{site.site_uuid}/pv_actual")
+    assert resp.status_code == 204
+
+
+def test_pv_actual_404(db_session, client):
+    """If we get actuals for an unknown site, we get a 404."""
+    resp = client.get(f"/sites/{uuid.uuid4()}/pv_actual")
+    assert resp.status_code == 404
