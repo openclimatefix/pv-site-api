@@ -458,8 +458,8 @@ def get_api_information():
 
 @app.get("/favicon.ico", include_in_schema=False)
 def get_favicon() -> FileResponse:
-     """Get favicon"""
-     return FileResponse(f"{folder}/favicon.ico")
+    """Get favicon"""
+    return FileResponse(f"{folder}/favicon.ico")
 
 
 @app.get("/QUARTZSOLAR_LOGO_SECONDARY_BLACK_1.png", include_in_schema=False)
