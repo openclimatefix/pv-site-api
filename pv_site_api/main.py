@@ -85,7 +85,7 @@ sentry_sdk.init(
 
 app = FastAPI(docs_url="/swagger", redoc_url=None)
 
-title = "Nowcasting PV Site API"
+title = "Quartz PV Site API"
 
 folder = os.path.dirname(os.path.abspath(__file__))
 description = """
@@ -443,29 +443,29 @@ def get_status(session: Session = Depends(get_session)):
 @app.get("/")
 def get_api_information():
     """
-    ####  This route returns basic information about the Nowcasting PV Site API.
+    ####  This route returns basic information about the Quartz PV Site API.
 
     """
 
     logger.info("Route / has been called")
 
     return {
-        "title": "Nowcasting PV Site API",
+        "title": "Quartz PV Site API",
         "version": pv_site_api.__version__,
-        "progress": "The Nowcasting PV Site API is still underconstruction.",
+        "progress": "The Quartz PV Site API is still under construction.",
     }
 
 
-# @app.get("/favicon.ico", include_in_schema=False)
-# def get_favicon() -> FileResponse:
-#     """Get favicon"""
-#     return FileResponse(f"/favicon.ico")
+@app.get("/favicon.ico", include_in_schema=False)
+def get_favicon() -> FileResponse:
+    """Get favicon"""
+    return FileResponse(f"{folder}/favicon.ico")
 
 
-@app.get("/nowcasting.png", include_in_schema=False)
+@app.get("/QUARTZSOLAR_LOGO_SECONDARY_BLACK_1.png", include_in_schema=False)
 def get_nowcasting_logo() -> FileResponse:
     """Get logo"""
-    return FileResponse(f"{folder}/nowcasting.png")
+    return FileResponse(f"{folder}/QUARTZSOLAR_LOGO_SECONDARY_BLACK_1.png")
 
 
 @app.get("/docs", include_in_schema=False)
@@ -487,7 +487,7 @@ def custom_openapi():
         description=description,
         contact={
             "name": "Nowcasting by Open Climate Fix",
-            "url": "https://nowcasting.io",
+            "url": "https://quartz.solar",
             "email": "info@openclimatefix.org",
         },
         license_info={
@@ -496,7 +496,7 @@ def custom_openapi():
         },
         routes=app.routes,
     )
-    openapi_schema["info"]["x-logo"] = {"url": "/nowcasting.png"}
+    openapi_schema["info"]["x-logo"] = {"url": "/QUARTZSOLAR_LOGO_SECONDARY_BLACK_1.png"}
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
