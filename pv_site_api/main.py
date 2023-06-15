@@ -117,6 +117,17 @@ auth = Auth(
 # get_sites: Clients get the site id that are available to them
 
 
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    """Add process time into response object header"""
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = str(time.time() - start_time)
+    logger.debug(f"Process Time {process_time} {request.url}")
+    response.headers["X-Process-Time"] = process_time
+
+    return response
+
 @app.get("/sites", response_model=PVSites)
 def get_sites(
     session: Session = Depends(get_session),
