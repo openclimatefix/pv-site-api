@@ -1,11 +1,12 @@
 """Main API Routes"""
 import os
+import time
 
 import pandas as pd
 import sentry_sdk
 import structlog
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, JSONResponse
@@ -127,6 +128,7 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Process-Time"] = process_time
 
     return response
+
 
 @app.get("/sites", response_model=PVSites)
 def get_sites(
