@@ -1,11 +1,12 @@
 """Main API Routes"""
 import os
+import time
 
 import pandas as pd
 import sentry_sdk
 import structlog
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, JSONResponse
@@ -115,6 +116,18 @@ auth = Auth(
 # for each site get the forecast using 'get_forecast'
 # Could look at 'get_forecast_metadata' to see when this forecast is made
 # get_sites: Clients get the site id that are available to them
+
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    """Add process time into response object header"""
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = str(time.time() - start_time)
+    logger.debug(f"Process Time {process_time} {request.url}")
+    response.headers["X-Process-Time"] = process_time
+
+    return response
 
 
 @app.get("/sites", response_model=PVSites)
