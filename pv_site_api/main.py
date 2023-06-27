@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, Response
 from pvlib import irradiance, location, pvsystem
 from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
@@ -210,7 +210,7 @@ def post_pv_actual(
 #     raise Exception(NotImplemented)
 
 
-@app.post("/sites")
+@app.post("/sites", status_code=201)
 def post_site_info(
     site_info: PVSiteMetadata,
     session: Session = Depends(get_session),
@@ -250,6 +250,8 @@ def post_site_info(
     session.add(site)
     session.commit()
 
+    return site_to_pydantic(site)
+
 
 # get_pv_actual: the client can read pv data from the past
 @app.get("/sites/{site_uuid}/pv_actual", response_model=MultiplePVActual)
@@ -265,7 +267,20 @@ def get_pv_actual(
     To test the route, you can input any number for the site_uuid (ex. 567)
     to generate a list of datetimes and actual kw generation for that site.
     """
-    return (get_pv_actual_many_sites(site_uuids=site_uuid, session=session))[0]
+    if is_fake():
+        return make_fake_pv_generation(fake_site_uuid)
+
+    site_exists = does_site_exist(session, site_uuid)
+
+    if not site_exists:
+        raise HTTPException(status_code=404)
+
+    actuals = get_pv_actual_many_sites(site_uuids=site_uuid, session=session)
+
+    if len(actuals) == 0:
+        return Response(status_code=204)
+
+    return actuals[0]
 
 
 @app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
@@ -318,7 +333,7 @@ def get_pv_forecast(
     forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session)
 
     if len(forecasts) == 0:
-        return JSONResponse(status_code=204, content="no data")
+        return Response(status_code=204)
 
     return forecasts[0]
 
