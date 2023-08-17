@@ -178,5 +178,5 @@ def forecast_values(db_session, sites):
 @pytest.fixture()
 def client(db_session):
     app.dependency_overrides[get_session] = lambda: db_session
-    app.dependency_overrides[auth] = lambda: {"email": "test@test.com"}
+    app.dependency_overrides[auth] = lambda: {"https://openclimatefix.org/email": "test@test.com"}
     return TestClient(app)

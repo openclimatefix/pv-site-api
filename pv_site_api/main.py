@@ -134,7 +134,7 @@ async def add_process_time_header(request: Request, call_next):
 @app.get("/sites", response_model=PVSites)
 def get_sites(
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """
     ### This route returns a list of the user's PV Sites with metadata for each site.
@@ -164,7 +164,7 @@ def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: auth = Depends(auth),
 ):
     """### This route is used to input actual PV generation.
 
@@ -179,11 +179,7 @@ def post_pv_actual(
         return
 
     # make sure user has access to this site
-    if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
-        raise HTTPException(
-            status_code=403,
-            detail=f"Forbidden. User does not hav access to this site {site_uuid}. ",
-        )
+    check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
     generations = []
     for pv_actual_value in pv_actual.pv_actual_values:
@@ -224,7 +220,7 @@ def post_pv_actual(
 def post_site_info(
     site_info: PVSiteMetadata,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """
     ### This route allows a user to add a site.
@@ -236,7 +232,7 @@ def post_site_info(
         print("Not doing anything with it (yet!)")
         return
 
-    user = get_user_by_email(session=session, email=auth["email"])
+    user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
 
     site = SiteSQL(
         client_site_id=site_info.client_site_id,
@@ -267,7 +263,7 @@ def post_site_info(
 def get_pv_actual(
     site_uuid: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """### This route returns PV readings from a single PV site.
 
@@ -284,13 +280,9 @@ def get_pv_actual(
     if not site_exists:
         raise HTTPException(status_code=404)
 
-    if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
-        raise HTTPException(
-            status_code=403,
-            detail=f"Forbidden. User does not hav access to this site {site_uuid}. ",
-        )
+    check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
-    actuals = get_pv_actual_many_sites(site_uuids=site_uuid, session=session)
+    actuals = get_pv_actual_many_sites(site_uuids=site_uuid, session=session, auth=auth)
 
     if len(actuals) == 0:
         return Response(status_code=204)
@@ -303,7 +295,7 @@ def get_pv_actual(
 def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """
     ### Get the actual power generation for a list of sites.
@@ -314,11 +306,7 @@ def get_pv_actual_many_sites(
         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
 
     for site_uuid in site_uuids_list:
-        if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Forbidden. User does not hav access to this site {site_uuid}. ",
-            )
+        check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
     start_utc = get_yesterday_midnight()
 
@@ -330,7 +318,7 @@ def get_pv_actual_many_sites(
 def get_pv_forecast(
     site_uuid: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """
     ### This route is where you might say the magic happens.
@@ -352,13 +340,9 @@ def get_pv_forecast(
     if not site_exists:
         raise HTTPException(status_code=404)
 
-    if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
-        raise HTTPException(
-            status_code=403,
-            detail=f"Forbidden. User does not hav access to this site {site_uuid}. ",
-        )
+    check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
-    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session)
+    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session, auth=auth)
 
     if len(forecasts) == 0:
         return Response(status_code=204)
@@ -371,7 +355,7 @@ def get_pv_forecast(
 def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """
     ### Get the forecasts for multiple sites.
@@ -386,11 +370,7 @@ def get_pv_forecast_many_sites(
     site_uuids_list = site_uuids.split(",")
 
     for site_uuid in site_uuids_list:
-        if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Forbidden. User does not hav access to this site {site_uuid}. ",
-            )
+        check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
     logger.debug(f"Loading forecast from {start_utc}")
 
@@ -406,7 +386,7 @@ def get_pv_forecast_many_sites(
 def get_pv_estimate_clearsky(
     site_uuid: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """
     ### Gets a estimate of AC production under a clear sky

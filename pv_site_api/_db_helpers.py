@@ -13,12 +13,12 @@ from typing import Any, Optional
 
 import sqlalchemy as sa
 import structlog
+from fastapi import HTTPException
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteSQL
 from sqlalchemy.orm import Session, aliased
 
-from .auth import Auth
 from .pydantic_models import (
     Forecast,
     MultiplePVActual,
@@ -238,13 +238,19 @@ def does_site_exist(session: Session, site_uuid: str) -> bool:
     )
 
 
-def check_user_has_access_to_site(session: Session, auth: Auth, site_uuid: str):
+def check_user_has_access_to_site(session: Session, auth: dict, site_uuid: str):
     """
     Checks if a user has access to a site.
     """
-    user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
+    assert isinstance(auth, dict)
+    email = auth["https://openclimatefix.org/email"]
+
+    user = get_user_by_email(session=session, email=email)
     site_uuids = [str(site.site_uuid) for site in user.site_group.sites]
     if site_uuid not in site_uuids:
-        return False
-    else:
-        return True
+        raise HTTPException(
+            status_code=403,
+            detail=f"Forbidden. User ({email}) "
+            f"does not hav access to this site {site_uuid}. "
+            f"User has access to {site_uuids}",
+        )
