@@ -110,6 +110,17 @@ def test_get_forecast_no_data(db_session, client, sites):
     assert resp.status_code == 204
 
 
+def test_get_forecast_user_no_access(db_session, client, sites):
+    # Make a brand new site.
+    site = SiteSQL(ml_id=123)
+    db_session.add(site)
+    db_session.commit()
+
+    # Get forecasts, but the user has no access to the site.
+    resp = client.get(f"/sites/{site.site_uuid}/pv_forecast")
+    assert resp.status_code == 403
+
+
 def test_get_forecast_404(db_session, client):
     """If we get forecasts for an unknown site, we get a 404."""
     resp = client.get(f"/sites/{uuid.uuid4()}/pv_forecast")
