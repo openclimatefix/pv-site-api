@@ -25,6 +25,7 @@ from ._db_helpers import (
     get_generation_by_sites,
     get_sites_by_uuids,
     site_to_pydantic,
+    check_user_has_access_to_site
 )
 from .auth import Auth
 from .cache import cache_response
@@ -142,7 +143,7 @@ def get_sites(
     if is_fake():
         return make_fake_site()
 
-    user = get_user_by_email(session=session, email=auth["email"])
+    user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
 
     sites = user.site_group.sites
 
@@ -178,13 +179,10 @@ def post_pv_actual(
         return
 
     # make sure user has access to this site
-    user = get_user_by_email(session=session, email=auth["email"])
-    site_uuids = [str(site.site_uuid) for site in user.site_group.sites]
-    if site_uuid not in site_uuids:
+    if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
         raise HTTPException(
             status_code=403,
-            detail=f"Forbidden. User does not hav access to this site. "
-            f"User only has access to {site_uuids} sites, not {site_uuid}",
+            detail=f"Forbidden. User does not hav access to this site {site_uuid}. "
         )
 
     generations = []
@@ -286,6 +284,12 @@ def get_pv_actual(
     if not site_exists:
         raise HTTPException(status_code=404)
 
+    if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Forbidden. User does not hav access to this site {site_uuid}. "
+        )
+
     actuals = get_pv_actual_many_sites(site_uuids=site_uuid, session=session)
 
     if len(actuals) == 0:
@@ -308,6 +312,13 @@ def get_pv_actual_many_sites(
 
     if is_fake():
         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
+
+    for site_uuid in site_uuids_list:
+        if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Forbidden. User does not hav access to this site {site_uuid}. "
+            )
 
     start_utc = get_yesterday_midnight()
 
@@ -341,6 +352,12 @@ def get_pv_forecast(
     if not site_exists:
         raise HTTPException(status_code=404)
 
+    if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Forbidden. User does not hav access to this site {site_uuid}. "
+        )
+
     forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session)
 
     if len(forecasts) == 0:
@@ -367,6 +384,13 @@ def get_pv_forecast_many_sites(
 
     start_utc = get_yesterday_midnight()
     site_uuids_list = site_uuids.split(",")
+
+    for site_uuid in site_uuids_list:
+        if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Forbidden. User does not hav access to this site {site_uuid}. "
+            )
 
     logger.debug(f"Loading forecast from {start_utc}")
 
