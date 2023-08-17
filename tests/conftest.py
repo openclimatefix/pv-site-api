@@ -57,15 +57,6 @@ def db_session(engine):
     engine.dispose()
 
 
-# @pytest.fixture()
-# def clients(db_session):
-#     """Make fake client sql"""
-#     clients = [ClientSQL(client_name=f"test_client_{i}") for i in range(2)]
-#     db_session.add_all(clients)
-#     db_session.commit()
-#     return clients
-
-
 @pytest.fixture()
 def sites(db_session):
     """Create some fake sites"""
