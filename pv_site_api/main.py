@@ -20,12 +20,12 @@ from sqlalchemy.orm import Session
 import pv_site_api
 
 from ._db_helpers import (
+    check_user_has_access_to_site,
     does_site_exist,
     get_forecasts_by_sites,
     get_generation_by_sites,
     get_sites_by_uuids,
     site_to_pydantic,
-    check_user_has_access_to_site
 )
 from .auth import Auth
 from .cache import cache_response
@@ -182,7 +182,7 @@ def post_pv_actual(
     if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
         raise HTTPException(
             status_code=403,
-            detail=f"Forbidden. User does not hav access to this site {site_uuid}. "
+            detail=f"Forbidden. User does not hav access to this site {site_uuid}. ",
         )
 
     generations = []
@@ -287,7 +287,7 @@ def get_pv_actual(
     if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
         raise HTTPException(
             status_code=403,
-            detail=f"Forbidden. User does not hav access to this site {site_uuid}. "
+            detail=f"Forbidden. User does not hav access to this site {site_uuid}. ",
         )
 
     actuals = get_pv_actual_many_sites(site_uuids=site_uuid, session=session)
@@ -317,7 +317,7 @@ def get_pv_actual_many_sites(
         if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
             raise HTTPException(
                 status_code=403,
-                detail=f"Forbidden. User does not hav access to this site {site_uuid}. "
+                detail=f"Forbidden. User does not hav access to this site {site_uuid}. ",
             )
 
     start_utc = get_yesterday_midnight()
@@ -355,7 +355,7 @@ def get_pv_forecast(
     if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
         raise HTTPException(
             status_code=403,
-            detail=f"Forbidden. User does not hav access to this site {site_uuid}. "
+            detail=f"Forbidden. User does not hav access to this site {site_uuid}. ",
         )
 
     forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session)
@@ -389,7 +389,7 @@ def get_pv_forecast_many_sites(
         if check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid):
             raise HTTPException(
                 status_code=403,
-                detail=f"Forbidden. User does not hav access to this site {site_uuid}. "
+                detail=f"Forbidden. User does not hav access to this site {site_uuid}. ",
             )
 
     logger.debug(f"Loading forecast from {start_utc}")
