@@ -251,6 +251,6 @@ def check_user_has_access_to_site(session: Session, auth: dict, site_uuid: str):
         raise HTTPException(
             status_code=403,
             detail=f"Forbidden. User ({email}) "
-            f"does not hav access to this site {site_uuid}. "
+            f"does not have access to this site {site_uuid}. "
             f"User has access to {site_uuids}",
         )
