@@ -5,15 +5,8 @@ from datetime import datetime, timedelta
 import freezegun
 import pytest
 from fastapi.testclient import TestClient
-from pvsite_datamodel.sqlmodels import (
-    Base,
-    ClientSQL,
-    ForecastSQL,
-    ForecastValueSQL,
-    GenerationSQL,
-    SiteSQL,
-    StatusSQL,
-)
+from pvsite_datamodel.sqlmodels import Base, ForecastSQL, ForecastValueSQL, GenerationSQL, StatusSQL
+from pvsite_datamodel.write.user_and_site import make_site, make_site_group, make_user
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from testcontainers.postgres import PostgresContainer
@@ -64,34 +57,29 @@ def db_session(engine):
     engine.dispose()
 
 
-@pytest.fixture()
-def clients(db_session):
-    """Make fake client sql"""
-    clients = [ClientSQL(client_name=f"test_client_{i}") for i in range(2)]
-    db_session.add_all(clients)
-    db_session.commit()
-    return clients
+# @pytest.fixture()
+# def clients(db_session):
+#     """Make fake client sql"""
+#     clients = [ClientSQL(client_name=f"test_client_{i}") for i in range(2)]
+#     db_session.add_all(clients)
+#     db_session.commit()
+#     return clients
 
 
 @pytest.fixture()
-def sites(db_session, clients):
+def sites(db_session):
     """Create some fake sites"""
+
+    site_group = make_site_group(db_session=db_session)
+    make_user(db_session=db_session, email="test@test.com", site_group=site_group)
+
     sites = []
     num_sites = 3
-    for i, client in enumerate(clients):
-        for j in range(num_sites):
-            site = SiteSQL(
-                client_uuid=client.client_uuid,
-                client_site_id=j,
-                client_site_name=f"site_{j}",
-                latitude=51,
-                longitude=3,
-                inverter_capacity_kw=4,
-                module_capacity_kw=4.3,
-                ml_id=i * num_sites + j,
-            )
+    for j in range(num_sites):
+        site = make_site(db_session=db_session, ml_id=j + 1)
 
-            sites.append(site)
+        sites.append(site)
+        site_group.sites.append(site)
 
     db_session.add_all(sites)
     db_session.commit()
@@ -190,5 +178,5 @@ def forecast_values(db_session, sites):
 @pytest.fixture()
 def client(db_session):
     app.dependency_overrides[get_session] = lambda: db_session
-    app.dependency_overrides[auth] = lambda: None
+    app.dependency_overrides[auth] = lambda: {"email": "test@test.com"}
     return TestClient(app)

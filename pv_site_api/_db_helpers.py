@@ -214,7 +214,6 @@ def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
     """Converts a SiteSQL object into a PVSiteMetadata object."""
     pv_site = PVSiteMetadata(
         site_uuid=str(site.site_uuid),
-        client_name=site.client.client_name,
         client_site_id=site.client_site_id,
         client_site_name=site.client_site_name,
         region=site.region,

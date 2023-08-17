@@ -11,9 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, Response
 from pvlib import irradiance, location, pvsystem
-from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
-from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
+from pvsite_datamodel.read.user import get_user_by_email
+from pvsite_datamodel.sqlmodels import SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
 from sqlalchemy.orm import Session
 
@@ -142,7 +142,9 @@ def get_sites(
     if is_fake():
         return make_fake_site()
 
-    sites = get_all_sites(session=session)
+    user = get_user_by_email(session=session, email=auth["email"])
+
+    sites = user.site_group.sites
 
     assert len(sites) > 0
 
@@ -174,6 +176,16 @@ def post_pv_actual(
         print(f"Got {pv_actual.dict()} for site {site_uuid}")
         print("Not doing anything with it (yet!)")
         return
+
+    # make sure user has access to this site
+    user = get_user_by_email(session=session, email=auth["email"])
+    site_uuids = [str(site.site_uuid) for site in user.site_group.sites]
+    if site_uuid not in site_uuids:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Forbidden. User does not hav access to this site. "
+            f"User only has access to {site_uuids} sites, not {site_uuid}",
+        )
 
     generations = []
     for pv_actual_value in pv_actual.pv_actual_values:
@@ -226,12 +238,9 @@ def post_site_info(
         print("Not doing anything with it (yet!)")
         return
 
-    # client uuid from name
-    client = session.query(ClientSQL).first()
-    assert client is not None
+    user = get_user_by_email(session=session, email=auth["email"])
 
     site = SiteSQL(
-        client_uuid=client.client_uuid,
         client_site_id=site_info.client_site_id,
         client_site_name=site_info.client_site_name,
         region=site_info.region,
@@ -249,6 +258,8 @@ def post_site_info(
     # add site
     session.add(site)
     session.commit()
+
+    user.site_group.sites.append(site)
 
     return site_to_pydantic(site)
 

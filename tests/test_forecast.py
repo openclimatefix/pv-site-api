@@ -102,9 +102,9 @@ def test_get_forecast_many_sites_late_forecast_one_day(db_session, client, forec
             assert forecast_value.target_datetime_utc < one_day_from_now
 
 
-def test_get_forecast_no_data(db_session, client, clients):
+def test_get_forecast_no_data(db_session, client):
     # Make a brand new site.
-    site = SiteSQL(client_uuid=clients[0].client_uuid, ml_id=123)
+    site = SiteSQL(ml_id=123)
     db_session.add(site)
     db_session.commit()
 

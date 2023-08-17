@@ -4,7 +4,7 @@ import json
 import uuid
 from datetime import datetime, timezone
 
-from pvsite_datamodel.sqlmodels import GenerationSQL, SiteSQL
+from pvsite_datamodel.sqlmodels import GenerationSQL
 
 from pv_site_api.pydantic_models import MultiplePVActual, PVActualValue
 
@@ -89,14 +89,9 @@ def test_post_pv_actual(db_session, client, sites):
     assert str(generations[0].site_uuid) == str(pv_actual_iteration.site_uuid)
 
 
-def test_pv_actual_no_data(db_session, client, clients):
-    # Make a brand new site.
-    site = SiteSQL(client_uuid=clients[0].client_uuid, ml_id=123)
-    db_session.add(site)
-    db_session.commit()
-
+def test_pv_actual_no_data(db_session, client, sites):
     # Get forecasts from that site with no actuals.
-    resp = client.get(f"/sites/{site.site_uuid}/pv_actual")
+    resp = client.get(f"/sites/{sites[0].site_uuid}/pv_actual")
     assert resp.status_code == 204
 
 
