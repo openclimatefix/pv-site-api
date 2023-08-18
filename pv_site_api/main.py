@@ -252,7 +252,7 @@ def post_site_info(
         longitude=site_info.longitude,
         inverter_capacity_kw=site_info.inverter_capacity_kw,
         module_capacity_kw=site_info.module_capacity_kw,
-        capacity_kw=site_info.module_capacity_kw, # fill remove this one in the future
+        capacity_kw=site_info.module_capacity_kw,  # fill remove this one in the future
         ml_id=max_ml_id + 1,
     )
 
