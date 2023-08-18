@@ -2,7 +2,7 @@
 
 import structlog
 
-__version__ = "0.0.52"
+__version__ = "0.0.53"
 
 # Add required processors and formatters to structlog
 structlog.configure(
