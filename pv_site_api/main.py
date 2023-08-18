@@ -15,6 +15,7 @@ from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.sqlmodels import SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 import pv_site_api
@@ -234,6 +235,11 @@ def post_site_info(
 
     user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
 
+    # get the current max ml id, small chance this could lead to a raise condition
+    max_ml_id = session.query(func.max(SiteSQL.ml_id)).scalar()
+    if max_ml_id is None:
+        max_ml_id = 0
+
     site = SiteSQL(
         client_site_id=site_info.client_site_id,
         client_site_name=site_info.client_site_name,
@@ -246,7 +252,7 @@ def post_site_info(
         longitude=site_info.longitude,
         inverter_capacity_kw=site_info.inverter_capacity_kw,
         module_capacity_kw=site_info.module_capacity_kw,
-        ml_id=1,  # TODO remove this once https://github.com/openclimatefix/pvsite-datamodel/issues/27 is complete # noqa
+        ml_id=max_ml_id + 1,
     )
 
     # add site
