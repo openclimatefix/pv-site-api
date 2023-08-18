@@ -13,7 +13,9 @@ from typing import Any, Optional
 
 import sqlalchemy as sa
 import structlog
+from fastapi import HTTPException
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
+from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteSQL
 from sqlalchemy.orm import Session, aliased
 
@@ -214,7 +216,6 @@ def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
     """Converts a SiteSQL object into a PVSiteMetadata object."""
     pv_site = PVSiteMetadata(
         site_uuid=str(site.site_uuid),
-        client_name=site.client.client_name,
         client_site_id=site.client_site_id,
         client_site_name=site.client_site_name,
         region=site.region,
@@ -235,3 +236,21 @@ def does_site_exist(session: Session, site_uuid: str) -> bool:
         session.execute(sa.select(SiteSQL).where(SiteSQL.site_uuid == site_uuid)).one_or_none()
         is not None
     )
+
+
+def check_user_has_access_to_site(session: Session, auth: dict, site_uuid: str):
+    """
+    Checks if a user has access to a site.
+    """
+    assert isinstance(auth, dict)
+    email = auth["https://openclimatefix.org/email"]
+
+    user = get_user_by_email(session=session, email=email)
+    site_uuids = [str(site.site_uuid) for site in user.site_group.sites]
+    if site_uuid not in site_uuids:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Forbidden. User ({email}) "
+            f"does not have access to this site {site_uuid}. "
+            f"User has access to {site_uuids}",
+        )

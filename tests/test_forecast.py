@@ -102,15 +102,23 @@ def test_get_forecast_many_sites_late_forecast_one_day(db_session, client, forec
             assert forecast_value.target_datetime_utc < one_day_from_now
 
 
-def test_get_forecast_no_data(db_session, client, clients):
-    # Make a brand new site.
-    site = SiteSQL(client_uuid=clients[0].client_uuid, ml_id=123)
-    db_session.add(site)
-    db_session.commit()
+def test_get_forecast_no_data(db_session, client, sites):
+    site = db_session.query(SiteSQL).first()
 
     # Get forecasts from that site with no forecasts.
     resp = client.get(f"/sites/{site.site_uuid}/pv_forecast")
     assert resp.status_code == 204
+
+
+def test_get_forecast_user_no_access(db_session, client, sites):
+    # Make a brand new site.
+    site = SiteSQL(ml_id=123)
+    db_session.add(site)
+    db_session.commit()
+
+    # Get forecasts, but the user has no access to the site.
+    resp = client.get(f"/sites/{site.site_uuid}/pv_forecast")
+    assert resp.status_code == 403
 
 
 def test_get_forecast_404(db_session, client):

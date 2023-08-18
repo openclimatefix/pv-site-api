@@ -22,7 +22,7 @@ class PVSiteMetadata(BaseModel):
     """Site metadata"""
 
     site_uuid: Optional[str] = Field(None, description="Unique internal ID for site.")
-    client_name: str = Field(..., description="Unique name for user providing the site data.")
+    client_name: str = Field("not-set", description="Unique name for user providing the site data.")
     client_site_id: str = Field(..., description="The site ID as given by the providing user.")
     client_site_name: str = Field(
         None, decription="The name of the site as given by the providing uuser."

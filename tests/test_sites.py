@@ -46,7 +46,7 @@ def test_put_site_fake(client, fake):
     assert response.status_code == 201, response.text
 
 
-def test_put_site(db_session, client, clients):
+def test_put_site(db_session, client):
     # make site object
     pv_site = PVSiteMetadata(
         client_name="test_client",

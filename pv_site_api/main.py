@@ -11,15 +11,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, Response
 from pvlib import irradiance, location, pvsystem
-from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.read.status import get_latest_status
-from pvsite_datamodel.sqlmodels import ClientSQL, SiteSQL
+from pvsite_datamodel.read.user import get_user_by_email
+from pvsite_datamodel.sqlmodels import SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
 from sqlalchemy.orm import Session
 
 import pv_site_api
 
 from ._db_helpers import (
+    check_user_has_access_to_site,
     does_site_exist,
     get_forecasts_by_sites,
     get_generation_by_sites,
@@ -133,7 +134,7 @@ async def add_process_time_header(request: Request, call_next):
 @app.get("/sites", response_model=PVSites)
 def get_sites(
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """
     ### This route returns a list of the user's PV Sites with metadata for each site.
@@ -142,7 +143,9 @@ def get_sites(
     if is_fake():
         return make_fake_site()
 
-    sites = get_all_sites(session=session)
+    user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
+
+    sites = user.site_group.sites
 
     assert len(sites) > 0
 
@@ -161,7 +164,7 @@ def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: auth = Depends(auth),
 ):
     """### This route is used to input actual PV generation.
 
@@ -174,6 +177,9 @@ def post_pv_actual(
         print(f"Got {pv_actual.dict()} for site {site_uuid}")
         print("Not doing anything with it (yet!)")
         return
+
+    # make sure user has access to this site
+    check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
     generations = []
     for pv_actual_value in pv_actual.pv_actual_values:
@@ -214,7 +220,7 @@ def post_pv_actual(
 def post_site_info(
     site_info: PVSiteMetadata,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """
     ### This route allows a user to add a site.
@@ -226,12 +232,9 @@ def post_site_info(
         print("Not doing anything with it (yet!)")
         return
 
-    # client uuid from name
-    client = session.query(ClientSQL).first()
-    assert client is not None
+    user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
 
     site = SiteSQL(
-        client_uuid=client.client_uuid,
         client_site_id=site_info.client_site_id,
         client_site_name=site_info.client_site_name,
         region=site_info.region,
@@ -250,6 +253,8 @@ def post_site_info(
     session.add(site)
     session.commit()
 
+    user.site_group.sites.append(site)
+
     return site_to_pydantic(site)
 
 
@@ -258,7 +263,7 @@ def post_site_info(
 def get_pv_actual(
     site_uuid: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """### This route returns PV readings from a single PV site.
 
@@ -275,7 +280,9 @@ def get_pv_actual(
     if not site_exists:
         raise HTTPException(status_code=404)
 
-    actuals = get_pv_actual_many_sites(site_uuids=site_uuid, session=session)
+    check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
+
+    actuals = get_pv_actual_many_sites(site_uuids=site_uuid, session=session, auth=auth)
 
     if len(actuals) == 0:
         return Response(status_code=204)
@@ -288,7 +295,7 @@ def get_pv_actual(
 def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """
     ### Get the actual power generation for a list of sites.
@@ -297,6 +304,9 @@ def get_pv_actual_many_sites(
 
     if is_fake():
         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
+
+    for site_uuid in site_uuids_list:
+        check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
     start_utc = get_yesterday_midnight()
 
@@ -308,7 +318,7 @@ def get_pv_actual_many_sites(
 def get_pv_forecast(
     site_uuid: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """
     ### This route is where you might say the magic happens.
@@ -330,7 +340,9 @@ def get_pv_forecast(
     if not site_exists:
         raise HTTPException(status_code=404)
 
-    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session)
+    check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
+
+    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session, auth=auth)
 
     if len(forecasts) == 0:
         return Response(status_code=204)
@@ -343,7 +355,7 @@ def get_pv_forecast(
 def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """
     ### Get the forecasts for multiple sites.
@@ -356,6 +368,9 @@ def get_pv_forecast_many_sites(
 
     start_utc = get_yesterday_midnight()
     site_uuids_list = site_uuids.split(",")
+
+    for site_uuid in site_uuids_list:
+        check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
     logger.debug(f"Loading forecast from {start_utc}")
 
@@ -371,7 +386,7 @@ def get_pv_forecast_many_sites(
 def get_pv_estimate_clearsky(
     site_uuid: str,
     session: Session = Depends(get_session),
-    auth: Auth = Depends(auth),
+    auth: dict = Depends(auth),
 ):
     """
     ### Gets a estimate of AC production under a clear sky
