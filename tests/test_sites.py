@@ -72,6 +72,15 @@ def test_put_site(db_session, client):
     sites = db_session.query(SiteSQL).all()
     assert len(sites) == 1
     assert sites[0].site_uuid is not None
+    assert sites[0].ml_id == 1
+
+    response = client.post("/sites", json=pv_site_dict)
+    assert response.status_code == 201, response.text
+
+    sites = db_session.query(SiteSQL).all()
+    assert len(sites) == 2
+    assert sites[0].ml_id == 1
+    assert sites[1].ml_id == 2
 
 
 # Comment this out, until we have security on this
