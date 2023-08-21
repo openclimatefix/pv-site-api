@@ -152,6 +152,9 @@ def get_sites(
 
     logger.debug(f"Found {len(sites)} sites")
 
+    # order sites
+    sites = sorted(sites, key=lambda site: site.site_uuid)
+
     pv_sites = []
     for site in sites:
         pv_sites.append(site_to_pydantic(site))
