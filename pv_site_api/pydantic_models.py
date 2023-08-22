@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 
 # initiate the classes
@@ -55,6 +55,11 @@ class PVActualValue(BaseModel):
     datetime_utc: datetime = Field(..., description="Time of data input")
     actual_generation_kw: float = Field(..., description="Actual kw generation", ge=0)
 
+    @validator('actual_generation_kw')
+    def result_check(cls, v):
+        ...
+        return round(v, 2)
+
 
 class MultiplePVActual(BaseModel):
     """Site data for one site"""
@@ -71,6 +76,11 @@ class SiteForecastValues(BaseModel):
     # forecast_value_uuid: str = Field(..., description="ID for this specific forecast value")
     target_datetime_utc: datetime = Field(..., description="Target time for forecast")
     expected_generation_kw: float = Field(..., description="Expected generation in kw")
+
+    @validator('expected_generation_kw')
+    def result_check(cls, v):
+        ...
+        return round(v, 2)
 
 
 # get_forecast
