@@ -55,7 +55,7 @@ class PVActualValue(BaseModel):
     datetime_utc: datetime = Field(..., description="Time of data input")
     actual_generation_kw: float = Field(..., description="Actual kw generation", ge=0)
 
-    @validator('actual_generation_kw')
+    @validator("actual_generation_kw")
     def result_check(cls, v):
         ...
         return round(v, 2)
@@ -77,7 +77,7 @@ class SiteForecastValues(BaseModel):
     target_datetime_utc: datetime = Field(..., description="Target time for forecast")
     expected_generation_kw: float = Field(..., description="Expected generation in kw")
 
-    @validator('expected_generation_kw')
+    @validator("expected_generation_kw")
     def result_check(cls, v):
         ...
         return round(v, 2)
