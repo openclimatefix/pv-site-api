@@ -254,3 +254,25 @@ def check_user_has_access_to_site(session: Session, auth: dict, site_uuid: str):
             f"does not have access to this site {site_uuid}. "
             f"User has access to {site_uuids}",
         )
+
+
+def check_user_has_access_to_sites(session: Session, auth: dict, site_uuids: list[str]):
+    """
+    Checks if a user has access to a list of sites.
+    """
+    assert isinstance(auth, dict)
+    email = auth["https://openclimatefix.org/email"]
+
+    user = get_user_by_email(session=session, email=email)
+    user_site_uuids = sorted([str(site.site_uuid) for site in user.site_group.sites])
+    site_uuids = sorted(site_uuids)
+
+    if user_site_uuids != site_uuids:
+        for site_uuid in site_uuids:
+            if site_uuid not in site_uuids:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Forbidden. User ({email}) "
+                    f"does not have access to this site {site_uuid}. "
+                    f"User has access to {site_uuids}",
+                )
