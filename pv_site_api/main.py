@@ -22,6 +22,7 @@ import pv_site_api
 
 from ._db_helpers import (
     check_user_has_access_to_site,
+    check_user_has_access_to_sites,
     does_site_exist,
     get_forecasts_by_sites,
     get_generation_by_sites,
@@ -315,8 +316,7 @@ def get_pv_actual_many_sites(
     if is_fake():
         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
 
-    for site_uuid in site_uuids_list:
-        check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
+    check_user_has_access_to_sites(session=session, auth=auth, site_uuids=site_uuids_list)
 
     start_utc = get_yesterday_midnight()
 
@@ -379,8 +379,7 @@ def get_pv_forecast_many_sites(
     start_utc = get_yesterday_midnight()
     site_uuids_list = site_uuids.split(",")
 
-    for site_uuid in site_uuids_list:
-        check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
+    check_user_has_access_to_sites(session=session, auth=auth, site_uuids=site_uuids_list)
 
     logger.debug(f"Loading forecast from {start_utc}")
 
