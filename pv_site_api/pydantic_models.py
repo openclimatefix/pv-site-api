@@ -70,6 +70,22 @@ class MultiplePVActual(BaseModel):
     )
 
 
+class PVActualValueBySite(BaseModel):
+    """PV Actual Value list"""
+
+    datetime_utc: datetime = Field(..., description="Time of data input")
+    generation_kw_by_location: dict = Field(..., description="Actual kw generation by location "
+                                                             "e.g {sites_uuid_1: 0.2, sites_uuid_2: 0.4}")
+
+
+class MultiplePVActualBySite(BaseModel):
+    """Site data for one site"""
+
+    pv_actual_values: List[PVActualValueBySite] = Field(
+        ..., description="List of datetimes and generation"
+    )
+
+
 class SiteForecastValues(BaseModel):
     """Forecast value list"""
 

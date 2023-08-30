@@ -9,7 +9,7 @@ style.
 import datetime as dt
 import uuid
 from collections import defaultdict
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import sqlalchemy as sa
 import structlog
@@ -25,6 +25,7 @@ from .pydantic_models import (
     PVActualValue,
     PVSiteMetadata,
     SiteForecastValues,
+    MultiplePVActualBySite, PVActualValueBySite
 )
 
 logger = structlog.stdlib.get_logger()
@@ -174,7 +175,7 @@ def get_forecasts_by_sites(
 
 
 def get_generation_by_sites(
-    session: Session, site_uuids: list[str], start_utc: dt.datetime
+    session: Session, site_uuids: list[str], start_utc: dt.datetime, compact: bool = False
 ) -> list[MultiplePVActual]:
     """Get the generation since yesterday (midnight) for a list of sites."""
     logger.info(f"Getting generation for {len(site_uuids)} sites")
@@ -186,24 +187,43 @@ def get_generation_by_sites(
     pv_actual_values_per_site: dict[str, list[PVActualValue]] = defaultdict(list)
 
     # TODO can we speed this up?
-    logger.info("Formatting generation 1")
-    for row in rows:
-        site_uuid = str(row.site_uuid)
-        pv_actual_values_per_site[site_uuid].append(
-            PVActualValue(
-                datetime_utc=row.start_utc,
-                actual_generation_kw=row.generation_power_kw,
+    if not compact:
+        logger.info("Formatting generation 1")
+        for row in rows:
+            site_uuid = str(row.site_uuid)
+            pv_actual_values_per_site[site_uuid].append(
+                PVActualValue(
+                    datetime_utc=row.start_utc,
+                    actual_generation_kw=row.generation_power_kw,
+                )
             )
-        )
 
-    logger.info("Formatting generation 2")
-    multiple_pv_actuals = [
-        MultiplePVActual(site_uuid=site_uuid, pv_actual_values=pv_actual_values)
-        for site_uuid, pv_actual_values in pv_actual_values_per_site.items()
-    ]
+        logger.info("Formatting generation 2")
+        multiple_pv_actuals = [
+            MultiplePVActual(site_uuid=site_uuid, pv_actual_values=pv_actual_values)
+            for site_uuid, pv_actual_values in pv_actual_values_per_site.items()
+        ]
 
-    logger.debug("Getting generation for {len(site_uuids)} sites: done")
-    return multiple_pv_actuals
+        logger.debug(f"Getting generation for {len(site_uuids)} sites: done")
+        return multiple_pv_actuals
+    else:
+        pv_actual_values_per_site = {}
+        for row in rows:
+            site_uuid = str(row.site_uuid)
+            start_utc = row.start_utc
+            if start_utc in pv_actual_values_per_site:
+                pv_actual_values_per_site[start_utc][site_uuid] = row.generation_power_kw
+            else:
+                pv_actual_values_per_site[start_utc] = {site_uuid: row.generation_power_kw}
+
+        multiple_pv_actuals = []
+        for start_utc, pv_actual_values in pv_actual_values_per_site.items():
+            multiple_pv_actuals.append(
+                PVActualValueBySite(datetime_utc=start_utc, generation_kw_by_location=pv_actual_values)
+            )
+
+        return MultiplePVActualBySite(pv_actual_values=multiple_pv_actuals)
+
 
 
 def get_sites_by_uuids(session: Session, site_uuids: list[str]) -> list[PVSiteMetadata]:

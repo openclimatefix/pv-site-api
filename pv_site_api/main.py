@@ -17,6 +17,7 @@ from pvsite_datamodel.sqlmodels import SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from typing import Union
 
 import pv_site_api
 
@@ -44,6 +45,7 @@ from .pydantic_models import (
     PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
+    MultiplePVActualBySite,
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
@@ -53,6 +55,8 @@ load_dotenv()
 
 logger = structlog.stdlib.get_logger()
 
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 def traces_sampler(sampling_context):
     """
@@ -300,12 +304,13 @@ def get_pv_actual(
     return actuals[0]
 
 
-@app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
+@app.get("/sites/pv_actual", response_model=Union[list[MultiplePVActual], MultiplePVActualBySite])
 @cache_response
 def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
+    compact: bool = False,
 ):
     """
     ### Get the actual power generation for a list of sites.
@@ -320,7 +325,7 @@ def get_pv_actual_many_sites(
 
     start_utc = get_yesterday_midnight()
 
-    return get_generation_by_sites(session, site_uuids=site_uuids_list, start_utc=start_utc)
+    return get_generation_by_sites(session, site_uuids=site_uuids_list, start_utc=start_utc, compact=compact)
 
 
 # get_forecast: Client gets the forecast for their site
