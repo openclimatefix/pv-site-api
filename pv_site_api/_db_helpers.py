@@ -19,13 +19,19 @@ from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteSQL
 from sqlalchemy.orm import Session, aliased
 
+from .convert import (
+    forecast_rows_to_pydantic,
+    forecast_rows_to_pydantic_compact,
+    generation_rows_to_pydantic,
+    generation_rows_to_pydantic_compact,
+)
 from .pydantic_models import (
     Forecast,
     MultiplePVActual,
+    MultiplePVActualBySite,
+    OneDatetimeManyForecasts,
     PVActualValue,
     PVSiteMetadata,
-    SiteForecastValues,
-    MultiplePVActualBySite, PVActualValueBySite
 )
 
 logger = structlog.stdlib.get_logger()
@@ -94,56 +100,13 @@ def _get_latest_forecast_by_sites(
     return query.all()
 
 
-def _forecast_rows_to_pydantic(rows: list[Row]) -> list[Forecast]:
-    """Make a list of `(ForecastSQL, ForecastValueSQL)` rows into our pydantic `Forecast`
-    objects.
-
-    Note that we remove duplicate ForecastValueSQL when found.
-    """
-    # Per-site metadata.
-    data: dict[str, dict[str, Any]] = defaultdict(dict)
-    # Per-site forecast values.
-    values: dict[str, list[SiteForecastValues]] = defaultdict(list)
-    # Per-site *set* of ForecastValueSQL.forecast_value_uuid to be able to filter out duplicates.
-    # This is useful in particular because our latest forecast and past forecasts will overlap in
-    # the middle.
-    fv_uuids: dict[str, set[uuid.UUID]] = defaultdict(set)
-
-    for row in rows:
-        site_uuid = str(row.ForecastSQL.site_uuid)
-
-        if site_uuid not in data:
-            data[site_uuid]["site_uuid"] = site_uuid
-            data[site_uuid]["forecast_uuid"] = str(row.ForecastSQL.forecast_uuid)
-            data[site_uuid]["forecast_creation_datetime"] = row.ForecastSQL.timestamp_utc
-            data[site_uuid]["forecast_version"] = row.ForecastSQL.forecast_version
-
-        fv_uuid = row.ForecastValueSQL.forecast_value_uuid
-
-        if fv_uuid not in fv_uuids[site_uuid]:
-            values[site_uuid].append(
-                SiteForecastValues(
-                    target_datetime_utc=row.ForecastValueSQL.start_utc,
-                    expected_generation_kw=row.ForecastValueSQL.forecast_power_kw,
-                )
-            )
-            fv_uuids[site_uuid].add(fv_uuid)
-
-    return [
-        Forecast(
-            forecast_values=values[site_uuid],
-            **data[site_uuid],
-        )
-        for site_uuid in data.keys()
-    ]
-
-
 def get_forecasts_by_sites(
     session: Session,
     site_uuids: list[str],
     start_utc: dt.datetime,
     horizon_minutes: int,
-) -> list[Forecast]:
+    compact: bool = False,
+) -> Union[list[Forecast], list[OneDatetimeManyForecasts]]:
     """Combination of the latest forecast and the past forecasts, for given sites.
 
     This is what we show in the UI.
@@ -168,7 +131,10 @@ def get_forecasts_by_sites(
     logger.debug("Found %s future forecasts", len(rows_future))
 
     logger.debug("Formatting forecasts to pydantic objects")
-    forecasts = _forecast_rows_to_pydantic(rows_past + rows_future)
+    if compact:
+        forecasts = forecast_rows_to_pydantic_compact(rows_past + rows_future)
+    else:
+        forecasts = forecast_rows_to_pydantic(rows_past + rows_future)
     logger.debug("Formatting forecasts to pydantic objects: done")
 
     return forecasts
@@ -176,7 +142,7 @@ def get_forecasts_by_sites(
 
 def get_generation_by_sites(
     session: Session, site_uuids: list[str], start_utc: dt.datetime, compact: bool = False
-) -> list[MultiplePVActual]:
+) -> Union[list[MultiplePVActual], MultiplePVActualBySite]:
     """Get the generation since yesterday (midnight) for a list of sites."""
     logger.info(f"Getting generation for {len(site_uuids)} sites")
     rows = get_pv_generation_by_sites(
@@ -188,42 +154,9 @@ def get_generation_by_sites(
 
     # TODO can we speed this up?
     if not compact:
-        logger.info("Formatting generation 1")
-        for row in rows:
-            site_uuid = str(row.site_uuid)
-            pv_actual_values_per_site[site_uuid].append(
-                PVActualValue(
-                    datetime_utc=row.start_utc,
-                    actual_generation_kw=row.generation_power_kw,
-                )
-            )
-
-        logger.info("Formatting generation 2")
-        multiple_pv_actuals = [
-            MultiplePVActual(site_uuid=site_uuid, pv_actual_values=pv_actual_values)
-            for site_uuid, pv_actual_values in pv_actual_values_per_site.items()
-        ]
-
-        logger.debug(f"Getting generation for {len(site_uuids)} sites: done")
-        return multiple_pv_actuals
+        return generation_rows_to_pydantic(pv_actual_values_per_site, rows, site_uuids)
     else:
-        pv_actual_values_per_site = {}
-        for row in rows:
-            site_uuid = str(row.site_uuid)
-            start_utc = row.start_utc
-            if start_utc in pv_actual_values_per_site:
-                pv_actual_values_per_site[start_utc][site_uuid] = row.generation_power_kw
-            else:
-                pv_actual_values_per_site[start_utc] = {site_uuid: row.generation_power_kw}
-
-        multiple_pv_actuals = []
-        for start_utc, pv_actual_values in pv_actual_values_per_site.items():
-            multiple_pv_actuals.append(
-                PVActualValueBySite(datetime_utc=start_utc, generation_kw_by_location=pv_actual_values)
-            )
-
-        return MultiplePVActualBySite(pv_actual_values=multiple_pv_actuals)
-
+        return generation_rows_to_pydantic_compact(rows)
 
 
 def get_sites_by_uuids(session: Session, site_uuids: list[str]) -> list[PVSiteMetadata]:

@@ -1,7 +1,7 @@
 """Pydantic models for PV Site API"""
 # import packages
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -74,8 +74,11 @@ class PVActualValueBySite(BaseModel):
     """PV Actual Value list"""
 
     datetime_utc: datetime = Field(..., description="Time of data input")
-    generation_kw_by_location: dict = Field(..., description="Actual kw generation by location "
-                                                             "e.g {sites_uuid_1: 0.2, sites_uuid_2: 0.4}")
+    generation_kw_by_location: dict = Field(
+        ...,
+        description="Actual kw generation by location "
+        "e.g {sites_uuid_1: 0.2, sites_uuid_2: 0.4}",
+    )
 
 
 class MultiplePVActualBySite(BaseModel):
@@ -112,6 +115,15 @@ class Forecast(BaseModel):
     forecast_version: str = Field(..., description="Forecast version")
     forecast_values: List[SiteForecastValues] = Field(
         ..., description="List of target times and generation"
+    )
+
+
+class OneDatetimeManyForecasts(BaseModel):
+    """Forecast for one datetime for many sites"""
+
+    datetime_utc: datetime = Field(..., description="Target time for forecast")
+    forecast_per_site: Dict[str, str] = Field(
+        ..., description="Dictionary of forecasts for each site "
     )
 
 

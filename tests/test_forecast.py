@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from freezegun import freeze_time
 from pvsite_datamodel.sqlmodels import SiteSQL
 
-from pv_site_api.pydantic_models import Forecast
+from pv_site_api.pydantic_models import Forecast, OneDatetimeManyForecasts
 
 
 def test_get_forecast_fake(client, fake):
@@ -100,6 +100,27 @@ def test_get_forecast_many_sites_late_forecast_one_day(db_session, client, forec
     for forecast in forecasts:
         for forecast_value in forecast.forecast_values:
             assert forecast_value.target_datetime_utc < one_day_from_now
+
+
+def test_get_forecast_many_sites_late_forecast_one_day_compact(
+    db_session, client, forecast_values, sites
+):
+    """Test the case where the forecast stop working 1 day ago"""
+    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids_str = ",".join(site_uuids)
+    one_day_from_now = datetime.utcnow() + timedelta(days=1)
+
+    with freeze_time(one_day_from_now):
+        resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}&compact=true")
+        assert resp.status_code == 200
+
+        f = [OneDatetimeManyForecasts(**x) for x in resp.json()]
+
+    # We have 10 forecasts with 11 values each.
+    # We should get 11 values for the latest forecast, and 9 values (all but the most recent)
+    # for the first prediction for each (other) forecast.
+    assert len(f) == 20
+    assert len(f[0].forecast_per_site) == len(sites)
 
 
 def test_get_forecast_no_data(db_session, client, sites):

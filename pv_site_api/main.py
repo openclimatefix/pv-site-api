@@ -1,6 +1,7 @@
 """Main API Routes"""
 import os
 import time
+from typing import Union
 
 import pandas as pd
 import sentry_sdk
@@ -17,7 +18,6 @@ from pvsite_datamodel.sqlmodels import SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from typing import Union
 
 import pv_site_api
 
@@ -43,10 +43,10 @@ from .pydantic_models import (
     ClearskyEstimate,
     Forecast,
     MultiplePVActual,
+    MultiplePVActualBySite,
     PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
-    MultiplePVActualBySite,
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
@@ -56,8 +56,6 @@ load_dotenv()
 
 logger = structlog.stdlib.get_logger()
 
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
 
 def traces_sampler(sampling_context):
     """
@@ -325,7 +323,9 @@ def get_pv_actual_many_sites(
 
     start_utc = get_yesterday_midnight()
 
-    return get_generation_by_sites(session, site_uuids=site_uuids_list, start_utc=start_utc, compact=compact)
+    return get_generation_by_sites(
+        session, site_uuids=site_uuids_list, start_utc=start_utc, compact=compact
+    )
 
 
 # get_forecast: Client gets the forecast for their site
@@ -371,6 +371,7 @@ def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
+    compact: bool = False,
 ):
     """
     ### Get the forecasts for multiple sites.
@@ -389,7 +390,7 @@ def get_pv_forecast_many_sites(
     logger.debug(f"Loading forecast from {start_utc}")
 
     forecasts = get_forecasts_by_sites(
-        session, site_uuids=site_uuids_list, start_utc=start_utc, horizon_minutes=0
+        session, site_uuids=site_uuids_list, start_utc=start_utc, horizon_minutes=0, compact=compact
     )
 
     return forecasts
