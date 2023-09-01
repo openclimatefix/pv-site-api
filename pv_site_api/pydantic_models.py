@@ -81,14 +81,6 @@ class PVActualValueBySite(BaseModel):
     )
 
 
-class MultiplePVActualBySite(BaseModel):
-    """Site data for one site"""
-
-    pv_actual_values: List[PVActualValueBySite] = Field(
-        ..., description="List of datetimes and generation"
-    )
-
-
 class SiteForecastValues(BaseModel):
     """Forecast value list"""
 

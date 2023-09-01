@@ -43,7 +43,7 @@ from .pydantic_models import (
     ClearskyEstimate,
     Forecast,
     MultiplePVActual,
-    MultiplePVActualBySite,
+    PVActualValueBySite,
     PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
@@ -303,7 +303,9 @@ def get_pv_actual(
     return actuals[0]
 
 
-@app.get("/sites/pv_actual", response_model=Union[list[MultiplePVActual], MultiplePVActualBySite])
+@app.get(
+    "/sites/pv_actual", response_model=Union[list[MultiplePVActual], list[PVActualValueBySite]]
+)
 @cache_response
 def get_pv_actual_many_sites(
     site_uuids: str,

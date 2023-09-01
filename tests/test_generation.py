@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from pvsite_datamodel.sqlmodels import GenerationSQL
 
-from pv_site_api.pydantic_models import MultiplePVActual, PVActualValue
+from pv_site_api.pydantic_models import MultiplePVActual, PVActualValue, PVActualValueBySite
 
 
 def test_pv_actual_fake(client, fake):
@@ -45,6 +45,18 @@ def test_pv_actual_many_sites(client, sites, generations):
 
     pv_actuals = [MultiplePVActual(**x) for x in resp.json()]
     assert len(pv_actuals) == len(sites)
+
+
+def test_pv_actual_many_sites_compact(client, sites, generations):
+    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuid_str = ",".join(site_uuids)
+
+    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&compact=true")
+
+    assert resp.status_code == 200
+
+    pv_actuals = [PVActualValueBySite(**x) for x in resp.json()]
+    assert len(pv_actuals[0].generation_kw_by_location) == len(sites)
 
 
 def test_post_fake_pv_actual(client, fake):

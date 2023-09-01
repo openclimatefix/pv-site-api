@@ -10,7 +10,6 @@ import structlog
 from pv_site_api.pydantic_models import (
     Forecast,
     MultiplePVActual,
-    MultiplePVActualBySite,
     OneDatetimeManyForecasts,
     PVActualValue,
     PVActualValueBySite,
@@ -132,4 +131,4 @@ def generation_rows_to_pydantic_compact(rows):
         multiple_pv_actuals.append(
             PVActualValueBySite(datetime_utc=start_utc, generation_kw_by_location=pv_actual_values)
         )
-    return MultiplePVActualBySite(pv_actual_values=multiple_pv_actuals)
+    return multiple_pv_actuals
