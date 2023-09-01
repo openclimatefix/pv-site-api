@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from freezegun import freeze_time
 from pvsite_datamodel.sqlmodels import SiteSQL
 
-from pv_site_api.pydantic_models import Forecast, OneDatetimeManyForecasts
+from pv_site_api.pydantic_models import Forecast, ManyForecastCompact
 
 
 def test_get_forecast_fake(client, fake):
@@ -114,13 +114,13 @@ def test_get_forecast_many_sites_late_forecast_one_day_compact(
         resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}&compact=true")
         assert resp.status_code == 200
 
-        f = [OneDatetimeManyForecasts(**x) for x in resp.json()]
+        f = ManyForecastCompact(**resp.json())
 
     # We have 10 forecasts with 11 values each.
     # We should get 11 values for the latest forecast, and 9 values (all but the most recent)
     # for the first prediction for each (other) forecast.
-    assert len(f) == 20
-    assert len(f[0].forecast_per_site) == len(sites)
+    assert len(f.forecasts[0].forecast_values) == 20
+    assert len(f.forecasts) == len(sites)
 
 
 def test_get_forecast_no_data(db_session, client, sites):

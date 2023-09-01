@@ -27,8 +27,8 @@ from .convert import (
 )
 from .pydantic_models import (
     Forecast,
+    ManyForecastCompact,
     MultiplePVActual,
-    OneDatetimeManyForecasts,
     PVActualValue,
     PVActualValueBySite,
     PVSiteMetadata,
@@ -106,7 +106,7 @@ def get_forecasts_by_sites(
     start_utc: dt.datetime,
     horizon_minutes: int,
     compact: bool = False,
-) -> Union[list[Forecast], list[OneDatetimeManyForecasts]]:
+) -> Union[list[Forecast], ManyForecastCompact]:
     """Combination of the latest forecast and the past forecasts, for given sites.
 
     This is what we show in the UI.

@@ -1,18 +1,19 @@
 """Functions to convert sql rows to pydantic models."""
-import datetime as dt
 import uuid
 from collections import defaultdict
-from typing import Any, List
+from typing import Any
 
 import numpy as np
 import structlog
 
 from pv_site_api.pydantic_models import (
     Forecast,
+    ForecastCompact,
+    ManyForecastCompact,
     MultiplePVActual,
-    OneDatetimeManyForecasts,
+    MultiplePVActualCompact,
+    MultipleSitePVActualCompact,
     PVActualValue,
-    PVActualValueBySite,
     SiteForecastValues,
 )
 
@@ -22,30 +23,52 @@ logger = structlog.stdlib.get_logger()
 Row = Any
 
 
-def forecast_rows_to_pydantic_compact(rows: list[Row]) -> List[OneDatetimeManyForecasts]:
-    """
-    Convert Forecast rows to a ManyDatetimesManyForecasts object.
+def forecast_rows_to_pydantic_compact(rows: list[Row]) -> ManyForecastCompact:
+    """Make a list of `(ForecastSQL, ForecastValueSQL)` rows into our pydantic `Forecast`
+    objects.
 
-    This produces a compact version of the forecast data.
+    Note that we remove duplicate ForecastValueSQL when found.
     """
-    fv_datetimes: dict[dt.datetime, dict[str, float]] = {}
+    # Per-site metadata.
+    data: dict[str, dict[str, Any]] = defaultdict(dict)
+    # Per-site forecast values.
+    defaultdict(list)
+    # Per-site *set* of ForecastValueSQL.forecast_value_uuid to be able to filter out duplicates.
+    # This is useful in particular because our latest forecast and past forecasts will overlap in
+    # the middle.
+    fv_uuids: dict[str, set[uuid.UUID]] = defaultdict(set)
+    start_utc_idx: dict[str, int] = {}
 
     for row in rows:
         site_uuid = str(row.ForecastSQL.site_uuid)
 
         start_utc = row.ForecastValueSQL.start_utc
-        forecast_power_kw = np.round(row.ForecastValueSQL.forecast_power_kw, 2)
+        expected_generation_kw = round(row.ForecastValueSQL.forecast_power_kw, 2)
 
-        if start_utc not in fv_datetimes:
-            fv_datetimes[start_utc] = {site_uuid: forecast_power_kw}
+        if start_utc not in start_utc_idx:
+            start_utc_idx[start_utc] = len(start_utc_idx)
+        idx = start_utc_idx[start_utc]
+
+        if site_uuid not in data:
+            data[site_uuid]["site_uuid"] = site_uuid
+            data[site_uuid]["forecast_uuid"] = str(row.ForecastSQL.forecast_uuid)
+            data[site_uuid]["forecast_creation_datetime"] = row.ForecastSQL.timestamp_utc
+            data[site_uuid]["forecast_version"] = row.ForecastSQL.forecast_version
+
+        if site_uuid not in fv_uuids:
+            fv_uuids[site_uuid] = {idx: expected_generation_kw}
         else:
-            fv_datetimes[start_utc][site_uuid] = forecast_power_kw
+            fv_uuids[site_uuid][idx] = expected_generation_kw
 
-    forecasts = []
-    for k, v in fv_datetimes.items():
-        forecasts.append(OneDatetimeManyForecasts(datetime_utc=k, forecast_per_site=v))
-
-    return forecasts
+    forecasts = [
+        ForecastCompact(
+            forecast_values=fv_uuids[site_uuid],
+            **data[site_uuid],
+        )
+        for site_uuid in data.keys()
+    ]
+    f = ManyForecastCompact(forecasts=forecasts, target_time_idx=start_utc_idx)
+    return f
 
 
 def forecast_rows_to_pydantic(rows: list[Row]) -> list[Forecast]:
@@ -118,17 +141,27 @@ def generation_rows_to_pydantic_compact(rows):
 
     This produces a compact version of the generation data."""
     pv_actual_values_per_site = {}
+    start_utc_idx = {}
     for row in rows:
         site_uuid = str(row.site_uuid)
         start_utc = row.start_utc
-        if start_utc in pv_actual_values_per_site:
-            pv_actual_values_per_site[start_utc][site_uuid] = row.generation_power_kw
+        generation_power_kw = np.round(row.generation_power_kw, 2)
+
+        if start_utc not in start_utc_idx:
+            start_utc_idx[start_utc] = len(start_utc_idx)
+        idx = start_utc_idx[start_utc]
+
+        if site_uuid in pv_actual_values_per_site:
+            pv_actual_values_per_site[site_uuid][idx] = generation_power_kw
         else:
-            pv_actual_values_per_site[start_utc] = {site_uuid: row.generation_power_kw}
+            pv_actual_values_per_site[site_uuid] = {idx: generation_power_kw}
 
     multiple_pv_actuals = []
-    for start_utc, pv_actual_values in pv_actual_values_per_site.items():
+    for site_uuid, pv_actual_values in pv_actual_values_per_site.items():
         multiple_pv_actuals.append(
-            PVActualValueBySite(datetime_utc=start_utc, generation_kw_by_location=pv_actual_values)
+            MultiplePVActualCompact(site_uuid=site_uuid, pv_actual_values=pv_actual_values)
         )
-    return multiple_pv_actuals
+
+    return MultipleSitePVActualCompact(
+        pv_actual_values_many_site=multiple_pv_actuals, start_utc_idx=start_utc_idx
+    )
