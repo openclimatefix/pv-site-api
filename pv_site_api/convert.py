@@ -136,7 +136,7 @@ def generation_rows_to_pydantic(pv_actual_values_per_site, rows, site_uuids):
     return multiple_pv_actuals
 
 
-def generation_rows_to_pydantic_compact(rows):
+def generation_rows_to_pydantic_compact(rows) -> MultipleSitePVActualCompact:
     """Convert generation rows to a MultiplePVActualBySite object.
 
     This produces a compact version of the generation data."""

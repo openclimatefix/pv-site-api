@@ -29,8 +29,8 @@ from .pydantic_models import (
     Forecast,
     ManyForecastCompact,
     MultiplePVActual,
+    MultipleSitePVActualCompact,
     PVActualValue,
-    PVActualValueBySite,
     PVSiteMetadata,
 )
 
@@ -142,7 +142,7 @@ def get_forecasts_by_sites(
 
 def get_generation_by_sites(
     session: Session, site_uuids: list[str], start_utc: dt.datetime, compact: bool = False
-) -> Union[list[MultiplePVActual], list[PVActualValueBySite]]:
+) -> Union[list[MultiplePVActual], MultipleSitePVActualCompact]:
     """Get the generation since yesterday (midnight) for a list of sites."""
     logger.info(f"Getting generation for {len(site_uuids)} sites")
     rows = get_pv_generation_by_sites(
