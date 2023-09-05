@@ -4,10 +4,10 @@ import json
 import uuid
 from datetime import datetime, timezone
 
+from pvsite_datamodel.pydantic_models import GenerationSum
 from pvsite_datamodel.sqlmodels import GenerationSQL
 
 from pv_site_api.pydantic_models import MultiplePVActual, MultipleSitePVActualCompact, PVActualValue
-from pvsite_datamodel.pydantic_models import GenerationSum
 
 
 def test_pv_actual_fake(client, fake):
