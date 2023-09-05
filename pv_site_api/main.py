@@ -15,8 +15,10 @@ from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.sqlmodels import SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
+from pvsite_datamodel.pydantic_models import GenerationSum, ForecastValueSum
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from typing import Union, Optional
 
 import pv_site_api
 
@@ -301,15 +303,18 @@ def get_pv_actual(
     return actuals[0]
 
 
-@app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
+@app.get("/sites/pv_actual", response_model=Union[list[MultiplePVActual], list[GenerationSum]])
 @cache_response
 def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
+    sum_by: Optional[str] = None,
     auth: dict = Depends(auth),
 ):
     """
     ### Get the actual power generation for a list of sites.
+
+    sum_by: can be None, 'total', 'dno' or 'gsp'
     """
     site_uuids_list = site_uuids.split(",")
 
@@ -320,7 +325,7 @@ def get_pv_actual_many_sites(
 
     start_utc = get_yesterday_midnight()
 
-    return get_generation_by_sites(session, site_uuids=site_uuids_list, start_utc=start_utc)
+    return get_generation_by_sites(session, site_uuids=site_uuids_list, start_utc=start_utc, sum_by=sum_by)
 
 
 # get_forecast: Client gets the forecast for their site
@@ -366,9 +371,12 @@ def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
+    sum_by: Optional[str] = None,
 ):
     """
     ### Get the forecasts for multiple sites.
+
+    sum_by: can be None, 'total', 'dno' or 'gsp'
     """
 
     logger.info(f"Getting forecasts for {site_uuids}")
@@ -384,7 +392,7 @@ def get_pv_forecast_many_sites(
     logger.debug(f"Loading forecast from {start_utc}")
 
     forecasts = get_forecasts_by_sites(
-        session, site_uuids=site_uuids_list, start_utc=start_utc, horizon_minutes=0
+        session, site_uuids=site_uuids_list, start_utc=start_utc, horizon_minutes=0, sum_by=sum_by
     )
 
     return forecasts
@@ -396,6 +404,7 @@ def get_pv_estimate_clearsky(
     site_uuid: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
+    sum_by: Optional[str] = None,
 ):
     """
     ### Gets a estimate of AC production under a clear sky
