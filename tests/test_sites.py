@@ -50,7 +50,7 @@ def test_put_site(db_session, client):
     # make site object
     pv_site = PVSiteMetadata(
         client_name="test_client",
-        client_site_id=1,
+        client_site_id="1",
         client_site_name="the site name",
         region="the site's region",
         dno="the site's dno",

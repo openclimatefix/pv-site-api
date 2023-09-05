@@ -106,6 +106,7 @@ def get_forecasts_by_sites(
     start_utc: dt.datetime,
     horizon_minutes: int,
     compact: bool = False,
+    sum_by: Optional[str] = None,
 ) -> Union[list[Forecast], ManyForecastCompact]:
     """Combination of the latest forecast and the past forecasts, for given sites.
 
