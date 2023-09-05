@@ -141,12 +141,19 @@ def get_forecasts_by_sites(
 
 
 def get_generation_by_sites(
-    session: Session, site_uuids: list[str], start_utc: dt.datetime, compact: bool = False, sum_by:Optional[str] = None
+    session: Session,
+    site_uuids: list[str],
+    start_utc: dt.datetime,
+    compact: bool = False,
+    sum_by: Optional[str] = None,
 ) -> Union[list[MultiplePVActual], MultipleSitePVActualCompact]:
     """Get the generation since yesterday (midnight) for a list of sites."""
     logger.info(f"Getting generation for {len(site_uuids)} sites")
     rows = get_pv_generation_by_sites(
-        session=session, start_utc=start_utc, site_uuids=[uuid.UUID(su) for su in site_uuids], sum_by=sum_by
+        session=session,
+        start_utc=start_utc,
+        site_uuids=[uuid.UUID(su) for su in site_uuids],
+        sum_by=sum_by,
     )
 
     # Go through the rows and split the data by site.

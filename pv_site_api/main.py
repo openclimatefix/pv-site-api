@@ -1,7 +1,7 @@
 """Main API Routes"""
 import os
 import time
-from typing import Union
+from typing import Optional, Union
 
 import pandas as pd
 import sentry_sdk
@@ -12,14 +12,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, Response
 from pvlib import irradiance, location, pvsystem
+from pvsite_datamodel.pydantic_models import GenerationSum
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.sqlmodels import SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
-from pvsite_datamodel.pydantic_models import GenerationSum, ForecastValueSum
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from typing import Union, Optional
 
 import pv_site_api
 
@@ -305,9 +304,9 @@ def get_pv_actual(
     return actuals[0]
 
 
-
 @app.get(
-    "/sites/pv_actual", response_model=Union[list[MultiplePVActual], list[GenerationSum], MultipleSitePVActualCompact]
+    "/sites/pv_actual",
+    response_model=Union[list[MultiplePVActual], list[GenerationSum], MultipleSitePVActualCompact],
 )
 @cache_response
 def get_pv_actual_many_sites(
@@ -334,7 +333,6 @@ def get_pv_actual_many_sites(
     return get_generation_by_sites(
         session, site_uuids=site_uuids_list, start_utc=start_utc, compact=compact, sum_by=sum_by
     )
-
 
 
 # get_forecast: Client gets the forecast for their site
@@ -402,7 +400,12 @@ def get_pv_forecast_many_sites(
     logger.debug(f"Loading forecast from {start_utc}")
 
     forecasts = get_forecasts_by_sites(
-        session, site_uuids=site_uuids_list, start_utc=start_utc, horizon_minutes=0, compact=compact, sum_by=sum_by
+        session,
+        site_uuids=site_uuids_list,
+        start_utc=start_utc,
+        horizon_minutes=0,
+        compact=compact,
+        sum_by=sum_by,
     )
 
     return forecasts
