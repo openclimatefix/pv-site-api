@@ -141,16 +141,19 @@ def get_forecasts_by_sites(
 
 
 def get_generation_by_sites(
-    session: Session, site_uuids: list[str], start_utc: dt.datetime, compact: bool = False
+    session: Session, site_uuids: list[str], start_utc: dt.datetime, compact: bool = False, sum_by:Optional[str] = None
 ) -> Union[list[MultiplePVActual], MultipleSitePVActualCompact]:
     """Get the generation since yesterday (midnight) for a list of sites."""
     logger.info(f"Getting generation for {len(site_uuids)} sites")
     rows = get_pv_generation_by_sites(
-        session=session, start_utc=start_utc, site_uuids=[uuid.UUID(su) for su in site_uuids]
+        session=session, start_utc=start_utc, site_uuids=[uuid.UUID(su) for su in site_uuids], sum_by=sum_by
     )
 
     # Go through the rows and split the data by site.
     pv_actual_values_per_site: dict[str, list[PVActualValue]] = defaultdict(list)
+
+    if sum_by is not None:
+        return rows
 
     # TODO can we speed this up?
     if not compact:
@@ -169,8 +172,8 @@ def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
     """Converts a SiteSQL object into a PVSiteMetadata object."""
     pv_site = PVSiteMetadata(
         site_uuid=str(site.site_uuid),
-        client_site_id=site.client_site_id,
-        client_site_name=site.client_site_name,
+        client_site_id=str(site.client_site_id),
+        client_site_name=str(site.client_site_name),
         region=site.region,
         dno=site.dno,
         gsp=site.gsp,
