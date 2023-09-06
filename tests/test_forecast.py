@@ -103,6 +103,42 @@ def test_get_forecast_many_sites_late_forecast_one_day(db_session, client, forec
             assert forecast_value.target_datetime_utc < one_day_from_now
 
 
+def test_get_forecast_many_sites_late_forecast_start(db_session, client, forecast_values, sites):
+    """Test the case where the forecast stop working 1 day ago"""
+    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids_str = ",".join(site_uuids)
+    one_day_from_now = datetime.utcnow() + timedelta(days=1)
+    start_utc = (datetime.today() - timedelta(minutes=5)).isoformat()
+
+    with freeze_time(one_day_from_now):
+        resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}&start_utc={start_utc}")
+        assert resp.status_code == 200
+
+        forecasts = [Forecast(**x) for x in resp.json()]
+
+    assert len(forecasts) == len(sites)
+    # We have 10 forecasts
+    assert len(forecasts[0].forecast_values) == 7
+
+
+def test_get_forecast_many_sites_late_forecast_end(db_session, client, forecast_values, sites):
+    """Test the case where the forecast stop working 1 day ago"""
+    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids_str = ",".join(site_uuids)
+    one_day_from_now = datetime.utcnow() + timedelta(days=1)
+    end_utc = (datetime.today() - timedelta(minutes=5)).isoformat()
+
+    with freeze_time(one_day_from_now):
+        resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}&end_utc={end_utc}")
+        assert resp.status_code == 200
+
+        forecasts = [Forecast(**x) for x in resp.json()]
+
+    assert len(forecasts) == len(sites)
+    # We have 10 forecasts
+    assert len(forecasts[0].forecast_values) == 12
+
+
 def test_get_forecast_many_sites_late_forecast_one_day_compact(
     db_session, client, forecast_values, sites
 ):

@@ -1,6 +1,7 @@
 """Main API Routes"""
 import os
 import time
+from datetime import datetime
 from typing import Optional, Union
 
 import pandas as pd
@@ -392,6 +393,8 @@ def get_pv_forecast_many_sites(
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
     sum_by: Optional[str] = None,
+    start_utc: Optional[str] = None,
+    end_utc: Optional[str] = None,
     compact: bool = False,
 ):
     """
@@ -405,7 +408,13 @@ def get_pv_forecast_many_sites(
     if is_fake():
         return [make_fake_forecast(fake_site_uuid)]
 
-    start_utc = get_yesterday_midnight()
+    if start_utc is not None:
+        start_utc = datetime.fromisoformat(start_utc)
+    if end_utc is not None:
+        end_utc = datetime.fromisoformat(end_utc)
+
+    if start_utc is None:
+        start_utc = get_yesterday_midnight()
     site_uuids_list = site_uuids.split(",")
 
     check_user_has_access_to_sites(session=session, auth=auth, site_uuids=site_uuids_list)
@@ -416,6 +425,7 @@ def get_pv_forecast_many_sites(
         session,
         site_uuids=site_uuids_list,
         start_utc=start_utc,
+        end_utc=end_utc,
         horizon_minutes=0,
         compact=compact,
         sum_by=sum_by,
@@ -430,7 +440,6 @@ def get_pv_estimate_clearsky(
     site_uuid: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
-    sum_by: Optional[str] = None,
 ):
     """
     ### Gets a estimate of AC production under a clear sky
