@@ -5,6 +5,7 @@ from typing import Any
 
 import numpy as np
 import structlog
+from pvsite_datamodel.pydantic_models import ForecastValueSum
 
 from pv_site_api.pydantic_models import (
     Forecast,
@@ -165,3 +166,22 @@ def generation_rows_to_pydantic_compact(rows) -> MultipleSitePVActualCompact:
     return MultipleSitePVActualCompact(
         pv_actual_values_many_site=multiple_pv_actuals, start_utc_idx=start_utc_idx
     )
+
+
+def forecast_rows_sums_to_pydantic_objects(rows):
+    """Convert forecast rows to a list of ForecastValueSum object.
+
+    These forecasts are summed by total, dno, or gsp in the database
+    """
+    forecasts = []
+    for forecast_raw in rows:
+        if len(forecast_raw) == 2:
+            generation = ForecastValueSum(
+                start_utc=forecast_raw[0], power_kw=forecast_raw[1], name="total"
+            )
+        else:
+            generation = ForecastValueSum(
+                start_utc=forecast_raw[0], power_kw=forecast_raw[2], name=forecast_raw[1]
+            )
+        forecasts.append(generation)
+    return forecasts
