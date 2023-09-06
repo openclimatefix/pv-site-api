@@ -108,7 +108,7 @@ def test_get_forecast_many_sites_late_forecast_start(db_session, client, forecas
     site_uuids = [str(s.site_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
     one_day_from_now = datetime.utcnow() + timedelta(days=1)
-    start_utc = (datetime.today() - timedelta(minutes=5)).isoformat()
+    start_utc = (datetime.utcnow() - timedelta(minutes=5)).isoformat()
 
     with freeze_time(one_day_from_now):
         resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}&start_utc={start_utc}")
@@ -118,7 +118,7 @@ def test_get_forecast_many_sites_late_forecast_start(db_session, client, forecas
 
     assert len(forecasts) == len(sites)
     # We have 10 forecasts
-    assert len(forecasts[0].forecast_values) == 7
+    assert len(forecasts[0].forecast_values) == 11
 
 
 def test_get_forecast_many_sites_late_forecast_end(db_session, client, forecast_values, sites):
@@ -126,7 +126,7 @@ def test_get_forecast_many_sites_late_forecast_end(db_session, client, forecast_
     site_uuids = [str(s.site_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
     one_day_from_now = datetime.utcnow() + timedelta(days=1)
-    end_utc = (datetime.today() - timedelta(minutes=5)).isoformat()
+    end_utc = (datetime.utcnow() - timedelta(minutes=5)).isoformat()
 
     with freeze_time(one_day_from_now):
         resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}&end_utc={end_utc}")
@@ -136,7 +136,7 @@ def test_get_forecast_many_sites_late_forecast_end(db_session, client, forecast_
 
     assert len(forecasts) == len(sites)
     # We have 10 forecasts
-    assert len(forecasts[0].forecast_values) == 12
+    assert len(forecasts[0].forecast_values) == 9
 
 
 def test_get_forecast_many_sites_late_forecast_one_day_compact(
