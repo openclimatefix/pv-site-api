@@ -197,12 +197,14 @@ def get_generation_by_sites(
     start_utc: dt.datetime,
     compact: bool = False,
     sum_by: Optional[str] = None,
+    end_utc: Optional[dt.datetime] = None,
 ) -> Union[list[MultiplePVActual], MultipleSitePVActualCompact]:
     """Get the generation since yesterday (midnight) for a list of sites."""
     logger.info(f"Getting generation for {len(site_uuids)} sites")
     rows = get_pv_generation_by_sites(
         session=session,
         start_utc=start_utc,
+        end_utc=end_utc,
         site_uuids=[uuid.UUID(su) for su in site_uuids],
         sum_by=sum_by,
     )

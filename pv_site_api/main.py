@@ -315,6 +315,8 @@ def get_pv_actual_many_sites(
     sum_by: Optional[str] = None,
     auth: dict = Depends(auth),
     compact: bool = False,
+    start_utc: Optional[str] = None,
+    end_utc: Optional[str] = None,
 ):
     """
     ### Get the actual power generation for a list of sites.
@@ -323,15 +325,26 @@ def get_pv_actual_many_sites(
     """
     site_uuids_list = site_uuids.split(",")
 
+    if start_utc is not None:
+        start_utc = datetime.fromisoformat(start_utc)
+    if end_utc is not None:
+        end_utc = datetime.fromisoformat(end_utc)
+
     if is_fake():
         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
 
     check_user_has_access_to_sites(session=session, auth=auth, site_uuids=site_uuids_list)
 
-    start_utc = get_yesterday_midnight()
+    if start_utc is None:
+        start_utc = get_yesterday_midnight()
 
     return get_generation_by_sites(
-        session, site_uuids=site_uuids_list, start_utc=start_utc, compact=compact, sum_by=sum_by
+        session,
+        site_uuids=site_uuids_list,
+        start_utc=start_utc,
+        compact=compact,
+        sum_by=sum_by,
+        end_utc=end_utc,
     )
 
 
