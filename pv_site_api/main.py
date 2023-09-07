@@ -168,8 +168,6 @@ def get_sites(
         user=user,
     )
 
-    assert len(sites) > 0
-
     logger.debug(f"Found {len(sites)} sites")
 
     # order sites

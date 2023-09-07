@@ -3,7 +3,7 @@ import math
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
-from pydantic_models import LatitudeLongitudeLimits
+from .pydantic_models import LatitudeLongitudeLimits
 
 TOTAL_MINUTES_IN_ONE_DAY = 24 * 60
 
