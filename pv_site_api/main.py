@@ -136,7 +136,7 @@ async def add_process_time_header(request: Request, call_next):
     return response
 
 
-@app.get("/sites/", response_model=PVSites)
+@app.get("/sites", response_model=PVSites)
 def get_sites(
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
@@ -146,8 +146,8 @@ def get_sites(
     """
     ### This route returns a list of the user's PV Sites with metadata for each site.
 
-    lat_lon_max and lat_lon_min are optional parameters that can be used to filter the
-    sites returned by latitude and longitude.
+    latitude_longitude_max and latitude_longitude_min are optional parameters that can be used to
+    filter the sites returned by latitude and longitude.
     The format of these parameters is a comma separated string of latitude and longitude values.
     For example to get sites in the UK you could use lat_lon_max=60,0 and lat_lon_min=50,-10
 
