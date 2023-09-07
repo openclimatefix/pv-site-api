@@ -1,9 +1,30 @@
 """ make fake intensity"""
 import math
 from datetime import datetime, timedelta, timezone
-from typing import List
+from typing import List, Optional
+
+from pydantic_models import LatitudeLongitudeLimits
 
 TOTAL_MINUTES_IN_ONE_DAY = 24 * 60
+
+
+def format_latitude_longitude(
+    latitude_longitude_max: Optional[str] = None, latitude_longitude_min: Optional[str] = None
+):
+    """Format latitude longitude"""
+
+    if (latitude_longitude_max is None) & (latitude_longitude_min is None):
+        return None
+
+    lat_lon_limits = LatitudeLongitudeLimits()
+    if latitude_longitude_max is not None:
+        lat_lon_limits.latitude_max = latitude_longitude_max.split(",")[0]
+        lat_lon_limits.longitude_max = latitude_longitude_max.split(",")[1]
+    if latitude_longitude_min is not None:
+        lat_lon_limits.latitude_min = latitude_longitude_min.split(",")[0]
+        lat_lon_limits.longitude_min = latitude_longitude_min.split(",")[1]
+
+    return lat_lon_limits
 
 
 def make_fake_intensity(datetime_utc: datetime) -> float:

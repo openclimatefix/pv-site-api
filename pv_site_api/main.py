@@ -51,7 +51,7 @@ from .pydantic_models import (
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
-from .utils import get_yesterday_midnight
+from .utils import format_latitude_longitude, get_yesterday_midnight
 
 load_dotenv()
 
@@ -158,9 +158,12 @@ def get_sites(
 
     user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
 
+    lat_lon_limits = format_latitude_longitude(
+        latitude_longitude_max=latitude_longitude_max, latitude_longitude_min=latitude_longitude_min
+    )
+
     sites = get_sites_from_user(
-        latitude_longitude_max=latitude_longitude_max,
-        latitude_longitude_min=latitude_longitude_min,
+        lat_lon_limits=lat_lon_limits,
         session=session,
         user=user,
     )

@@ -233,24 +233,15 @@ def check_user_has_access_to_sites(session: Session, auth: dict, site_uuids: lis
                 )
 
 
-def get_sites_from_user(session, user, latitude_longitude_max=None, latitude_longitude_min=None):
+def get_sites_from_user(session, user, lat_lon_limits: Optional[LatitudeLongitudeLimits] = None):
     """
     Get the sites for a user
 
     Option to filter on latitude longitude max and min
     """
 
-    # make LatitudeLongitudeLimits object
-    lat_lon_limits = LatitudeLongitudeLimits()
-    if latitude_longitude_max is not None:
-        lat_lon_limits.latitude_max = latitude_longitude_max.split(",")[0]
-        lat_lon_limits.longitude_max = latitude_longitude_max.split(",")[1]
-    if latitude_longitude_min is not None:
-        lat_lon_limits.latitude_min = latitude_longitude_min.split(",")[0]
-        lat_lon_limits.longitude_min = latitude_longitude_min.split(",")[1]
-
     # get sites and filter if required
-    if latitude_longitude_min is not None and latitude_longitude_max is not None:
+    if lat_lon_limits is not None:
         query = session.query(SiteSQL)
         query = query.join(SiteGroupSiteSQL)
         query = query.join(SiteGroupSQL)
