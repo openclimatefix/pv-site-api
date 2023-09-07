@@ -120,10 +120,11 @@ def generation_rows_to_pydantic(pv_actual_values_per_site, rows, site_uuids):
     logger.info("Formatting generation 1")
     for row in rows:
         site_uuid = str(row.site_uuid)
+        generation_power_kw = np.round(row.generation_power_kw, 2)
         pv_actual_values_per_site[site_uuid].append(
             PVActualValue(
                 datetime_utc=row.start_utc,
-                actual_generation_kw=row.generation_power_kw,
+                actual_generation_kw=generation_power_kw,
             )
         )
 
