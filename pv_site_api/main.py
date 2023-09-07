@@ -158,7 +158,12 @@ def get_sites(
 
     user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
 
-    sites = get_sites_from_user(latitude_longitude_max, latitude_longitude_min, session, user)
+    sites = get_sites_from_user(
+        latitude_longitude_max=latitude_longitude_max,
+        latitude_longitude_min=latitude_longitude_min,
+        session=session,
+        user=user,
+    )
 
     assert len(sites) > 0
 
