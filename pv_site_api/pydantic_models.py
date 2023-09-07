@@ -1,7 +1,7 @@
 """Pydantic models for PV Site API"""
 # import packages
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -70,6 +70,25 @@ class MultiplePVActual(BaseModel):
     )
 
 
+class MultiplePVActualCompact(BaseModel):
+    """Site data for one site"""
+
+    site_uuid: str = Field(..., description="The site id")
+    pv_actual_values: dict[int, float] = Field(
+        ..., description="List of datetimes indexes and generation"
+    )
+
+
+class MultipleSitePVActualCompact(BaseModel):
+    start_utc_idx: dict[datetime, int] = Field(
+        ...,
+        description="Dictionary of start datetimes and their index in the pv_actual_values list",
+    )
+    pv_actual_values_many_site: List[MultiplePVActualCompact] = Field(
+        ..., description="List of generation data for each site"
+    )
+
+
 class SiteForecastValues(BaseModel):
     """Forecast value list"""
 
@@ -97,6 +116,30 @@ class Forecast(BaseModel):
     forecast_values: List[SiteForecastValues] = Field(
         ..., description="List of target times and generation"
     )
+
+
+class ForecastCompact(BaseModel):
+    """PV Forecast"""
+
+    forecast_uuid: str = Field(..., description="The forecast id")
+    site_uuid: str = Field(..., description="The site id")
+    forecast_creation_datetime: datetime = Field(
+        ..., description="The time that the forecast was created."
+    )
+    forecast_version: str = Field(..., description="Forecast version")
+    forecast_values: Dict[int, float] = Field(
+        ..., description="List of target times indexes and generation"
+    )
+
+
+class ManyForecastCompact(BaseModel):
+    """Forecast for one datetime for many sites"""
+
+    target_time_idx: dict[datetime, int] = Field(
+        ...,
+        description="Dictionary of target datetimes and their index in the forecast_values list",
+    )
+    forecasts: List[ForecastCompact] = Field(..., description="Target time for forecast")
 
 
 # get_sites

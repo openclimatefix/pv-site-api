@@ -1,6 +1,7 @@
 """Main API Routes"""
 import os
 import time
+from typing import Union
 
 import pandas as pd
 import sentry_sdk
@@ -42,6 +43,7 @@ from .pydantic_models import (
     ClearskyEstimate,
     Forecast,
     MultiplePVActual,
+    MultipleSitePVActualCompact,
     PVSiteAPIStatus,
     PVSiteMetadata,
     PVSites,
@@ -301,12 +303,15 @@ def get_pv_actual(
     return actuals[0]
 
 
-@app.get("/sites/pv_actual", response_model=list[MultiplePVActual])
+@app.get(
+    "/sites/pv_actual", response_model=Union[list[MultiplePVActual], MultipleSitePVActualCompact]
+)
 @cache_response
 def get_pv_actual_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
+    compact: bool = False,
 ):
     """
     ### Get the actual power generation for a list of sites.
@@ -320,7 +325,9 @@ def get_pv_actual_many_sites(
 
     start_utc = get_yesterday_midnight()
 
-    return get_generation_by_sites(session, site_uuids=site_uuids_list, start_utc=start_utc)
+    return get_generation_by_sites(
+        session, site_uuids=site_uuids_list, start_utc=start_utc, compact=compact
+    )
 
 
 # get_forecast: Client gets the forecast for their site
@@ -366,6 +373,7 @@ def get_pv_forecast_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
+    compact: bool = False,
 ):
     """
     ### Get the forecasts for multiple sites.
@@ -384,7 +392,7 @@ def get_pv_forecast_many_sites(
     logger.debug(f"Loading forecast from {start_utc}")
 
     forecasts = get_forecasts_by_sites(
-        session, site_uuids=site_uuids_list, start_utc=start_utc, horizon_minutes=0
+        session, site_uuids=site_uuids_list, start_utc=start_utc, horizon_minutes=0, compact=compact
     )
 
     return forecasts
