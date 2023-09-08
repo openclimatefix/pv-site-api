@@ -23,6 +23,30 @@ def test_get_site_list(client, sites):
     assert len(pv_sites.site_list) > 0
 
 
+def test_get_site_list_max(client, sites):
+    # examples sites are at 51,3
+    response = client.get("/sites?latitude_longitude_max=50,4")
+    assert len(PVSites(**response.json()).site_list) == 0
+
+    response = client.get("/sites?latitude_longitude_max=52,2")
+    assert len(PVSites(**response.json()).site_list) == 0
+
+    response = client.get("/sites?latitude_longitude_max=52,4")
+    assert len(PVSites(**response.json()).site_list) > 0
+
+
+def test_get_site_list_min(client, sites):
+    # examples sites are at 51,3
+    response = client.get("/sites?latitude_longitude_min=52,2")
+    assert len(PVSites(**response.json()).site_list) == 0
+
+    response = client.get("/sites?latitude_longitude_min=50,4")
+    assert len(PVSites(**response.json()).site_list) == 0
+
+    response = client.get("/sites?latitude_longitude_min=50,2")
+    assert len(PVSites(**response.json()).site_list) > 0
+
+
 def test_put_site_fake(client, fake):
     pv_site = PVSiteMetadata(
         client_name="client_name_1",
