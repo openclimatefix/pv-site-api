@@ -14,9 +14,10 @@ from typing import Any, Optional, Union
 import sqlalchemy as sa
 import structlog
 from fastapi import HTTPException
+from pvsite_datamodel import SiteGroupSQL, UserSQL
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.user import get_user_by_email
-from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteSQL
+from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteGroupSiteSQL, SiteSQL
 from sqlalchemy import func
 from sqlalchemy.orm import Session, aliased
 
@@ -29,6 +30,7 @@ from .convert import (
 )
 from .pydantic_models import (
     Forecast,
+    LatitudeLongitudeLimits,
     ManyForecastCompact,
     MultiplePVActual,
     MultipleSitePVActualCompact,
@@ -290,3 +292,27 @@ def check_user_has_access_to_sites(session: Session, auth: dict, site_uuids: lis
                     f"does not have access to this site {site_uuid}. "
                     f"User has access to {site_uuids}",
                 )
+
+
+def get_sites_from_user(session, user, lat_lon_limits: Optional[LatitudeLongitudeLimits] = None):
+    """
+    Get the sites for a user
+
+    Option to filter on latitude longitude max and min
+    """
+
+    # get sites and filter if required
+    if lat_lon_limits is not None:
+        query = session.query(SiteSQL)
+        query = query.join(SiteGroupSiteSQL)
+        query = query.join(SiteGroupSQL)
+        query = query.join(UserSQL)
+        query = query.filter(SiteSQL.latitude <= lat_lon_limits.latitude_max)
+        query = query.filter(SiteSQL.latitude >= lat_lon_limits.latitude_min)
+        query = query.filter(SiteSQL.longitude <= lat_lon_limits.longitude_max)
+        query = query.filter(SiteSQL.longitude >= lat_lon_limits.longitude_min)
+        sites = query.all()
+
+    else:
+        sites = user.site_group.sites
+    return sites

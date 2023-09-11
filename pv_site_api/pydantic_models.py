@@ -6,6 +6,15 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field, validator
 
 
+class LatitudeLongitudeLimits(BaseModel):
+    """Lat and lon limits"""
+
+    latitude_min: float = Field(-90, description="Minimum latitude")
+    latitude_max: float = Field(90, description="Maximum latitude")
+    longitude_min: float = Field(-180, description="Minimum longitude")
+    longitude_max: float = Field(180, description="Maximum longitude")
+
+
 # initiate the classes
 # get_status
 class PVSiteAPIStatus(BaseModel):
