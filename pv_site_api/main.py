@@ -30,6 +30,7 @@ from ._db_helpers import (
     get_forecasts_by_sites,
     get_generation_by_sites,
     get_sites_by_uuids,
+    get_sites_from_user,
     site_to_pydantic,
 )
 from .auth import Auth
@@ -52,7 +53,7 @@ from .pydantic_models import (
 )
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
-from .utils import get_yesterday_midnight
+from .utils import format_latitude_longitude, get_yesterday_midnight
 
 load_dotenv()
 
@@ -141,9 +142,17 @@ async def add_process_time_header(request: Request, call_next):
 def get_sites(
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
+    latitude_longitude_max: Optional[str] = None,
+    latitude_longitude_min: Optional[str] = None,
 ):
     """
     ### This route returns a list of the user's PV Sites with metadata for each site.
+
+    latitude_longitude_max and latitude_longitude_min are optional parameters that can be used to
+    filter the sites returned by latitude and longitude.
+    The format of these parameters is a comma separated string of latitude and longitude values.
+    For example to get sites in the UK you could use lat_lon_max=60,0 and lat_lon_min=50,-10
+
     """
 
     if is_fake():
@@ -151,9 +160,15 @@ def get_sites(
 
     user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
 
-    sites = user.site_group.sites
+    lat_lon_limits = format_latitude_longitude(
+        latitude_longitude_max=latitude_longitude_max, latitude_longitude_min=latitude_longitude_min
+    )
 
-    assert len(sites) > 0
+    sites = get_sites_from_user(
+        lat_lon_limits=lat_lon_limits,
+        session=session,
+        user=user,
+    )
 
     logger.debug(f"Found {len(sites)} sites")
 
