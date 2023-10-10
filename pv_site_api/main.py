@@ -49,6 +49,8 @@ from .pydantic_models import (
     PVSiteMetadata,
     PVSites,
 )
+from .data.gsp import get_gsp
+from .data.dno import get_dno
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
 from .utils import format_latitude_longitude, get_yesterday_midnight
@@ -261,12 +263,16 @@ def post_site_info(
     if max_ml_id is None:
         max_ml_id = 0
 
+    # get gsp and dno
+    gsp = get_gsp(latitude=site_info.latitude, longitude=site_info.longitude)
+    dno = get_dno(latitude=site_info.latitude, longitude=site_info.longitude)
+
     site = SiteSQL(
         client_site_id=site_info.client_site_id,
         client_site_name=site_info.client_site_name,
         region=site_info.region,
-        dno=site_info.dno,
-        gsp=site_info.gsp,
+        dno=dno,
+        gsp=gsp,
         orientation=site_info.orientation,
         tilt=site_info.tilt,
         latitude=site_info.latitude,

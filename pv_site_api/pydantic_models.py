@@ -30,15 +30,12 @@ class PVSiteAPIStatus(BaseModel):
 class PVSiteMetadata(BaseModel):
     """Site metadata"""
 
-    site_uuid: Optional[str] = Field(None, description="Unique internal ID for site.")
     client_name: str = Field("not-set", description="Unique name for user providing the site data.")
     client_site_id: str = Field(..., description="The site ID as given by the providing user.")
     client_site_name: str = Field(
         None, decription="The name of the site as given by the providing uuser."
     )
     region: Optional[str] = Field(None, decription="The region of the PV site")
-    dno: Optional[str] = Field(None, decription="The distribution network operator of the PV site.")
-    gsp: Optional[str] = Field(None, decription="The grid supply point of the PV site.")
     orientation: Optional[float] = Field(
         None, description="The rotation of the panel in degrees. 180° points south"
     )
