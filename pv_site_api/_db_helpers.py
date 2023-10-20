@@ -18,9 +18,11 @@ from pvsite_datamodel import SiteGroupSQL, UserSQL
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteGroupSiteSQL, SiteSQL
+from sqlalchemy import func
 from sqlalchemy.orm import Session, aliased
 
 from .convert import (
+    forecast_rows_sums_to_pydantic_objects,
     forecast_rows_to_pydantic,
     forecast_rows_to_pydantic_compact,
     generation_rows_to_pydantic,
@@ -49,14 +51,14 @@ def _get_forecasts_for_horizon(
     start_utc: dt.datetime,
     end_utc: dt.datetime,
     horizon_minutes: int,
+    sum_by: Optional[str] = None,
 ) -> list[Row]:
     """Get the forecasts for given sites for a given horizon."""
-    stmt = (
-        sa.select(ForecastSQL, ForecastValueSQL)
+    query = (
+        session.query(ForecastSQL, ForecastValueSQL)
         # We need a DISTINCT ON statement in cases where we have run two forecasts for the same
         # time. In practice this shouldn't happen often.
         .distinct(ForecastSQL.site_uuid, ForecastSQL.timestamp_utc)
-        .select_from(ForecastSQL)
         .join(ForecastValueSQL)
         .where(ForecastSQL.site_uuid.in_(site_uuids))
         # Also filtering on `timestamp_utc` makes the query faster.
@@ -68,11 +70,35 @@ def _get_forecasts_for_horizon(
         .order_by(ForecastSQL.site_uuid, ForecastSQL.timestamp_utc)
     )
 
-    return list(session.execute(stmt))
+    if sum_by is not None:
+        subquery = query.subquery()
+
+        group_by_variables = [subquery.c.start_utc]
+        if sum_by == "dno":
+            group_by_variables.append(SiteSQL.dno)
+        if sum_by == "gsp":
+            group_by_variables.append(SiteSQL.gsp)
+        query_variables = group_by_variables.copy()
+        query_variables.append(func.sum(subquery.c.forecast_power_kw))
+
+        query = session.query(*query_variables)
+        query = query.join(ForecastSQL, ForecastSQL.forecast_uuid == subquery.c.forecast_uuid)
+        query = query.join(SiteSQL)
+        query = query.group_by(*group_by_variables)
+        query = query.order_by(*group_by_variables)
+        forecasts_raw = query.all()
+
+    else:
+        forecasts_raw = query.all()
+
+    return forecasts_raw
 
 
 def _get_latest_forecast_by_sites(
-    session: Session, site_uuids: list[str], start_utc: Optional[dt.datetime] = None
+    session: Session,
+    site_uuids: list[str],
+    start_utc: Optional[dt.datetime] = None,
+    sum_by: Optional[str] = None,
 ) -> list[Row]:
     """Get the latest forecast for given site uuids."""
     # Get the latest forecast for each site.
@@ -99,7 +125,27 @@ def _get_latest_forecast_by_sites(
 
     query.order_by(forecast_subq.timestamp_utc, ForecastValueSQL.start_utc)
 
-    return query.all()
+    if sum_by is None:
+        return query.all()
+    else:
+        subquery = query.subquery()
+
+        group_by_variables = [subquery.c.start_utc]
+        if sum_by == "dno":
+            group_by_variables.append(SiteSQL.dno)
+        if sum_by == "gsp":
+            group_by_variables.append(SiteSQL.gsp)
+        query_variables = group_by_variables.copy()
+        query_variables.append(func.sum(subquery.c.forecast_power_kw))
+
+        query = session.query(*query_variables)
+        query = query.join(ForecastSQL, ForecastSQL.forecast_uuid == subquery.c.forecast_uuid)
+        query = query.join(SiteSQL)
+        query = query.group_by(*group_by_variables)
+        query = query.order_by(*group_by_variables)
+        forecasts_raw = query.all()
+
+        return forecasts_raw
 
 
 def get_forecasts_by_sites(
@@ -108,6 +154,7 @@ def get_forecasts_by_sites(
     start_utc: dt.datetime,
     horizon_minutes: int,
     compact: bool = False,
+    sum_by: Optional[str] = None,
 ) -> Union[list[Forecast], ManyForecastCompact]:
     """Combination of the latest forecast and the past forecasts, for given sites.
 
@@ -124,35 +171,49 @@ def get_forecasts_by_sites(
         start_utc=start_utc,
         end_utc=end_utc,
         horizon_minutes=horizon_minutes,
+        sum_by=sum_by,
     )
     logger.debug("Found %s past forecasts", len(rows_past))
 
     rows_future = _get_latest_forecast_by_sites(
-        session=session, site_uuids=site_uuids, start_utc=start_utc
+        session=session, site_uuids=site_uuids, start_utc=start_utc, sum_by=sum_by
     )
     logger.debug("Found %s future forecasts", len(rows_future))
 
-    logger.debug("Formatting forecasts to pydantic objects")
-    if compact:
-        forecasts = forecast_rows_to_pydantic_compact(rows_past + rows_future)
+    if sum_by is not None:
+        forecasts = forecast_rows_sums_to_pydantic_objects(rows_future + rows_past)
     else:
-        forecasts = forecast_rows_to_pydantic(rows_past + rows_future)
-    logger.debug("Formatting forecasts to pydantic objects: done")
+        logger.debug("Formatting forecasts to pydantic objects")
+        if compact:
+            forecasts = forecast_rows_to_pydantic_compact(rows_past + rows_future)
+        else:
+            forecasts = forecast_rows_to_pydantic(rows_past + rows_future)
+        logger.debug("Formatting forecasts to pydantic objects: done")
 
     return forecasts
 
 
 def get_generation_by_sites(
-    session: Session, site_uuids: list[str], start_utc: dt.datetime, compact: bool = False
+    session: Session,
+    site_uuids: list[str],
+    start_utc: dt.datetime,
+    compact: bool = False,
+    sum_by: Optional[str] = None,
 ) -> Union[list[MultiplePVActual], MultipleSitePVActualCompact]:
     """Get the generation since yesterday (midnight) for a list of sites."""
     logger.info(f"Getting generation for {len(site_uuids)} sites")
     rows = get_pv_generation_by_sites(
-        session=session, start_utc=start_utc, site_uuids=[uuid.UUID(su) for su in site_uuids]
+        session=session,
+        start_utc=start_utc,
+        site_uuids=[uuid.UUID(su) for su in site_uuids],
+        sum_by=sum_by,
     )
 
     # Go through the rows and split the data by site.
     pv_actual_values_per_site: dict[str, list[PVActualValue]] = defaultdict(list)
+
+    if sum_by is not None:
+        return rows
 
     # TODO can we speed this up?
     if not compact:

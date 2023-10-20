@@ -68,6 +68,8 @@ def sites(db_session):
     num_sites = 3
     for j in range(num_sites):
         site = make_site(db_session=db_session, ml_id=j + 1)
+        site.dno = f"test_dno_{j}"
+        site.gsp = f"test_gsp_{j}"
 
         sites.append(site)
         site_group.sites.append(site)

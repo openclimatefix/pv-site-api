@@ -4,6 +4,7 @@ import json
 import uuid
 from datetime import datetime, timezone
 
+from pvsite_datamodel.pydantic_models import GenerationSum
 from pvsite_datamodel.sqlmodels import GenerationSQL
 
 from pv_site_api.pydantic_models import MultiplePVActual, MultipleSitePVActualCompact, PVActualValue
@@ -57,6 +58,42 @@ def test_pv_actual_many_sites_compact(client, sites, generations):
 
     pv_actuals = MultipleSitePVActualCompact(**resp.json())
     assert len(pv_actuals.pv_actual_values_many_site) == len(sites)
+
+
+def test_pv_actual_many_sites_total(client, sites, generations):
+    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuid_str = ",".join(site_uuids)
+
+    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&sum_by=total")
+
+    assert resp.status_code == 200
+
+    pv_actuals = [GenerationSum(**x) for x in resp.json()]
+    assert len(pv_actuals) == 10
+
+
+def test_pv_actual_many_sites_dno(client, sites, generations):
+    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuid_str = ",".join(site_uuids)
+
+    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&sum_by=dno")
+
+    assert resp.status_code == 200
+
+    pv_actuals = [GenerationSum(**x) for x in resp.json()]
+    assert len(pv_actuals) == 30
+
+
+def test_pv_actual_many_sites_gsp(client, sites, generations):
+    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuid_str = ",".join(site_uuids)
+
+    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&sum_by=gsp")
+
+    assert resp.status_code == 200
+
+    pv_actuals = [GenerationSum(**x) for x in resp.json()]
+    assert len(pv_actuals) == 30
 
 
 def test_post_fake_pv_actual(client, fake):
