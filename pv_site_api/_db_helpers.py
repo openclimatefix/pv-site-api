@@ -98,6 +98,7 @@ def _get_latest_forecast_by_sites(
     session: Session,
     site_uuids: list[str],
     start_utc: Optional[dt.datetime] = None,
+    end_utc: Optional[dt.datetime] = None,
     sum_by: Optional[str] = None,
 ) -> list[Row]:
     """Get the latest forecast for given site uuids."""
@@ -122,6 +123,9 @@ def _get_latest_forecast_by_sites(
     # but since then, no new forecast have been made
     if start_utc is not None:
         query = query.filter(ForecastValueSQL.start_utc >= start_utc)
+
+    if end_utc is not None:
+        query = query.filter(ForecastValueSQL.end_utc <= end_utc)
 
     query.order_by(forecast_subq.timestamp_utc, ForecastValueSQL.start_utc)
 
@@ -155,6 +159,7 @@ def get_forecasts_by_sites(
     horizon_minutes: int,
     compact: bool = False,
     sum_by: Optional[str] = None,
+    end_utc: Optional[dt.datetime] = None,
 ) -> Union[list[Forecast], ManyForecastCompact]:
     """Combination of the latest forecast and the past forecasts, for given sites.
 
@@ -163,20 +168,22 @@ def get_forecasts_by_sites(
 
     logger.info(f"Getting forecast for {len(site_uuids)} sites")
 
-    end_utc = dt.datetime.utcnow()
+    end_utc_past = dt.datetime.utcnow()
+    if (end_utc is not None) and (end_utc < end_utc_past):
+        end_utc_past = end_utc
 
     rows_past = _get_forecasts_for_horizon(
         session,
         site_uuids=site_uuids,
         start_utc=start_utc,
-        end_utc=end_utc,
+        end_utc=end_utc_past,
         horizon_minutes=horizon_minutes,
         sum_by=sum_by,
     )
     logger.debug("Found %s past forecasts", len(rows_past))
 
     rows_future = _get_latest_forecast_by_sites(
-        session=session, site_uuids=site_uuids, start_utc=start_utc, sum_by=sum_by
+        session=session, site_uuids=site_uuids, start_utc=start_utc, sum_by=sum_by, end_utc=end_utc
     )
     logger.debug("Found %s future forecasts", len(rows_future))
 
@@ -199,12 +206,14 @@ def get_generation_by_sites(
     start_utc: dt.datetime,
     compact: bool = False,
     sum_by: Optional[str] = None,
+    end_utc: Optional[dt.datetime] = None,
 ) -> Union[list[MultiplePVActual], MultipleSitePVActualCompact]:
     """Get the generation since yesterday (midnight) for a list of sites."""
     logger.info(f"Getting generation for {len(site_uuids)} sites")
     rows = get_pv_generation_by_sites(
         session=session,
         start_utc=start_utc,
+        end_utc=end_utc,
         site_uuids=[uuid.UUID(su) for su in site_uuids],
         sum_by=sum_by,
     )

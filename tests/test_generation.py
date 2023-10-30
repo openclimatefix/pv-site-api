@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from pvsite_datamodel.pydantic_models import GenerationSum
 from pvsite_datamodel.sqlmodels import GenerationSQL
@@ -82,6 +82,35 @@ def test_pv_actual_many_sites_dno(client, sites, generations):
 
     pv_actuals = [GenerationSum(**x) for x in resp.json()]
     assert len(pv_actuals) == 30
+
+
+def test_pv_actual_many_sites_start(client, sites, generations):
+    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuid_str = ",".join(site_uuids)
+    start_utc = (datetime.today() - timedelta(minutes=5)).isoformat()
+
+    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&start_utc={start_utc}")
+
+    assert resp.status_code == 200
+
+    pv_actuals = [MultiplePVActual(**x) for x in resp.json()]
+    assert len(pv_actuals) == len(sites)
+    assert len(pv_actuals[0].pv_actual_values) == 5
+
+
+def test_pv_actual_many_sites_end(client, sites, generations):
+    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuid_str = ",".join(site_uuids)
+    end_utc = (datetime.today()).isoformat()
+
+    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&end_utc={end_utc}")
+
+    assert resp.status_code == 200
+
+    pv_actuals = [MultiplePVActual(**x) for x in resp.json()]
+    assert len(pv_actuals) == len(sites)
+    # only 5 generations are later than now, the other 5 all stop before now
+    assert len(pv_actuals[0].pv_actual_values) == 5
 
 
 def test_pv_actual_many_sites_gsp(client, sites, generations):
