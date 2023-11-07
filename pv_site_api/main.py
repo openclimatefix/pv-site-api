@@ -336,6 +336,8 @@ def get_pv_actual_many_sites(
 
     sum_by: can be None, 'total', 'dno' or 'gsp'
     """
+    if site_uuids == "[]":
+        return Response(status_code=204)
     site_uuids_list = site_uuids.split(",")
 
     if is_fake():
@@ -408,6 +410,10 @@ def get_pv_forecast_many_sites(
         return [make_fake_forecast(fake_site_uuid)]
 
     start_utc = get_yesterday_midnight()
+
+    if site_uuids == "[]":
+        return Response(status_code=204)
+
     site_uuids_list = site_uuids.split(",")
 
     check_user_has_access_to_sites(session=session, auth=auth, site_uuids=site_uuids_list)
