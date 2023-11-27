@@ -100,9 +100,10 @@ description = """
 The Quartz Solar PV Site API generates site-specific pv forecasts for users.
 
 This API is built with [FastAPI](https://fastapi.tiangolo.com/), offering 
-users the options to both try API routes with the [`/swagger`](https://api-site.quartz.solar/swagger) UI 
+users the options to both try API routes with the
+[`/swagger`](https://api-site.quartz.solar/swagger) UI
 and read the [`/docs`](https://api-site.quartz.solar/docs) with the sleeker 
-Redocs layout. The information is the same in both places. 
+Redocs layout. The information is the same in both places.
 """
 
 origins = os.getenv("ORIGINS", "*").split(",")
