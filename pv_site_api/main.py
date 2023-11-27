@@ -97,7 +97,11 @@ title = "Quartz PV Site API"
 
 folder = os.path.dirname(os.path.abspath(__file__))
 description = """
-Description of PV Site API
+The Quartz Solar PV Site API generates site-specific pv forecasts for users.
+
+This API is built with [FastAPI](https://fastapi.tiangolo.com/), offering 
+users the options to both try API routes with the [`/swagger`](/swagger) UI 
+and read documentation with the sleek Redocs layout at [`/docs`](/docs).
 """
 
 origins = os.getenv("ORIGINS", "*").split(",")
@@ -581,7 +585,7 @@ def custom_openapi():
         version=pv_site_api.__version__,
         description=description,
         contact={
-            "name": "Nowcasting by Open Climate Fix",
+            "name": "Quartz Solar by Open Climate Fix",
             "url": "https://quartz.solar",
             "email": "info@openclimatefix.org",
         },
