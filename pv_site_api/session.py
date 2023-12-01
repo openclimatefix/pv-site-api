@@ -15,4 +15,3 @@ def get_session():
 
         with connection.get_session() as s:
             yield s
-
