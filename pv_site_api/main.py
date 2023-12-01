@@ -346,7 +346,7 @@ def get_pv_actual_many_sites(
         return []
 
     # convert to list of strings
-    if isinstance(site_uuids,str):
+    if isinstance(site_uuids, str):
         site_uuids_list = site_uuids.split(",")
     else:
         site_uuids_list = site_uuids
@@ -426,7 +426,7 @@ def get_pv_forecast_many_sites(
         return []
 
     # convert to list of strings
-    if isinstance(site_uuids,str):
+    if isinstance(site_uuids, str):
         site_uuids_list = site_uuids.split(",")
     else:
         site_uuids_list = site_uuids
