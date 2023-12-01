@@ -342,7 +342,7 @@ def get_pv_actual_many_sites(
 
     sum_by: can be None, 'total', 'dno' or 'gsp'
     """
-    if site_uuids == "[]" or site_uuids == "":
+    if (site_uuids == "[]") or (site_uuids == ""):
         return []
 
     # convert to list of strings
