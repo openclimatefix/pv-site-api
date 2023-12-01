@@ -331,7 +331,7 @@ def get_pv_actual(
 )
 @cache_response
 def get_pv_actual_many_sites(
-    site_uuids: Union[str | list[str]],
+    site_uuids: str,
     session: Session = Depends(get_session),
     sum_by: Optional[str] = None,
     auth: dict = Depends(auth),
@@ -346,10 +346,7 @@ def get_pv_actual_many_sites(
         return []
 
     # convert to list of strings
-    if isinstance(site_uuids, str):
-        site_uuids_list = site_uuids.split(",")
-    else:
-        site_uuids_list = site_uuids
+    site_uuids_list = site_uuids.split(",")
 
     if is_fake():
         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
@@ -403,7 +400,7 @@ def get_pv_forecast(
 @app.get("/sites/pv_forecast")
 @cache_response
 def get_pv_forecast_many_sites(
-    site_uuids: Union[str | list[str]],
+    site_uuids: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
     sum_by: Optional[str] = None,
@@ -425,11 +422,7 @@ def get_pv_forecast_many_sites(
     if (site_uuids == "[]") or (site_uuids == ""):
         return []
 
-    # convert to list of strings
-    if isinstance(site_uuids, str):
-        site_uuids_list = site_uuids.split(",")
-    else:
-        site_uuids_list = site_uuids
+    site_uuids_list = site_uuids.split(",")
 
     check_user_has_access_to_sites(session=session, auth=auth, site_uuids=site_uuids_list)
 

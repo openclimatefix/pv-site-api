@@ -199,6 +199,13 @@ def test_get_forecast_no_data_multiple_sites(db_session, client):
     assert resp.json() == []
 
 
+def test_get_forecast_empty_data_multiple_sites(db_session, client):
+    # Get forecasts from that site with no forecasts.
+    resp = client.get("/sites/pv_forecast?site_uuids=&UI")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
 def test_get_forecast_user_no_access(db_session, client, sites):
     # Make a brand new site.
     site = SiteSQL(ml_id=123)
