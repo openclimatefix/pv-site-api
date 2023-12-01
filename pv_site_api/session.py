@@ -12,6 +12,5 @@ def get_session():
     if int(os.environ.get("FAKE", 0)):
         yield None
     else:
-
         with connection.get_session() as s:
             yield s
