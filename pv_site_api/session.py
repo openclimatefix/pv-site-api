@@ -4,7 +4,11 @@ import os
 
 from pvsite_datamodel.connection import DatabaseConnection
 
-connection = DatabaseConnection(url=os.getenv("DB_URL", "not_set"))
+try:
+    connection = DatabaseConnection(url=os.getenv("DB_URL", "not_set"))
+except Exception as e:
+    print(e)
+    print("Could not connect to database")
 
 
 def get_session():
