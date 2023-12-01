@@ -331,7 +331,7 @@ def get_pv_actual(
 )
 @cache_response
 def get_pv_actual_many_sites(
-    site_uuids: str,
+    site_uuids: Union[str | list[str]],
     session: Session = Depends(get_session),
     sum_by: Optional[str] = None,
     auth: dict = Depends(auth),
@@ -342,9 +342,14 @@ def get_pv_actual_many_sites(
 
     sum_by: can be None, 'total', 'dno' or 'gsp'
     """
-    if site_uuids == "[]":
-        return Response(status_code=204)
-    site_uuids_list = site_uuids.split(",")
+    if site_uuids == "[]" or site_uuids == "":
+        return []
+
+    # convert to list of strings
+    if isinstance(site_uuids,str)
+        site_uuids_list = site_uuids.split(",")
+    else:
+        site_uuids_list = site_uuids
 
     if is_fake():
         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
@@ -398,7 +403,7 @@ def get_pv_forecast(
 @app.get("/sites/pv_forecast")
 @cache_response
 def get_pv_forecast_many_sites(
-    site_uuids: str,
+    site_uuids: Union[str | list[str]],
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
     sum_by: Optional[str] = None,
@@ -417,10 +422,14 @@ def get_pv_forecast_many_sites(
 
     start_utc = get_yesterday_midnight()
 
-    if site_uuids == "[]":
-        return Response(status_code=204)
+    if (site_uuids == "[]") or (site_uuids == ""):
+        return []
 
-    site_uuids_list = site_uuids.split(",")
+    # convert to list of strings
+    if isinstance(site_uuids,str):
+        site_uuids_list = site_uuids.split(",")
+    else:
+        site_uuids_list = site_uuids
 
     check_user_has_access_to_sites(session=session, auth=auth, site_uuids=site_uuids_list)
 
