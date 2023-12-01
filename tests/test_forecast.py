@@ -195,7 +195,8 @@ def test_get_forecast_no_data(db_session, client, sites):
 def test_get_forecast_no_data_multiple_sites(db_session, client):
     # Get forecasts from that site with no forecasts.
     resp = client.get("/sites/pv_forecast?site_uuids=[]")
-    assert resp.status_code == 204
+    assert resp.status_code == 200
+    assert resp.json() == []
 
 
 def test_get_forecast_user_no_access(db_session, client, sites):
