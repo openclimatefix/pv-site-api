@@ -147,7 +147,15 @@ def test_pv_actual_no_data(db_session, client, sites):
 def test_pv_actual_no_data_multiple_sites(db_session, client):
     # Get forecasts from that site with no actuals.
     resp = client.get("/sites/pv_actual?site_uuids=[]")
-    assert resp.status_code == 204
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_pv_actual_empty_multiple_sites(db_session, client):
+    # Get forecasts from that site with no actuals.
+    resp = client.get("/sites/pv_actual?site_uuids=&UI")
+    assert resp.status_code == 200
+    assert resp.json() == []
 
 
 def test_pv_actual_404(db_session, client):
