@@ -88,7 +88,7 @@ def cache_response(func):
 
         # check if it's been called before
         if last_updated_datetime is None:
-            logger.debug(f"First time this is route run for {key}")
+            logger.debug(f"First time this is route run for {key}, or cache has been deleted")
 
         # re-run if cache time out is up
         elif refresh_cache:
