@@ -9,7 +9,19 @@ import structlog
 logger = structlog.stdlib.get_logger()
 
 CACHE_TIME_SECONDS = 120
+DELETE_CACHE_TIME_SECONDS = 240
 cache_time_seconds = int(os.getenv("CACHE_TIME_SECONDS", CACHE_TIME_SECONDS))
+delete_cache_time_seconds = int(os.getenv("DELETE_CACHE_TIME_SECONDS", DELETE_CACHE_TIME_SECONDS))
+
+
+def remove_old_cache(last_updated: dict, cache_time_seconds: float = delete_cache_time_seconds):
+    """
+    Remove old cache entries from the cache
+    """
+    now = datetime.now(tz=timezone.utc)
+    for key, value in last_updated.items():
+        if now - timedelta(seconds=delete_cache_time_seconds) > value:
+            last_updated.pop(key)
 
 
 def cache_response(func):
@@ -42,6 +54,10 @@ def cache_response(func):
         for var in ["session", "user"]:
             if var in route_variables:
                 route_variables.pop(var)
+
+        # remove old cache
+        if "background_tasks" in route_variables:
+            route_variables["background_tasks"].add_task(cache_response, last_updated)
 
         # make into string
         route_variables = json.dumps(route_variables)
