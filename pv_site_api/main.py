@@ -7,7 +7,7 @@ import pandas as pd
 import sentry_sdk
 import structlog
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, Response
@@ -145,7 +145,6 @@ async def add_process_time_header(request: Request, call_next):
 
 @app.get("/sites", response_model=PVSites)
 def get_sites(
-    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
     latitude_longitude_max: Optional[str] = None,

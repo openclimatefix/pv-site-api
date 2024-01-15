@@ -15,15 +15,28 @@ delete_cache_time_seconds = int(os.getenv("DELETE_CACHE_TIME_SECONDS", DELETE_CA
 
 
 def remove_old_cache(
-    last_updated: dict, remove_cache_time_seconds: float = delete_cache_time_seconds
+    last_updated: dict, response:dict, remove_cache_time_seconds: float = delete_cache_time_seconds
 ):
     """
     Remove old cache entries from the cache
+
+    :param last_updated: dict of last updated times
+    :param response: dict of responses, same keys as last_updated
+    :param remove_cache_time_seconds: the amount of time, after which the cache should be removed
     """
     now = datetime.now(tz=timezone.utc)
+    logger.info('Removing old cache entries')
+    keys_to_remove = []
     for key, value in last_updated.items():
         if now - timedelta(seconds=remove_cache_time_seconds) > value:
-            last_updated.pop(key)
+            logger.debug(f"Removing {key} from cache, ({value})")
+            keys_to_remove.append(key)
+
+    for key in keys_to_remove:
+        last_updated.pop(key)
+        response.pop(key)
+
+    return last_updated
 
 
 def cache_response(func):
@@ -57,11 +70,10 @@ def cache_response(func):
             if var in route_variables:
                 route_variables.pop(var)
 
-        # remove old cache
-        if "background_tasks" in route_variables:
-            route_variables["background_tasks"].add_task(cache_response, last_updated)
+        last_updated = remove_old_cache(last_updated, response)
 
         # make into string
+        logger.debug(response.keys())
         route_variables = json.dumps(route_variables)
         args_as_json = json.dumps(args)
         function_name = func.__name__
