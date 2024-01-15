@@ -36,7 +36,7 @@ def remove_old_cache(
         last_updated.pop(key)
         response.pop(key)
 
-    return last_updated
+    return last_updated, response
 
 
 def cache_response(func):
@@ -70,10 +70,9 @@ def cache_response(func):
             if var in route_variables:
                 route_variables.pop(var)
 
-        last_updated = remove_old_cache(last_updated, response)
+        last_updated, response = remove_old_cache(last_updated, response)
 
         # make into string
-        logger.debug(response.keys())
         route_variables = json.dumps(route_variables)
         args_as_json = json.dumps(args)
         function_name = func.__name__
