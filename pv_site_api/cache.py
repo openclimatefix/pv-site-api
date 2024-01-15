@@ -15,7 +15,7 @@ delete_cache_time_seconds = int(os.getenv("DELETE_CACHE_TIME_SECONDS", DELETE_CA
 
 
 def remove_old_cache(
-    last_updated: dict, response:dict, remove_cache_time_seconds: float = delete_cache_time_seconds
+    last_updated: dict, response: dict, remove_cache_time_seconds: float = delete_cache_time_seconds
 ):
     """
     Remove old cache entries from the cache
@@ -25,7 +25,7 @@ def remove_old_cache(
     :param remove_cache_time_seconds: the amount of time, after which the cache should be removed
     """
     now = datetime.now(tz=timezone.utc)
-    logger.info('Removing old cache entries')
+    logger.info("Removing old cache entries")
     keys_to_remove = []
     for key, value in last_updated.items():
         if now - timedelta(seconds=remove_cache_time_seconds) > value:
