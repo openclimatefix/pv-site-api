@@ -54,6 +54,8 @@ from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
 from .utils import format_latitude_longitude, get_yesterday_midnight
 
+from pvsite_datamodel.write.user_and_site import create_site
+
 load_dotenv()
 
 logger = structlog.stdlib.get_logger()
@@ -268,27 +270,27 @@ def post_site_info(
     if max_ml_id is None:
         max_ml_id = 0
 
-    site = SiteSQL(
+    site, message = create_site(
+        session=session,
         client_site_id=site_info.client_site_id,
         client_site_name=site_info.client_site_name,
-        region=site_info.region,
-        dno=site_info.dno,
-        gsp=site_info.gsp,
         orientation=site_info.orientation,
         tilt=site_info.tilt,
         latitude=site_info.latitude,
         longitude=site_info.longitude,
         inverter_capacity_kw=site_info.inverter_capacity_kw,
         module_capacity_kw=site_info.module_capacity_kw,
-        capacity_kw=site_info.module_capacity_kw,  # fill remove this one in the future
-        ml_id=max_ml_id + 1,
-    )
+        capacity_kw=site_info.module_capacity_kw)
+
+    logger.debug(message)
 
     # add site
     session.add(site)
     session.commit()
 
+    # make sure the user is added to the site
     user.site_group.sites.append(site)
+    session.commit()
 
     return site_to_pydantic(site)
 
