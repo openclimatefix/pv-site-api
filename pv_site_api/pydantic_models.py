@@ -27,8 +27,8 @@ class PVSiteAPIStatus(BaseModel):
 # get_sites
 # these are the sites available to the client given their login
 # schema will return a list of sites
-class PVSiteMetadata(BaseModel):
-    """Site metadata"""
+class PVSiteInputMetadata(BaseModel):
+    """Site metadata when adding a site"""
 
     client_site_id: str = Field(..., description="The site ID as given by the providing user.")
     client_site_name: str = Field(
@@ -46,6 +46,15 @@ class PVSiteMetadata(BaseModel):
     module_capacity_kw: Optional[float] = Field(
         ..., description="The site's PV module nameplate capacity in kw", ge=0
     )
+
+
+class PVSiteMetadata(PVSiteInputMetadata):
+    """Site metadata"""
+
+    site_uuid: str = Field(..., description="The site's UUID")
+    capacity_kw: float = Field(..., description="The site's total capacity in kw", ge=0)
+    dno: str = Field(..., description="The site's DNO")
+    gsp: str = Field(..., description="The site's GSP")
 
 
 # post_pv_actual

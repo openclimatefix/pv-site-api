@@ -46,6 +46,7 @@ from .pydantic_models import (
     MultiplePVActual,
     MultipleSitePVActualCompact,
     PVSiteAPIStatus,
+    PVSiteInputMetadata,
     PVSiteMetadata,
     PVSites,
 )
@@ -244,9 +245,9 @@ def post_pv_actual(
 #     raise Exception(NotImplemented)
 
 
-@app.post("/sites", status_code=201)
+@app.post("/sites", status_code=201, response_model=PVSiteMetadata)
 def post_site_info(
-    site_info: PVSiteMetadata,
+    site_info: PVSiteInputMetadata,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
 ):
@@ -257,8 +258,8 @@ def post_site_info(
 
     if is_fake():
         print(f"Successfully added {site_info.dict()} for site {site_info.client_site_name}")
-        print("Not doing anything with it (yet!)")
-        return
+        site = make_fake_site().site_list[0]
+        return site
 
     user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
 

@@ -239,9 +239,12 @@ def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
         gsp=site.gsp,
         latitude=site.latitude,
         longitude=site.longitude,
+        tilt=site.tilt,
+        orientation=site.orientation,
         inverter_capacity_kw=site.inverter_capacity_kw,
         module_capacity_kw=site.module_capacity_kw,
         created_utc=site.created_utc,
+        capacity_kw=site.capacity_kw,
     )
     return pv_site
 
