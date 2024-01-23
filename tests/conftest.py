@@ -6,7 +6,7 @@ import freezegun
 import pytest
 from fastapi.testclient import TestClient
 from pvsite_datamodel.sqlmodels import Base, ForecastSQL, ForecastValueSQL, GenerationSQL, StatusSQL
-from pvsite_datamodel.write.user_and_site import make_site, make_site_group, make_user
+from pvsite_datamodel.write.user_and_site import make_fake_site, make_site_group, make_user
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from testcontainers.postgres import PostgresContainer
