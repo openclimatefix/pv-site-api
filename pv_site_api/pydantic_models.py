@@ -26,11 +26,10 @@ class PVSiteAPIStatus(BaseModel):
 
 # get_sites
 # these are the sites available to the client given their login
-# schema will retuurn a list of sites
+# schema will return a list of sites
 class PVSiteMetadata(BaseModel):
     """Site metadata"""
 
-    client_name: str = Field("not-set", description="Unique name for user providing the site data.")
     client_site_id: str = Field(..., description="The site ID as given by the providing user.")
     client_site_name: str = Field(
         None, decription="The name of the site as given by the providing uuser."
