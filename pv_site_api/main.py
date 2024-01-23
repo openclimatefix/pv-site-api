@@ -17,6 +17,7 @@ from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.sqlmodels import SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
+from pvsite_datamodel.write.user_and_site import create_site
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -53,8 +54,6 @@ from .pydantic_models import (
 from .redoc_theme import get_redoc_html_with_theme
 from .session import get_session
 from .utils import format_latitude_longitude, get_yesterday_midnight
-
-from pvsite_datamodel.write.user_and_site import create_site
 
 load_dotenv()
 
@@ -280,7 +279,8 @@ def post_site_info(
         longitude=site_info.longitude,
         inverter_capacity_kw=site_info.inverter_capacity_kw,
         module_capacity_kw=site_info.module_capacity_kw,
-        capacity_kw=site_info.module_capacity_kw)
+        capacity_kw=site_info.module_capacity_kw,
+    )
 
     logger.debug(message)
 
