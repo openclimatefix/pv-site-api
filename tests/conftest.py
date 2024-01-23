@@ -62,7 +62,7 @@ def sites(db_session):
     """Create some fake sites"""
 
     site_group = create_site_group(db_session=db_session)
-    create_user(db_session=db_session, email="test@test.com", site_group=site_group)
+    create_user(session=db_session, email="test@test.com", site_group_name=site_group.site_group_name)
 
     sites = []
     num_sites = 3
