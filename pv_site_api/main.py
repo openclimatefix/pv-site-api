@@ -15,10 +15,8 @@ from pvlib import irradiance, location, pvsystem
 from pvsite_datamodel.pydantic_models import GenerationSum
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
-from pvsite_datamodel.sqlmodels import SiteSQL
 from pvsite_datamodel.write.generation import insert_generation_values
 from pvsite_datamodel.write.user_and_site import create_site
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 import pv_site_api
@@ -263,11 +261,6 @@ def post_site_info(
         return
 
     user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
-
-    # get the current max ml id, small chance this could lead to a raise condition
-    max_ml_id = session.query(func.max(SiteSQL.ml_id)).scalar()
-    if max_ml_id is None:
-        max_ml_id = 0
 
     site, message = create_site(
         session=session,
