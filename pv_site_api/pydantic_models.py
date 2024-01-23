@@ -32,7 +32,7 @@ class PVSiteMetadata(BaseModel):
 
     client_site_id: str = Field(..., description="The site ID as given by the providing user.")
     client_site_name: str = Field(
-        None, decription="The name of the site as given by the providing uuser."
+        None, decription="The name of the site as given by the providing user."
     )
     orientation: Optional[float] = Field(
         None, description="The rotation of the panel in degrees. 180° points south"
