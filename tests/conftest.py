@@ -6,7 +6,7 @@ import freezegun
 import pytest
 from fastapi.testclient import TestClient
 from pvsite_datamodel.sqlmodels import Base, ForecastSQL, ForecastValueSQL, GenerationSQL, StatusSQL
-from pvsite_datamodel.write.user_and_site import make_site, make_site_group, make_user
+from pvsite_datamodel.write.user_and_site import create_site_group, create_user, make_fake_site
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from testcontainers.postgres import PostgresContainer
@@ -61,13 +61,15 @@ def db_session(engine):
 def sites(db_session):
     """Create some fake sites"""
 
-    site_group = make_site_group(db_session=db_session)
-    make_user(db_session=db_session, email="test@test.com", site_group=site_group)
+    site_group = create_site_group(db_session=db_session)
+    create_user(
+        session=db_session, email="test@test.com", site_group_name=site_group.site_group_name
+    )
 
     sites = []
     num_sites = 3
     for j in range(num_sites):
-        site = make_site(db_session=db_session, ml_id=j + 1)
+        site = make_fake_site(db_session=db_session, ml_id=j + 1)
         site.dno = f"test_dno_{j}"
         site.gsp = f"test_gsp_{j}"
 

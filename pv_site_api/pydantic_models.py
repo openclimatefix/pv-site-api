@@ -26,19 +26,14 @@ class PVSiteAPIStatus(BaseModel):
 
 # get_sites
 # these are the sites available to the client given their login
-# schema will retuurn a list of sites
+# schema will return a list of sites
 class PVSiteMetadata(BaseModel):
     """Site metadata"""
 
-    site_uuid: Optional[str] = Field(None, description="Unique internal ID for site.")
-    client_name: str = Field("not-set", description="Unique name for user providing the site data.")
     client_site_id: str = Field(..., description="The site ID as given by the providing user.")
     client_site_name: str = Field(
-        None, decription="The name of the site as given by the providing uuser."
+        None, decription="The name of the site as given by the providing user."
     )
-    region: Optional[str] = Field(None, decription="The region of the PV site")
-    dno: Optional[str] = Field(None, decription="The distribution network operator of the PV site.")
-    gsp: Optional[str] = Field(None, decription="The grid supply point of the PV site.")
     orientation: Optional[float] = Field(
         None, description="The rotation of the panel in degrees. 180° points south"
     )
