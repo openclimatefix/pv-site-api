@@ -30,7 +30,7 @@ class PVSiteAPIStatus(BaseModel):
 class PVSiteInputMetadata(BaseModel):
     """Site metadata when adding a site"""
 
-    client_site_id: str = Field(..., description="The site ID as given by the providing user.")
+    client_site_id: int = Field(..., description="The site ID as given by the providing user.")
     client_site_name: str = Field(
         None, decription="The name of the site as given by the providing user."
     )

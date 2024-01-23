@@ -50,7 +50,7 @@ def test_get_site_list_min(client, sites):
 def test_put_site_fake(client, fake):
     pv_site = PVSiteInputMetadata(
         client_name="client_name_1",
-        client_site_id="the site id used by the user",
+        client_site_id=1,
         client_site_name="the site name",
         region="the site's region",
         dno="the site's dno",
