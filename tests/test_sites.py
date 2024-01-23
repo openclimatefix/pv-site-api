@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from pvsite_datamodel.sqlmodels import SiteSQL
 
-from pv_site_api.pydantic_models import PVSiteMetadata, PVSites
+from pv_site_api.pydantic_models import PVSiteInputMetadata, PVSites
 
 
 def test_get_site_list_fake(client, fake):
@@ -48,7 +48,7 @@ def test_get_site_list_min(client, sites):
 
 
 def test_put_site_fake(client, fake):
-    pv_site = PVSiteMetadata(
+    pv_site = PVSiteInputMetadata(
         client_name="client_name_1",
         client_site_id="the site id used by the user",
         client_site_name="the site name",
@@ -72,7 +72,7 @@ def test_put_site_fake(client, fake):
 
 def test_put_site(db_session, client):
     # make site object
-    pv_site = PVSiteMetadata(
+    pv_site = PVSiteInputMetadata(
         client_name="test_client",
         client_site_id="1",
         client_site_name="the site name",

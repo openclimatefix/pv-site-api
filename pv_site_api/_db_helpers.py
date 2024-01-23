@@ -244,6 +244,7 @@ def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
         inverter_capacity_kw=site.inverter_capacity_kw,
         module_capacity_kw=site.module_capacity_kw,
         created_utc=site.created_utc,
+        capacity_kw=site.capacity_kw,
     )
     return pv_site
 
