@@ -96,6 +96,10 @@ def forecast_rows_to_pydantic(rows: list[Row]) -> list[Forecast]:
             data[site_uuid]["forecast_creation_datetime"] = row.ForecastSQL.timestamp_utc
             data[site_uuid]["forecast_version"] = row.ForecastSQL.forecast_version
 
+        # make sure we use the latest forecast_creation_datetime
+        if row.ForecastSQL.timestamp_utc > data[site_uuid]["forecast_creation_datetime"]:
+            data[site_uuid]["forecast_creation_datetime"] = row.ForecastSQL.timestamp_utc
+
         fv_uuid = row.ForecastValueSQL.forecast_value_uuid
 
         if fv_uuid not in fv_uuids[site_uuid]:
