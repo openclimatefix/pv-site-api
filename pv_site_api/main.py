@@ -113,8 +113,7 @@ Redocs layout. The information is the same in both places.
 
 And if you're interested in contributing to our open source project, you can
 get started by going to our [OCF Github](https://github.com/openclimatefix)
-page and checking out our
-“[list of good first issues](https://github.com/search?l=&p=1&q=user%3Aopenclimatefix+label%3A%22good+first+issue%22&ref=advsearch&type=Issues&utf8=%E2%9C%93&state=open)”!
+page and checking out our list of good first issues. 
 
 If you have any further questions, please don't hesitate to get in touch.
 """
@@ -185,10 +184,11 @@ def get_sites(
     """
     ### This route returns a list of the user's PV Sites with metadata for each site.
 
-    **latitude_longitude_max** and **latitude_longitude_min** are optional parameters that can be used to
-    filter the sites returned by latitude and longitude.
+    **latitude_longitude_max** and **latitude_longitude_min** are optional parameters
+    that can be used to filter the sites returned by latitude and longitude.
     The format of these parameters is a comma separated string of latitude and longitude values.
-    For example to get sites in the UK you could use `latitude_longitude_max=60,0` and `latitude_longitude_min=50,-10`
+    For example to get sites in the UK you could use
+    `latitude_longitude_max=60,0` and `latitude_longitude_min=50,-10`
 
     """
 
@@ -234,12 +234,13 @@ def post_pv_actual(
 
     #### Parameters
     - **site_uuid**: The unique identifier for the site.
-    - **pv_actual**: The actual PV generation values for the site. You can add one at a time, or many. For example
+    - **pv_actual**: The actual PV generation values for the site.
+        You can add one at a time, or many. For example
         { "site_uuid": "e6dc5077-0a8e-44b7-aa91-ef6084d66b81", "pv_actual_values": [
-    {
-      "datetime_utc": "2024-02-09T17:19:35.986Z",
-      "actual_generation_kw": 0
-    }]}
+           {
+               "datetime_utc": "2024-02-09T17:19:35.986Z",
+               "actual_generation_kw": 0
+         }]}
 
     All datetimes are in UTC.
 
@@ -299,7 +300,8 @@ def post_site_info(
 
     For example, a user could add a new site by sending a POST request with the following JSON body:
 
-    {"client_site_id": 1 "client_site_name": "Norfolk Solar Farm", "orientation": 180, "tilt": 35, "latitude": 52.5, "longitude": 1.5, "inverter_capacity_kw": 5, "module_capacity_kw": 5}
+    {"client_site_id": 1 "client_site_name": "Norfolk Solar Farm", "orientation": 180, "tilt": 35,
+    "latitude": 52.5, "longitude": 1.5, "inverter_capacity_kw": 5, "module_capacity_kw": 5}
 
     """
 
