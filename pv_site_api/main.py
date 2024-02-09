@@ -477,7 +477,7 @@ def get_pv_forecast_many_sites(
     auth: dict = Depends(auth),
     sum_by: Optional[str] = None,
     compact: bool = False,
-)
+):
     """
     ### Get the forecasts for many sites.
 
