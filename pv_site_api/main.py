@@ -408,14 +408,14 @@ def get_pv_actual_many_sites(
     site_uuids = site_uuids.replace(" ", "")
     site_uuids_list = site_uuids.split(",")
 
+    if is_fake():
+        return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
+
     # check that uuids are given
     try:
         [uuid.UUID(site_uuid) for site_uuid in site_uuids_list]
     except ValueError:
         raise HTTPException(status_code=422, detail="Invalid site_uuids list.")
-
-    if is_fake():
-        return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
 
     check_user_has_access_to_sites(session=session, auth=auth, site_uuids=site_uuids_list)
 
@@ -468,7 +468,6 @@ def get_pv_forecast(
 
 @app.get(
     "/sites/pv_forecast",
-    response_model=Union[list[Forecast], ManyForecastCompact],
     tags=["Forecast"],
 )
 @cache_response
@@ -478,7 +477,7 @@ def get_pv_forecast_many_sites(
     auth: dict = Depends(auth),
     sum_by: Optional[str] = None,
     compact: bool = False,
-) -> Union[list[Forecast], ManyForecastCompact]:
+)
     """
     ### Get the forecasts for many sites.
 
