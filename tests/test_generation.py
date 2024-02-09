@@ -144,7 +144,7 @@ def test_pv_actual_no_data(db_session, client, sites):
     assert resp.status_code == 204
 
 
-def test_pv_actual_wrong_site_uuid(db_session, client):
+def test_pv_actual_incorrect_site_uuid(db_session, client):
     # Get forecasts from that site with no actuals.
     resp = client.get("/sites/pv_actual?site_uuids=ff-ff-ff")
     assert resp.status_code == 422
