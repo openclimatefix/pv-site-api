@@ -161,7 +161,7 @@ class PVSites(BaseModel):
     """PV Sites"""
 
     site_list: List[PVSiteMetadata] = Field(
-        ..., description="List of all sites with their metadata"
+        ..., description="List of all sites with their metadata (PVSiteMetadata)"
     )
 
 
