@@ -71,7 +71,7 @@ class PVActualValue(BaseModel):
     @validator("actual_generation_kw")
     def result_check(cls, v):
         ...
-        return round(v, 2)
+        return round(v, 3)
 
 
 class MultiplePVActual(BaseModel):
@@ -112,7 +112,7 @@ class SiteForecastValues(BaseModel):
     @validator("expected_generation_kw")
     def result_check(cls, v):
         ...
-        return round(v, 2)
+        return round(v, 3)
 
 
 # get_forecast
