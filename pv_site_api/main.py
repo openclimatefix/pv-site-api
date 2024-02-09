@@ -44,7 +44,6 @@ from .fake import (
 from .pydantic_models import (
     ClearskyEstimate,
     Forecast,
-    ManyForecastCompact,
     MultiplePVActual,
     MultipleSitePVActualCompact,
     PVSiteAPIStatus,
