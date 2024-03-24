@@ -247,7 +247,7 @@ def post_pv_actual(
     """
 
     if is_fake():
-        print(f"Got {pv_actual.dict()} for site {site_uuid}")
+        print(f"Got {pv_actual.model_dump()} for site {site_uuid}")
         print("Not doing anything with it (yet!)")
         return
 
@@ -282,7 +282,7 @@ def post_pv_actual(
 #     """
 #
 #     if is_fake():
-#         print(f"Successfully updated {site_info.dict()} for site {site_info.client_site_name}")
+#         print(f"Successfully updated {site_info.model_dump()} for site {site_info.client_site_name}")
 #         print("Not doing anything with it (yet!)")
 #         return
 #
@@ -306,7 +306,7 @@ def post_site_info(
     """
 
     if is_fake():
-        print(f"Successfully added {site_info.dict()} for site {site_info.client_site_name}")
+        print(f"Successfully added {site_info.model_dump()} for site {site_info.client_site_name}")
         site = make_fake_site().site_list[0]
         return site
 

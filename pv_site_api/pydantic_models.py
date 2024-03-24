@@ -3,16 +3,16 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class LatitudeLongitudeLimits(BaseModel):
     """Lat and lon limits"""
 
-    latitude_min: float = Field(-90, description="Minimum latitude")
-    latitude_max: float = Field(90, description="Maximum latitude")
-    longitude_min: float = Field(-180, description="Minimum longitude")
-    longitude_max: float = Field(180, description="Maximum longitude")
+    latitude_min: float = Field(-90, json_schema_extra={"description":"Minimum latitude"})
+    latitude_max: float = Field(90, json_schema_extra={"description":"Maximum latitude"})
+    longitude_min: float = Field(-180, json_schema_extra={"description":"Minimum longitude"})
+    longitude_max: float = Field(180, json_schema_extra={"description":"Maximum longitude"})
 
 
 # initiate the classes
@@ -20,8 +20,8 @@ class LatitudeLongitudeLimits(BaseModel):
 class PVSiteAPIStatus(BaseModel):
     """PVSiteAPI Status"""
 
-    status: str = Field(..., description="Status description")
-    message: str = Field(..., description="Status Message")
+    status: str = Field(..., json_schema_extra={"description":"Status description"})
+    message: str = Field(..., json_schema_extra={"description":"Status Message"})
 
 
 # get_sites
@@ -30,31 +30,31 @@ class PVSiteAPIStatus(BaseModel):
 class PVSiteInputMetadata(BaseModel):
     """Site metadata when adding a site"""
 
-    client_site_id: int = Field(..., description="The site ID as given by the providing user.")
+    client_site_id: int = Field(..., json_schema_extra={"description":"The site ID as given by the providing user."})
     client_site_name: str = Field(
-        None, decription="The name of the site as given by the providing user."
+        None, json_schema_extra={"description":"The name of the site as given by the providing user."}
     )
     orientation: Optional[float] = Field(
-        None, description="The rotation of the panel in degrees. 180° points south"
+        None, json_schema_extra={"description":"The rotation of the panel in degrees. 180° points south"}
     )
     tilt: Optional[float] = Field(
-        None, description="The tile of the panel in degrees. 90° indicates the panel is vertical."
+        None, json_schema_extra={"description":"The tile of the panel in degrees. 90° indicates the panel is vertical."}
     )
-    latitude: float = Field(..., description="The site's latitude", ge=-90, le=90)
-    longitude: float = Field(..., description="The site's longitude", ge=-180, le=180)
-    inverter_capacity_kw: float = Field(..., description="The site's inverter capacity in kw", ge=0)
+    latitude: float = Field(..., json_schema_extra={"description":"The site's latitude"}, ge=-90, le=90)
+    longitude: float = Field(..., json_schema_extra={"description":"The site's longitude"}, ge=-180, le=180)
+    inverter_capacity_kw: float = Field(..., json_schema_extra={"description":"The site's inverter capacity in kw"}, ge=0)
     module_capacity_kw: Optional[float] = Field(
-        ..., description="The site's PV module nameplate capacity in kw", ge=0
+        ..., json_schema_extra={"description":"The site's PV module nameplate capacity in kw"}, ge=0
     )
 
 
 class PVSiteMetadata(PVSiteInputMetadata):
     """Site metadata"""
 
-    site_uuid: str = Field(..., description="The site's UUID")
-    capacity_kw: float = Field(..., description="The site's total capacity in kw", ge=0)
-    dno: str = Field(..., description="The site's DNO")
-    gsp: str = Field(..., description="The site's GSP")
+    site_uuid: str = Field(..., json_schema_extra={"description":"The site's UUID"})
+    capacity_kw: float = Field(..., json_schema_extra={"description":"The site's total capacity in kw"}, ge=0)
+    dno: str = Field(..., json_schema_extra={"description":"The site's DNO"})
+    gsp: str = Field(..., json_schema_extra={"description":"The site's GSP"})
 
 
 # post_pv_actual
@@ -65,10 +65,10 @@ class PVSiteMetadata(PVSiteInputMetadata):
 class PVActualValue(BaseModel):
     """PV Actual Value list"""
 
-    datetime_utc: datetime = Field(..., description="Time of data input")
-    actual_generation_kw: float = Field(..., description="Actual kw generation", ge=0)
+    datetime_utc: datetime = Field(..., json_schema_extra={"description":"Time of data input"})
+    actual_generation_kw: float = Field(..., json_schema_extra={"description":"Actual kw generation"}, ge=0)
 
-    @validator("actual_generation_kw")
+    @field_validator("actual_generation_kw")
     def result_check(cls, v):
         ...
         return round(v, 3)
@@ -77,39 +77,39 @@ class PVActualValue(BaseModel):
 class MultiplePVActual(BaseModel):
     """Site data for one site"""
 
-    site_uuid: str = Field(..., description="The site id")
+    site_uuid: str = Field(..., json_schema_extra={"description":"The site id"})
     pv_actual_values: List[PVActualValue] = Field(
-        ..., description="List of  datetimes and generation"
+        ..., json_schema_extra={"description":"List of  datetimes and generation"}
     )
 
 
 class MultiplePVActualCompact(BaseModel):
     """Site data for one site"""
 
-    site_uuid: str = Field(..., description="The site id")
+    site_uuid: str = Field(..., json_schema_extra={"description":"The site id"})
     pv_actual_values: dict[int, float] = Field(
-        ..., description="List of datetimes indexes and generation"
+        ..., json_schema_extra={"description":"List of datetimes indexes and generation"}
     )
 
 
 class MultipleSitePVActualCompact(BaseModel):
     start_utc_idx: dict[datetime, int] = Field(
         ...,
-        description="Dictionary of start datetimes and their index in the pv_actual_values list",
+        json_schema_extra={"description":"Dictionary of start datetimes and their index in the pv_actual_values list"},
     )
     pv_actual_values_many_site: List[MultiplePVActualCompact] = Field(
-        ..., description="List of generation data for each site"
+        ..., json_schema_extra={"description":"List of generation data for each site"}
     )
 
 
 class SiteForecastValues(BaseModel):
     """Forecast value list"""
 
-    # forecast_value_uuid: str = Field(..., description="ID for this specific forecast value")
-    target_datetime_utc: datetime = Field(..., description="Target time for forecast")
-    expected_generation_kw: float = Field(..., description="Expected generation in kw")
+    # forecast_value_uuid: str = Field(..., json_schema_extra={"description":"ID for this specific forecast value"})
+    target_datetime_utc: datetime = Field(..., json_schema_extra={"description":"Target time for forecast"})
+    expected_generation_kw: float = Field(..., json_schema_extra={"description":"Expected generation in kw"})
 
-    @validator("expected_generation_kw")
+    @field_validator("expected_generation_kw")
     def result_check(cls, v):
         ...
         return round(v, 3)
@@ -120,28 +120,28 @@ class SiteForecastValues(BaseModel):
 class Forecast(BaseModel):
     """PV Forecast"""
 
-    forecast_uuid: str = Field(..., description="The forecast id")
-    site_uuid: str = Field(..., description="The site id")
+    forecast_uuid: str = Field(..., json_schema_extra={"description":"The forecast id"})
+    site_uuid: str = Field(..., json_schema_extra={"description":"The site id"})
     forecast_creation_datetime: datetime = Field(
-        ..., description="The time that the forecast was created."
+        ..., json_schema_extra={"description":"The time that the forecast was created."}
     )
-    forecast_version: str = Field(..., description="Forecast version")
+    forecast_version: str = Field(..., json_schema_extra={"description":"Forecast version"})
     forecast_values: List[SiteForecastValues] = Field(
-        ..., description="List of target times and generation"
+        ..., json_schema_extra={"description":"List of target times and generation"}
     )
 
 
 class ForecastCompact(BaseModel):
     """PV Forecast"""
 
-    forecast_uuid: str = Field(..., description="The forecast id")
-    site_uuid: str = Field(..., description="The site id")
+    forecast_uuid: str = Field(..., json_schema_extra={"description":"The forecast id"})
+    site_uuid: str = Field(..., json_schema_extra={"description":"The site id"})
     forecast_creation_datetime: datetime = Field(
-        ..., description="The time that the forecast was created."
+        ..., json_schema_extra={"description":"The time that the forecast was created."}
     )
-    forecast_version: str = Field(..., description="Forecast version")
+    forecast_version: str = Field(..., json_schema_extra={"description":"Forecast version"})
     forecast_values: Dict[int, float] = Field(
-        ..., description="List of target times indexes and generation"
+        ..., json_schema_extra={"description":"List of target times indexes and generation"}
     )
 
 
@@ -150,9 +150,9 @@ class ManyForecastCompact(BaseModel):
 
     target_time_idx: dict[datetime, int] = Field(
         ...,
-        description="Dictionary of target datetimes and their index in the forecast_values list",
+        json_schema_extra={"description":"Dictionary of target datetimes and their index in the forecast_values list"},
     )
-    forecasts: List[ForecastCompact] = Field(..., description="Target time for forecast")
+    forecasts: List[ForecastCompact] = Field(..., json_schema_extra={"description":"Target time for forecast"})
 
 
 # get_sites
@@ -161,20 +161,20 @@ class PVSites(BaseModel):
     """PV Sites"""
 
     site_list: List[PVSiteMetadata] = Field(
-        ..., description="List of all sites with their metadata (PVSiteMetadata)"
+        ..., json_schema_extra={"description":"List of all sites with their metadata (PVSiteMetadata)"}
     )
 
 
 class ClearskyEstimateValues(BaseModel):
     """Clearsky estimate data for a single time"""
 
-    target_datetime_utc: datetime = Field(..., description="Time for clearsky estimate")
-    clearsky_generation_kw: float = Field(..., description="Clearsky estimate in kW", ge=0)
+    target_datetime_utc: datetime = Field(..., json_schema_extra={"description":"Time for clearsky estimate"})
+    clearsky_generation_kw: float = Field(..., json_schema_extra={"description":"Clearsky estimate in kW"}, ge=0)
 
 
 class ClearskyEstimate(BaseModel):
     """Clearsky estimate for a site"""
 
     clearsky_estimate: List[ClearskyEstimateValues] = Field(
-        ..., description="List of times and clearsky estimate"
+        ..., json_schema_extra={"description":"List of times and clearsky estimate"}
     )
