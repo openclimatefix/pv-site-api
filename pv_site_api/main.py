@@ -282,7 +282,8 @@ def post_pv_actual(
 #     """
 #
 #     if is_fake():
-#         print(f"Successfully updated {site_info.model_dump()} for site {site_info.client_site_name}")
+#         print(f"Successfully updated {site_info.model_dump()} for site {site_info.client_site_name
+# }")
 #         print("Not doing anything with it (yet!)")
 #         return
 #
