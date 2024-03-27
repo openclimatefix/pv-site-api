@@ -1,6 +1,8 @@
 name: Run tests and lint
 on:
   push:
+  pull_request:
+    types: [opened, reopened]
 
 jobs:
   test_and_lint:
