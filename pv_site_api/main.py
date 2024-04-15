@@ -430,6 +430,7 @@ def get_pv_actual_many_sites(
 @app.get("/sites/{site_uuid}/pv_forecast", response_model=Forecast, tags=["Forecast"])
 def get_pv_forecast(
     site_uuid: str,
+    normalize_by_capacity: Optional[bool] = Query(default=False, description="Normalize forecast by site capacity"),
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
 ):
@@ -447,6 +448,7 @@ def get_pv_forecast(
 
     #### Parameters
     - **site_uuid**: The site uuid, for example '8d39a579-8bed-490e-800e-1395a8eb6535'
+    - **normalize_by_capacity**: If True, normalize the forecast values by the site capacity.
     """
     if is_fake():
         return make_fake_forecast(fake_site_uuid)
@@ -462,6 +464,15 @@ def get_pv_forecast(
 
     if len(forecasts) == 0:
         return Response(status_code=204)
+
+    # Adjust forecast values if normalize_by_capacity is True
+    if normalize_by_capacity:
+        site = get_site_by_uuid(session, site_uuid)  # Replace with actual function to get site by UUID
+        if site:
+            site_capacity_kw = site.module_capacity_kw or site.inverter_capacity_kw  
+            for forecast in forecasts:
+                for value in forecast.forecast_values:
+                    value.expected_generation_kw = (value.expected_generation_kw / site_capacity_kw) * 100
 
     return forecasts[0]
 
