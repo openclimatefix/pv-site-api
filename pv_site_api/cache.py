@@ -69,8 +69,8 @@ def cache_response(func):
         # save route variables to db
         session = route_variables.get("session", None)
         user = route_variables.get("user", None)
-        request = route_variables.get("request", None)
-        save_api_call_to_db(url=request, session=session, user=user)
+        url = route_variables.get("url", None)
+        save_api_call_to_db(url=url, session=session, user=user)
 
         # drop session and user
         for var in ["session", "user"]:
