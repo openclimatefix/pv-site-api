@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 import structlog
+from pvsite_datamodel.write.database import save_api_call_to_db
 
 logger = structlog.stdlib.get_logger()
 
@@ -64,6 +65,12 @@ def cache_response(func):
         # get the variables that go into the route
         # we don't want to use the cache for different variables
         route_variables = kwargs.copy()
+
+        # save route variables to db
+        session = route_variables.get("session", None)
+        user = route_variables.get("user", None)
+        url = route_variables.get("url", None)
+        save_api_call_to_db(url=url, session=session, user=user)
 
         # drop session and user
         for var in ["session", "user"]:
