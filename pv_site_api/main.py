@@ -341,7 +341,9 @@ def post_site_info(
 
 # get_pv_actual: the client can read pv data from the past
 @app.get("/sites/{site_uuid}/pv_actual", response_model=MultiplePVActual, tags=["Generation"])
+@cache_response
 def get_pv_actual(
+    request: Request,
     site_uuid: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
@@ -379,6 +381,7 @@ def get_pv_actual(
 )
 @cache_response
 def get_pv_actual_many_sites(
+    request: Request,
     site_uuids: str,
     session: Session = Depends(get_session),
     sum_by: Optional[str] = None,
@@ -429,6 +432,7 @@ def get_pv_actual_many_sites(
 # get_forecast: Client gets the forecast for their site
 @app.get("/sites/{site_uuid}/pv_forecast", response_model=Forecast, tags=["Forecast"])
 def get_pv_forecast(
+    request: Request,
     site_uuid: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
@@ -472,6 +476,7 @@ def get_pv_forecast(
 )
 @cache_response
 def get_pv_forecast_many_sites(
+    request: Request,
     site_uuids: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
@@ -534,6 +539,7 @@ def get_pv_forecast_many_sites(
 @app.get("/sites/{site_uuid}/clearsky_estimate", response_model=ClearskyEstimate, tags=["Forecast"])
 @cache_response
 def get_pv_estimate_clearsky(
+    request: Request,
     site_uuid: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
