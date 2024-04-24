@@ -77,7 +77,7 @@ def cache_response(func):
         save_api_call_to_db(url=url, session=session, user=user)
 
         # drop session and user
-        for var in ["session", "user"]:
+        for var in ["session", "user", "request"]:
             if var in route_variables:
                 route_variables.pop(var)
 
