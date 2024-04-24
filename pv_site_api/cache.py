@@ -5,8 +5,8 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 import structlog
-from pvsite_datamodel.write.database import save_api_call_to_db
 from pvsite_datamodel.read.user import get_user_by_email
+from pvsite_datamodel.write.database import save_api_call_to_db
 
 logger = structlog.stdlib.get_logger()
 
