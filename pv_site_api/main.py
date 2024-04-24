@@ -366,7 +366,9 @@ def get_pv_actual(
 
     check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
-    actuals = get_pv_actual_many_sites(site_uuids=site_uuid, session=session, auth=auth)
+    actuals = get_pv_actual_many_sites(
+        site_uuids=site_uuid, session=session, auth=auth, request=request
+    )
 
     if len(actuals) == 0:
         return Response(status_code=204)
@@ -462,7 +464,9 @@ def get_pv_forecast(
 
     check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
-    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session, auth=auth)
+    forecasts = get_pv_forecast_many_sites(
+        site_uuids=site_uuid, session=session, auth=auth, request=request
+    )
 
     if len(forecasts) == 0:
         return Response(status_code=204)
