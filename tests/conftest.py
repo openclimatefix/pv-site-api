@@ -1,6 +1,6 @@
 """ Pytest fixtures for tests """
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import freezegun
 import pytest
@@ -19,7 +19,7 @@ from pv_site_api.session import get_session
 def _now(autouse=True):
     """Hard-code the time for all tests to make the tests less flaky."""
     with freezegun.freeze_time(2020, 1, 1):
-        return datetime.utcnow()
+        return datetime.now(tz=timezone.utc)
 
 
 @pytest.fixture(scope="session")
@@ -136,7 +136,7 @@ def forecast_values(db_session, sites):
     num_forecasts = 10
     num_values_per_forecast = 11
 
-    timestamps = [datetime.utcnow() - timedelta(minutes=10 * i) for i in range(num_forecasts)]
+    timestamps = [datetime.now(tz=timezone.utc) - timedelta(minutes=10 * i) for i in range(num_forecasts)]
 
     # To make things trickier we make a second forecast at the same for one of the timestamps.
     timestamps = timestamps + timestamps[-1:]

@@ -1,7 +1,7 @@
 """ Test for main app """
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from freezegun import freeze_time
 from pvsite_datamodel.pydantic_models import ForecastValueSum
@@ -63,7 +63,7 @@ def test_get_forecast_many_sites_late_forecast_one_week(db_session, client, fore
     site_uuids = [str(s.site_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
 
-    one_week_from_now = datetime.utcnow() + timedelta(days=7)
+    one_week_from_now = datetime.now(tz=timezone.utc) + timedelta(days=7)
     with freeze_time(one_week_from_now):
         resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}")
         assert resp.status_code == 200
@@ -77,7 +77,7 @@ def test_get_forecast_many_sites_late_forecast_one_day(db_session, client, forec
     """Test the case where the forecast stop working 1 day ago"""
     site_uuids = [str(s.site_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
-    one_day_from_now = datetime.utcnow() + timedelta(days=1)
+    one_day_from_now = datetime.now(tz=timezone.utc) + timedelta(days=1)
 
     with freeze_time(one_day_from_now):
         resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}")
@@ -109,7 +109,7 @@ def test_get_forecast_many_sites_late_forecast_one_day_compact(
     """Test the case where the forecast stop working 1 day ago"""
     site_uuids = [str(s.site_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
-    one_day_from_now = datetime.utcnow() + timedelta(days=1)
+    one_day_from_now = datetime.now(tz=timezone.utc) + timedelta(days=1)
 
     with freeze_time(one_day_from_now):
         resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}&compact=true")
@@ -130,7 +130,7 @@ def test_get_forecast_many_sites_late_forecast_one_day_total(
     """Test the case where the forecast stop working 1 day ago"""
     site_uuids = [str(s.site_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
-    one_day_from_now = datetime.utcnow() + timedelta(days=1)
+    one_day_from_now = datetime.now(tz=timezone.utc) + timedelta(days=1)
 
     with freeze_time(one_day_from_now):
         resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}&sum_by=total")
@@ -150,7 +150,7 @@ def test_get_forecast_many_sites_late_forecast_one_day_dno(
     """Test the case where the forecast stop working 1 day ago"""
     site_uuids = [str(s.site_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
-    one_day_from_now = datetime.utcnow() + timedelta(days=1)
+    one_day_from_now = datetime.now(tz=timezone.utc) + timedelta(days=1)
 
     with freeze_time(one_day_from_now):
         resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}&sum_by=dno")
@@ -170,7 +170,7 @@ def test_get_forecast_many_sites_late_forecast_one_day_gsp(
     """Test the case where the forecast stop working 1 day ago"""
     site_uuids = [str(s.site_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
-    one_day_from_now = datetime.utcnow() + timedelta(days=1)
+    one_day_from_now = datetime.now(tz=timezone.utc) + timedelta(days=1)
 
     with freeze_time(one_day_from_now):
         resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}&sum_by=gsp")
