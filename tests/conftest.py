@@ -137,8 +137,7 @@ def forecast_values(db_session, sites):
     num_values_per_forecast = 11
 
     timestamps = [
-        datetime.now(tz=timezone.utc) - timedelta(minutes=10 * i) 
-        for i in range(num_forecasts)
+        datetime.now(tz=timezone.utc) - timedelta(minutes=10 * i) for i in range(num_forecasts)
     ]
 
     # To make things trickier we make a second forecast at the same for one of the timestamps.
