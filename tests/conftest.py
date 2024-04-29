@@ -1,5 +1,4 @@
 """ Pytest fixtures for tests """
-
 import os
 from datetime import datetime, timedelta, timezone
 
