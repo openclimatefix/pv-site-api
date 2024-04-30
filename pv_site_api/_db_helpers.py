@@ -7,7 +7,6 @@ style.
 """
 
 import datetime as dt
-from datetime import timezone
 import uuid
 from collections import defaultdict
 from typing import Any, Optional, Union
@@ -164,7 +163,7 @@ def get_forecasts_by_sites(
 
     logger.info(f"Getting forecast for {len(site_uuids)} sites")
 
-    end_utc = dt.datetime.now(tz=timezone.utc)
+    end_utc = dt.datetime.now(tz=dt.timezone.utc)
 
     rows_past = _get_forecasts_for_horizon(
         session,
