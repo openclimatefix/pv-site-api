@@ -100,7 +100,9 @@ def test_get_forecast_many_sites_late_forecast_one_day(db_session, client, forec
     # check they are all less than one day from now
     for forecast in forecasts:
         for forecast_value in forecast.forecast_values:
-            assert forecast_value.target_datetime_utc.replace(tzinfo=timezone.utc) < one_day_from_now
+            assert forecast_value.target_datetime_utc.replace(
+                tzinfo=timezone.utc
+            ) < one_day_from_now
 
 
 def test_get_forecast_many_sites_late_forecast_one_day_compact(
