@@ -41,6 +41,24 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "rahul-maurya11b",
+      "name": "Rahul Maurya",
+      "avatar_url": "https://avatars.githubusercontent.com/u/98907006?v=4",
+      "profile": "https://github.com/rahul-maurya11b",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "suleman1412",
+      "name": "Suleman Karigar",
+      "avatar_url": "https://avatars.githubusercontent.com/u/37236131?v=4",
+      "profile": "https://github.com/suleman1412",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
@@ -48,5 +66,6 @@
   "repoType": "github",
   "repoHost": "https://github.com",
   "projectName": "pv-site-api",
-  "projectOwner": "openclimatefix"
+  "projectOwner": "openclimatefix",
+  "commitType": "docs"
 }

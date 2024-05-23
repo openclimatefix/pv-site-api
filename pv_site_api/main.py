@@ -1,6 +1,7 @@
 """Main API Routes"""
 import os
 import time
+import uuid
 from typing import Optional, Union
 
 import pandas as pd
@@ -99,11 +100,22 @@ folder = os.path.dirname(os.path.abspath(__file__))
 description = """
 The Quartz Solar PV Site API generates site-specific pv forecasts for users.
 
+This API allows users to access forecasts and actual generation data for their sites. 
+It also allows users to create new sites and update the actual generation data for their sites. 
+You'll find more detailed information for each API route in
+the documentation below.
+
 This API is built with [FastAPI](https://fastapi.tiangolo.com/), offering 
 users the options to both try API routes with the
 [`/swagger`](https://api-site.quartz.solar/swagger) UI
 and read the [`/docs`](https://api-site.quartz.solar/docs) with the sleeker 
 Redocs layout. The information is the same in both places.
+
+And if you're interested in contributing to our open source project, you can
+get started by going to our [OCF Github](https://github.com/openclimatefix)
+page and checking out our list of good first issues. 
+
+If you have any further questions, please don't hesitate to get in touch.
 """
 
 origins = os.getenv("ORIGINS", "*").split(",")
@@ -120,6 +132,25 @@ auth = Auth(
     api_audience=os.getenv("AUTH0_API_AUDIENCE"),
     algorithm=os.getenv("AUTH0_ALGORITHM"),
 )
+
+route_tags = [
+    {
+        "name": "Sites",
+        "description": "Routes for getting and posting site information.",
+    },
+    {
+        "name": "Forecast",
+        "description": "Routes for fetching forecast power values.",
+    },
+    {
+        "name": "Generation",
+        "description": "Routes for fetching generation power values.",
+    },
+    {
+        "name": "API Information",
+        "description": "Routes pertaining to the usage and status of the API.",
+    },
+]
 
 # name the api
 # test that the routes are there on swagger
@@ -143,7 +174,7 @@ async def add_process_time_header(request: Request, call_next):
     return response
 
 
-@app.get("/sites", response_model=PVSites)
+@app.get("/sites", response_model=PVSites, tags=["Sites"])
 def get_sites(
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
@@ -153,10 +184,11 @@ def get_sites(
     """
     ### This route returns a list of the user's PV Sites with metadata for each site.
 
-    latitude_longitude_max and latitude_longitude_min are optional parameters that can be used to
-    filter the sites returned by latitude and longitude.
+    **latitude_longitude_max** and **latitude_longitude_min** are optional parameters
+    that can be used to filter the sites returned by latitude and longitude.
     The format of these parameters is a comma separated string of latitude and longitude values.
-    For example to get sites in the UK you could use lat_lon_max=60,0 and lat_lon_min=50,-10
+    For example to get sites in the UK you could use
+    `latitude_longitude_max=60,0` and `latitude_longitude_min=50,-10`
 
     """
 
@@ -188,7 +220,7 @@ def get_sites(
 
 
 # post_pv_actual: sends data to us, and we save to database
-@app.post("/sites/{site_uuid}/pv_actual")
+@app.post("/sites/{site_uuid}/pv_actual", tags=["Generation"])
 def post_pv_actual(
     site_uuid: str,
     pv_actual: MultiplePVActual,
@@ -199,11 +231,23 @@ def post_pv_actual(
 
     Users will upload actual PV generation
     readings at regular intervals throughout a given day.
-    Currently this route does not return anything.
+
+    #### Parameters
+    - **site_uuid**: The unique identifier for the site.
+    - **pv_actual**: The actual PV generation values for the site.
+        You can add one at a time, or many. For example
+        { "site_uuid": "e6dc5077-0a8e-44b7-aa91-ef6084d66b81", "pv_actual_values": [
+           {
+               "datetime_utc": "2024-02-09T17:19:35.986Z",
+               "actual_generation_kw": 0
+         }]}
+
+    All datetimes are in UTC.
+
     """
 
     if is_fake():
-        print(f"Got {pv_actual.dict()} for site {site_uuid}")
+        print(f"Got {pv_actual.model_dump()} for site {site_uuid}")
         print("Not doing anything with it (yet!)")
         return
 
@@ -238,26 +282,32 @@ def post_pv_actual(
 #     """
 #
 #     if is_fake():
-#         print(f"Successfully updated {site_info.dict()} for site {site_info.client_site_name}")
+#         print(f"Successfully updated {site_info.model_dump()} for site {site_info.client_site_name
+# }")
 #         print("Not doing anything with it (yet!)")
 #         return
 #
 #     raise Exception(NotImplemented)
 
 
-@app.post("/sites", status_code=201, response_model=PVSiteMetadata)
+@app.post("/sites", status_code=201, response_model=PVSiteMetadata, tags=["Sites"])
 def post_site_info(
     site_info: PVSiteInputMetadata,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
-):
+) -> PVSiteMetadata:
     """
     ### This route allows a user to add a site.
+
+    For example, a user could add a new site by sending a POST request with the following JSON body:
+
+    {"client_site_id": 1 "client_site_name": "Norfolk Solar Farm", "orientation": 180, "tilt": 35,
+    "latitude": 52.5, "longitude": 1.5, "inverter_capacity_kw": 5, "module_capacity_kw": 5}
 
     """
 
     if is_fake():
-        print(f"Successfully added {site_info.dict()} for site {site_info.client_site_name}")
+        print(f"Successfully added {site_info.model_dump()} for site {site_info.client_site_name}")
         site = make_fake_site().site_list[0]
         return site
 
@@ -290,18 +340,21 @@ def post_site_info(
 
 
 # get_pv_actual: the client can read pv data from the past
-@app.get("/sites/{site_uuid}/pv_actual", response_model=MultiplePVActual)
+@app.get("/sites/{site_uuid}/pv_actual", response_model=MultiplePVActual, tags=["Generation"])
+@cache_response
 def get_pv_actual(
+    request: Request,
     site_uuid: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
 ):
     """### This route returns PV readings from a single PV site.
 
-    Currently the route is set to provide a reading
-    every hour for the previous 24-hour period.
-    To test the route, you can input any number for the site_uuid (ex. 567)
-    to generate a list of datetimes and actual kw generation for that site.
+    All datetimes are in UTC.
+
+    #### Parameters
+    - **site_uuid**: The site uuid, for example '8d39a579-8bed-490e-800e-1395a8eb6535'
+
     """
     if is_fake():
         return make_fake_pv_generation(fake_site_uuid)
@@ -313,7 +366,9 @@ def get_pv_actual(
 
     check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
-    actuals = get_pv_actual_many_sites(site_uuids=site_uuid, session=session, auth=auth)
+    actuals = get_pv_actual_many_sites(
+        site_uuids=site_uuid, session=session, auth=auth, request=request
+    )
 
     if len(actuals) == 0:
         return Response(status_code=204)
@@ -324,9 +379,11 @@ def get_pv_actual(
 @app.get(
     "/sites/pv_actual",
     response_model=Union[list[MultiplePVActual], list[GenerationSum], MultipleSitePVActualCompact],
+    tags=["Generation"],
 )
 @cache_response
 def get_pv_actual_many_sites(
+    request: Request,
     site_uuids: str,
     session: Session = Depends(get_session),
     sum_by: Optional[str] = None,
@@ -336,16 +393,34 @@ def get_pv_actual_many_sites(
     """
     ### Get the actual power generation for a list of sites.
 
-    sum_by: can be None, 'total', 'dno' or 'gsp'
+    This route is where you can pull many actual power generations from a list of sites.
+
+     All datetimes are in UTC.
+
+    #### Parameters
+    - **site_uuids**: a comma-separated list of 'site_uuids' for example
+        '8d39a579-8bed-490e-800e-1395a8eb6535,e6dc5077-0a8e-44b7-aa91-ef6084d66b81'
+    - **sum_by**: This can be None, 'total', 'dno' or 'gsp'. The default is None.
+        For example if 'dno' the response will be grouped into different DNO groups.
+    - **compact**: if True, the response will compact the data.
+        This can be useful when pulling data for a large number of sites.
+        If True the response object is _ManyForecastCompact_
     """
+
     if (site_uuids == "[]") or (site_uuids == ""):
         return []
 
-    # convert to list of strings
+    site_uuids = site_uuids.replace(" ", "")
     site_uuids_list = site_uuids.split(",")
 
     if is_fake():
         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
+
+    # check that uuids are given
+    try:
+        [uuid.UUID(site_uuid) for site_uuid in site_uuids_list]
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid site_uuids list.")
 
     check_user_has_access_to_sites(session=session, auth=auth, site_uuids=site_uuids_list)
 
@@ -357,23 +432,27 @@ def get_pv_actual_many_sites(
 
 
 # get_forecast: Client gets the forecast for their site
-@app.get("/sites/{site_uuid}/pv_forecast", response_model=Forecast)
+@app.get("/sites/{site_uuid}/pv_forecast", response_model=Forecast, tags=["Forecast"])
 def get_pv_forecast(
+    request: Request,
     site_uuid: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
 ):
     """
-    ### This route is where you might say the magic happens.
+    ### This route is where you can pull a forecast for a single site.
 
     The user receives a forecast for their PV site.
     The forecast is attached to the **site_uuid** and
     provides a list of forecast values with a
     **target_date_time_utc** and **expected_generation_kw**
-    reading every half-hour 8-hours into the future.
+    reading every 15 minutes, approximately for 48-hours into the future.
 
-    You can currently input any number for **site_uuid** (ex. 567),
-    and the route returns a sample forecast.
+    All datetimes are in UTC, and they represent the start of the 15-minute period.
+    The **expected_generation_kw** is the average expected generation over the 15-minute period.
+
+    #### Parameters
+    - **site_uuid**: The site uuid, for example '8d39a579-8bed-490e-800e-1395a8eb6535'
     """
     if is_fake():
         return make_fake_forecast(fake_site_uuid)
@@ -385,7 +464,9 @@ def get_pv_forecast(
 
     check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
-    forecasts = get_pv_forecast_many_sites(site_uuids=site_uuid, session=session, auth=auth)
+    forecasts = get_pv_forecast_many_sites(
+        site_uuids=site_uuid, session=session, auth=auth, request=request
+    )
 
     if len(forecasts) == 0:
         return Response(status_code=204)
@@ -393,9 +474,13 @@ def get_pv_forecast(
     return forecasts[0]
 
 
-@app.get("/sites/pv_forecast")
+@app.get(
+    "/sites/pv_forecast",
+    tags=["Forecast"],
+)
 @cache_response
 def get_pv_forecast_many_sites(
+    request: Request,
     site_uuids: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
@@ -403,9 +488,21 @@ def get_pv_forecast_many_sites(
     compact: bool = False,
 ):
     """
-    ### Get the forecasts for multiple sites.
+    ### Get the forecasts for many sites.
 
-    sum_by: can be None, 'total', 'dno' or 'gsp'
+    This route is where you can pull many forecasts from a list of sites.
+
+    All datetimes are in UTC, and they represent the start of the 15-minute period.
+    The **expected_generation_kw** is the average expected generation over the 15-minute period.
+
+    #### Parameters
+    - **site_uuids**: a comma-separated list of 'site_uuids' for example
+        '8d39a579-8bed-490e-800e-1395a8eb6535,e6dc5077-0a8e-44b7-aa91-ef6084d66b81'
+    - **sum_by**: This can be None, 'total', 'dno' or 'gsp'. The default is None.
+        For example if 'dno' the response will be grouped into different DNO groups.
+    - **compact**: if True, the response will compact the data.
+        This can be useful when pulling data for a large number of sites.
+        If True the response object is _ManyForecastCompact_
     """
 
     logger.info(f"Getting forecasts for {site_uuids}")
@@ -418,7 +515,14 @@ def get_pv_forecast_many_sites(
     if (site_uuids == "[]") or (site_uuids == ""):
         return []
 
+    site_uuids = site_uuids.replace(" ", "")
     site_uuids_list = site_uuids.split(",")
+
+    # check that uuids are given
+    try:
+        [uuid.UUID(site_uuid) for site_uuid in site_uuids_list]
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid site_uuids list.")
 
     check_user_has_access_to_sites(session=session, auth=auth, site_uuids=site_uuids_list)
 
@@ -436,16 +540,20 @@ def get_pv_forecast_many_sites(
     return forecasts
 
 
-@app.get("/sites/{site_uuid}/clearsky_estimate", response_model=ClearskyEstimate)
+@app.get("/sites/{site_uuid}/clearsky_estimate", response_model=ClearskyEstimate, tags=["Forecast"])
 @cache_response
 def get_pv_estimate_clearsky(
+    request: Request,
     site_uuid: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
-    sum_by: Optional[str] = None,
 ):
     """
-    ### Gets a estimate of AC production under a clear sky
+    ### Gets a estimate of power production under a clear sky
+
+    #### Parameters
+    - **site_uuid**: The site uuid, for example '8d39a579-8bed-490e-800e-1395a8eb6535'
+
     """
     if not is_fake():
         site_exists = does_site_exist(session, site_uuid)
@@ -456,13 +564,18 @@ def get_pv_estimate_clearsky(
     return clearsky_estimates[0]
 
 
-@app.get("/sites/clearsky_estimate", response_model=list[ClearskyEstimate])
+@app.get("/sites/clearsky_estimate", response_model=list[ClearskyEstimate], tags=["Forecast"])
 def get_pv_estimate_clearsky_many_sites(
     site_uuids: str,
     session: Session = Depends(get_session),
 ):
     """
-    ### Gets a estimate of AC production under a clear sky for multiple sites.
+    ### Gets a estimate of power production under a clear sky for multiple sites.
+
+    #### Parameters
+    - **site_uuids**: a comma-separated list of 'site_uuids' for example
+        '8d39a579-8bed-490e-800e-1395a8eb6535,e6dc5077-0a8e-44b7-aa91-ef6084d66b81'
+
     """
 
     if is_fake():
@@ -521,7 +634,7 @@ def get_pv_estimate_clearsky_many_sites(
 
 
 # get_status: get the status of the system
-@app.get("/api_status", response_model=PVSiteAPIStatus)
+@app.get("/api_status", response_model=PVSiteAPIStatus, tags=["API Information"])
 def get_status(session: Session = Depends(get_session)):
     """This route gets the status of the system.
 
@@ -539,7 +652,7 @@ def get_status(session: Session = Depends(get_session)):
     return status
 
 
-@app.get("/")
+@app.get("/", tags=["API Information"], include_in_schema=False)
 def get_api_information():
     """
     ####  This route returns basic information about the Quartz PV Site API.

@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 import structlog
+from pvsite_datamodel.read.user import get_user_by_email
+from pvsite_datamodel.write.database import save_api_call_to_db
 
 logger = structlog.stdlib.get_logger()
 
@@ -65,8 +67,25 @@ def cache_response(func):
         # we don't want to use the cache for different variables
         route_variables = kwargs.copy()
 
+        # save route variables to db
+        session = route_variables.get("session", None)
+        auth = route_variables.get("auth", None)
+        request = route_variables.get("request", None)
+        if request:
+            url = str(request.url)
+        else:
+            url = None
+
+        if auth is not None:
+            email = auth["https://openclimatefix.org/email"]
+            user = get_user_by_email(email=email, session=session)
+        else:
+            user = None
+
+        save_api_call_to_db(url=url, session=session, user=user)
+
         # drop session and user
-        for var in ["session", "user"]:
+        for var in ["session", "user", "request"]:
             if var in route_variables:
                 route_variables.pop(var)
 

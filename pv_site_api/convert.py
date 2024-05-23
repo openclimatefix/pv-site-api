@@ -44,7 +44,7 @@ def forecast_rows_to_pydantic_compact(rows: list[Row]) -> ManyForecastCompact:
         site_uuid = str(row.ForecastSQL.site_uuid)
 
         start_utc = row.ForecastValueSQL.start_utc
-        expected_generation_kw = round(row.ForecastValueSQL.forecast_power_kw, 2)
+        expected_generation_kw = round(row.ForecastValueSQL.forecast_power_kw, 3)
 
         if start_utc not in start_utc_idx:
             start_utc_idx[start_utc] = len(start_utc_idx)
@@ -125,7 +125,7 @@ def generation_rows_to_pydantic(pv_actual_values_per_site, rows, site_uuids):
     logger.info("Formatting generation 1")
     for row in rows:
         site_uuid = str(row.site_uuid)
-        generation_power_kw = np.round(row.generation_power_kw, 2)
+        generation_power_kw = np.round(row.generation_power_kw, 3)
         pv_actual_values_per_site[site_uuid].append(
             PVActualValue(
                 datetime_utc=row.start_utc,
@@ -151,7 +151,7 @@ def generation_rows_to_pydantic_compact(rows) -> MultipleSitePVActualCompact:
     for row in rows:
         site_uuid = str(row.site_uuid)
         start_utc = row.start_utc
-        generation_power_kw = np.round(row.generation_power_kw, 2)
+        generation_power_kw = np.round(row.generation_power_kw, 3)
 
         if start_utc not in start_utc_idx:
             start_utc_idx[start_utc] = len(start_utc_idx)
