@@ -34,7 +34,6 @@ def test_remove_old_cache(caplog):
     Test entry removal and debug messages
     """
     with caplog.at_level(logging.DEBUG):
-
         now = datetime.now(tz=timezone.utc)
         last_updated = {
             "key1": now - timedelta(seconds=160),
