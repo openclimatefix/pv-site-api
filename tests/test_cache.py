@@ -1,3 +1,5 @@
+""" Test for chach """
+
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -7,7 +9,10 @@ from pv_site_api.cache import remove_old_cache
 
 
 def get_logger():
-    # Configure structlog to use caplog-compatible output
+    """
+    Configure structlog to use caplog-compatible output
+    """
+
     structlog.configure(
         processors=[
             structlog.stdlib.add_log_level,
@@ -25,6 +30,9 @@ logger = get_logger()
 
 
 def test_remove_old_cache(caplog):
+    """
+    Test entry removal and debug messages
+    """
     with caplog.at_level(logging.DEBUG):
 
         now = datetime.now(tz=timezone.utc)
