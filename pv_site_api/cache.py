@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
+import psutil
 import structlog
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.write.database import save_api_call_to_db
@@ -22,7 +23,7 @@ def remove_old_cache(
     """
     Remove old cache entries from the cache
 
-    :param last_updated: dict of last updated times
+    :param last_updated: dict of last updatedtimes
     :param response: dict of responses, same keys as last_updated
     :param remove_cache_time_seconds: the amount of time, after which the cache should be removed
     """
@@ -37,6 +38,9 @@ def remove_old_cache(
     for key in keys_to_remove:
         last_updated.pop(key)
         response.pop(key)
+
+    process = psutil.Process(os.getpid())
+    logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
 
     return last_updated, response
 
