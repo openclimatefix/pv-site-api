@@ -248,8 +248,9 @@ def post_pv_actual(
 
     """
 
+    # limit payload size to 1 MB, raise 413 if exceeded
     content_length = int(request.headers.get("Content-Length", 0))
-    max_payload_size = 1024 * 1024  # equalse to 1 MB
+    max_payload_size = 1024 * 1024
 
     if content_length > max_payload_size:
         raise HTTPException(status_code=413, detail="Payload too large")
