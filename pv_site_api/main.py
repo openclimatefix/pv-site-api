@@ -1,4 +1,5 @@
 """Main API Routes"""
+
 import os
 import time
 import uuid
@@ -222,6 +223,7 @@ def get_sites(
 # post_pv_actual: sends data to us, and we save to database
 @app.post("/sites/{site_uuid}/pv_actual", tags=["Generation"])
 def post_pv_actual(
+    request: Request,
     site_uuid: str,
     pv_actual: MultiplePVActual,
     session: Session = Depends(get_session),
@@ -245,6 +247,12 @@ def post_pv_actual(
     All datetimes are in UTC.
 
     """
+
+    content_length = int(request.headers.get("Content-Length", 0))
+    max_payload_size = 1024 * 1024  # equalse to 1 MB
+
+    if content_length > max_payload_size:
+        raise HTTPException(status_code=413, detail="Payload too large")
 
     if is_fake():
         print(f"Got {pv_actual.model_dump()} for site {site_uuid}")
