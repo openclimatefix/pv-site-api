@@ -15,7 +15,6 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, Response
 from pvlib import irradiance, location, pvsystem
 from pvsite_datamodel.pydantic_models import GenerationSum
-from pvsite_datamodel.read.site import get_site_by_uuid
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.write.generation import insert_generation_values
