@@ -1,4 +1,5 @@
 """ Test for main app """
+
 import json
 from datetime import datetime, timezone
 
@@ -44,4 +45,12 @@ def test_post_pv_actual(client, fake):
     obj = json.loads(fake_pv_actual_iteration.json())
 
     response = client.post("/sites/fff-fff-fff/pv_actual", json=obj)
+    assert response.status_code == 200
+
+
+def test_delete_site(client, fake):
+
+    response = client.delete("/sites/delete/fff-fff-fff")
+
+    assert response.json()["message"] == "Site deleted successfully"
     assert response.status_code == 200
