@@ -49,7 +49,6 @@ def test_post_pv_actual(client, fake):
 
 
 def test_delete_site(client, fake):
-
     response = client.delete("/sites/delete/fff-fff-fff")
 
     assert response.json()["message"] == "Site deleted successfully"
