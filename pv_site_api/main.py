@@ -1,4 +1,5 @@
 """Main API Routes"""
+
 import os
 import time
 import uuid
@@ -14,6 +15,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, Response
 from pvlib import irradiance, location, pvsystem
 from pvsite_datamodel.pydantic_models import GenerationSum
+from pvsite_datamodel.read.site import get_site_by_uuid
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.write.generation import insert_generation_values
@@ -127,7 +129,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-auth = Auth(
+auth = Auth(Identify the Site to Delete: Obtain the site_uuid of the site you want to 
     domain=os.getenv("AUTH0_DOMAIN"),
     api_audience=os.getenv("AUTH0_API_AUDIENCE"),
     algorithm=os.getenv("AUTH0_ALGORITHM"),
@@ -337,6 +339,40 @@ def post_site_info(
     session.commit()
 
     return site_to_pydantic(site)
+
+
+@app.delete("/sites/delte/{site_uuid}", tags=["Sites"])
+def delete_site(
+    site_uuid: str,
+    session: Session = Depends(get_session),
+    auth: dict = Depends(auth),
+):
+    """
+    ### This route allows a user to delte a site.
+
+    """
+
+    if is_fake():
+        print(
+            f"Got {site_uuid} to delete it."
+        )
+        return {"message": "Site deleted successfully"}
+
+    # check user has access to site
+    check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
+
+    # get site 
+    site = get_site_by_uuid(session=session, site_uuid=site_uuid)
+
+
+    # remove all site_group assosiations 
+    site.site_groups.clear()
+
+
+    session.delete(site)
+    session.commit()
+
+    return {"message": "Site delted successfully"}
 
 
 # get_pv_actual: the client can read pv data from the past
