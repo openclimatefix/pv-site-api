@@ -129,7 +129,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-auth = Auth(Identify the Site to Delete: Obtain the site_uuid of the site you want to 
+auth = Auth(
     domain=os.getenv("AUTH0_DOMAIN"),
     api_audience=os.getenv("AUTH0_API_AUDIENCE"),
     algorithm=os.getenv("AUTH0_ALGORITHM"),
@@ -353,21 +353,17 @@ def delete_site(
     """
 
     if is_fake():
-        print(
-            f"Got {site_uuid} to delete it."
-        )
+        print(f"Got {site_uuid} to delete it.")
         return {"message": "Site deleted successfully"}
 
     # check user has access to site
     check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
-    # get site 
+    # get site
     site = get_site_by_uuid(session=session, site_uuid=site_uuid)
 
-
-    # remove all site_group assosiations 
+    # remove all site_group assosiations
     site.site_groups.clear()
-
 
     session.delete(site)
     session.commit()
