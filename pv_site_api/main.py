@@ -15,6 +15,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, Response
 from pvlib import irradiance, location, pvsystem
 from pvsite_datamodel.pydantic_models import GenerationSum
+from pvsite_datamodel.read.site import get_site_by_uuid
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.write.generation import insert_generation_values
@@ -36,18 +37,11 @@ from ._db_helpers import (
 from .auth import Auth
 from .cache import cache_response
 from .fake import (
-    F401,
-    [*],
-    `pvsite_datamodel.read.site.get_site_by_uuid`,
-    but,
     fake_site_uuid,
-    imported,
     make_fake_forecast,
     make_fake_pv_generation,
     make_fake_site,
     make_fake_status,
-    pv_site_api/main.py:18:40:,
-    unused,
 )
 from .pydantic_models import (
     ClearskyEstimate,
@@ -354,12 +348,11 @@ def delete_site_info(
     auth: dict = Depends(auth),
 ):
     """
-    ### This route allows a user to delete a site.
+    ### This route allows a user to delte a site.
 
     """
 
     if is_fake():
-
         print(f"Got {fake_site_uuid} to delete it.")
         return {"message": "Site deleted successfully"}
 
