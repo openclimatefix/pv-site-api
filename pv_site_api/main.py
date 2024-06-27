@@ -1,4 +1,5 @@
 """Main API Routes"""
+
 import os
 import time
 import uuid
@@ -17,7 +18,7 @@ from pvsite_datamodel.pydantic_models import GenerationSum
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.write.generation import insert_generation_values
-from pvsite_datamodel.write.user_and_site import create_site
+from pvsite_datamodel.write.user_and_site import create_site, delete_site
 from sqlalchemy.orm import Session
 
 import pv_site_api
@@ -337,6 +338,30 @@ def post_site_info(
     session.commit()
 
     return site_to_pydantic(site)
+
+
+@app.delete("/sites/delete/{site_uuid}", tags=["Sites"])
+def delete_site_info(
+    site_uuid: str,
+    session: Session = Depends(get_session),
+    auth: dict = Depends(auth),
+):
+    """
+    ### This route allows a user to delte a site.
+
+    """
+
+    if is_fake():
+        print(f"Got {fake_site_uuid} to delete it.")
+        return {"message": "Site deleted successfully"}
+
+    # check user has access to site
+    check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
+
+    # delete site
+    message = delete_site(session=session, site_uuid=site_uuid)
+
+    return message
 
 
 # get_pv_actual: the client can read pv data from the past
