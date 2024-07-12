@@ -14,11 +14,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, Response
 from pvlib import irradiance, location, pvsystem
-from pvsite_datamodel.pydantic_models import GenerationSum
+from pvsite_datamodel.pydantic_models import GenerationSum, PVSiteEditMetadata
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.write.generation import insert_generation_values
-from pvsite_datamodel.write.user_and_site import create_site, delete_site
+from pvsite_datamodel.write.user_and_site import create_site, delete_site, edit_site
 from sqlalchemy.orm import Session
 
 import pv_site_api
@@ -273,22 +273,43 @@ def post_pv_actual(
     session.commit()
 
 
-# Comment this out, until we have security on this
-# # put_site_info: client can update a site
-# @app.put("/sites/{site_uuid}")
-# def put_site_info(site_info: PVSiteMetadata):
-#     """
-#     ### This route allows a user to update site information for a single site.
-#
-#     """
-#
-#     if is_fake():
-#         print(f"Successfully updated {site_info.model_dump()} for site {site_info.client_site_name
-# }")
-#         print("Not doing anything with it (yet!)")
-#         return
-#
-#     raise Exception(NotImplemented)
+# put_site_info: client can update a site
+@app.put("/sites/{site_uuid}")
+def put_site_info(
+    site_uuid: str,
+    site_info: PVSiteEditMetadata,
+    session: Session = Depends(get_session),
+    auth: dict = Depends(auth),
+) -> PVSiteMetadata:
+    """
+    ### This route allows a user to update site information for a single site.
+
+    #### Parameters
+    - **site_uuid**: The site uuid, for example '8d39a579-8bed-490e-800e-1395a8eb6535'
+    - **site_info**: The site informations to update.
+    """
+
+    if is_fake():
+        print(
+            f"Successfully updated {site_info.model_dump()} for site {site_info.client_site_name}"
+        )
+        print("Not doing anything with it (yet!)")
+        return
+
+    site_exists = does_site_exist(session, site_uuid)
+
+    if not site_exists:
+        raise HTTPException(status_code=404, detail=f"Site with {site_uuid=} does not exist")
+
+    # make sure user has access to this site
+    check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
+
+    # update site informations
+    site, message = edit_site(session=session, site_uuid=site_uuid, site_info=site_info)
+
+    logger.debug(message)
+
+    return site_to_pydantic(site)
 
 
 @app.post("/sites", status_code=201, response_model=PVSiteMetadata, tags=["Sites"])
