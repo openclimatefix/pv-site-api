@@ -3,6 +3,8 @@
 import json
 from datetime import datetime, timezone
 
+from pvsite_datamodel.pydantic_models import PVSiteEditMetadata
+
 from pv_site_api import __version__
 from pv_site_api.pydantic_models import MultiplePVActual, PVActualValue, PVSiteAPIStatus
 
@@ -52,4 +54,13 @@ def test_delete_site(client, fake):
     response = client.delete("/sites/delete/fff-fff-fff")
 
     assert response.json()["message"] == "Site deleted successfully"
+    assert response.status_code == 200
+
+
+def test_put_site_info(client, fake):
+    info_to_edit = PVSiteEditMetadata(orientation=25)
+
+    obj = json.loads(info_to_edit.model_dump_json())
+
+    response = client.put("/sites/fff-fff-fff", json=obj)
     assert response.status_code == 200

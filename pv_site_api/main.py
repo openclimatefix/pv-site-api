@@ -287,14 +287,15 @@ def put_site_info(
     #### Parameters
     - **site_uuid**: The site uuid, for example '8d39a579-8bed-490e-800e-1395a8eb6535'
     - **site_info**: The site informations to update.
+        You can update one or more fields at a time. For example :
+        {"orientation": 170, "tilt": 35, "module_capacity_kw": 5}
     """
 
     if is_fake():
-        print(
-            f"Successfully updated {site_info.model_dump()} for site {site_info.client_site_name}"
-        )
+        print(f"Successfully updated {site_info.model_dump()} for site {site_uuid}")
         print("Not doing anything with it (yet!)")
-        return
+        site = make_fake_site().site_list[0]
+        return site
 
     site_exists = does_site_exist(session, site_uuid)
 
