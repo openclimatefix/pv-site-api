@@ -3,6 +3,7 @@
 import os
 import time
 import uuid
+from datetime import datetime
 from typing import Optional, Union
 
 import pandas as pd
@@ -444,6 +445,8 @@ def get_pv_actual_many_sites(
     sum_by: Optional[str] = None,
     auth: dict = Depends(auth),
     compact: bool = False,
+    start_utc: Optional[str] = None,
+    end_utc: Optional[str] = None,
 ):
     """
     ### Get the actual power generation for a list of sites.
@@ -468,6 +471,11 @@ def get_pv_actual_many_sites(
     site_uuids = site_uuids.replace(" ", "")
     site_uuids_list = site_uuids.split(",")
 
+    if start_utc is not None:
+        start_utc = datetime.fromisoformat(start_utc)
+    if end_utc is not None:
+        end_utc = datetime.fromisoformat(end_utc)
+
     if is_fake():
         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
 
@@ -479,10 +487,16 @@ def get_pv_actual_many_sites(
 
     check_user_has_access_to_sites(session=session, auth=auth, site_uuids=site_uuids_list)
 
-    start_utc = get_yesterday_midnight()
+    if start_utc is None:
+        start_utc = get_yesterday_midnight()
 
     return get_generation_by_sites(
-        session, site_uuids=site_uuids_list, start_utc=start_utc, compact=compact, sum_by=sum_by
+        session,
+        site_uuids=site_uuids_list,
+        start_utc=start_utc,
+        compact=compact,
+        sum_by=sum_by,
+        end_utc=end_utc,
     )
 
 
@@ -540,6 +554,8 @@ def get_pv_forecast_many_sites(
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
     sum_by: Optional[str] = None,
+    start_utc: Optional[str] = None,
+    end_utc: Optional[str] = None,
     compact: bool = False,
 ):
     """
@@ -565,12 +581,19 @@ def get_pv_forecast_many_sites(
     if is_fake():
         return [make_fake_forecast(fake_site_uuid)]
 
-    start_utc = get_yesterday_midnight()
+    if start_utc is not None:
+        start_utc = datetime.fromisoformat(start_utc)
+    if end_utc is not None:
+        end_utc = datetime.fromisoformat(end_utc)
+
+    if start_utc is None:
+        start_utc = get_yesterday_midnight()
 
     if (site_uuids == "[]") or (site_uuids == ""):
         return []
 
     site_uuids = site_uuids.replace(" ", "")
+
     site_uuids_list = site_uuids.split(",")
 
     # check that uuids are given
@@ -587,6 +610,7 @@ def get_pv_forecast_many_sites(
         session,
         site_uuids=site_uuids_list,
         start_utc=start_utc,
+        end_utc=end_utc,
         horizon_minutes=0,
         compact=compact,
         sum_by=sum_by,
