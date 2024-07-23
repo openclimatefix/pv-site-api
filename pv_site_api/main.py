@@ -283,7 +283,7 @@ def post_pv_actual(
 
 
 # put_site_info: client can update a site
-@app.put("/sites/{site_uuid}")
+@app.put("/sites/{site_uuid}", response_model=PVSiteMetadata, tags=["Sites"])
 def put_site_info(
     site_uuid: str,
     site_info: PVSiteEditMetadata,
