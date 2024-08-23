@@ -3,6 +3,7 @@
 import os
 import time
 import uuid
+from datetime import datetime
 from typing import Optional, Union
 
 import pandas as pd
@@ -14,11 +15,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, Response
 from pvlib import irradiance, location, pvsystem
-from pvsite_datamodel.pydantic_models import GenerationSum
+from pvsite_datamodel.pydantic_models import GenerationSum, PVSiteEditMetadata
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.write.generation import insert_generation_values
-from pvsite_datamodel.write.user_and_site import create_site, delete_site
+from pvsite_datamodel.write.user_and_site import create_site, delete_site, edit_site
 from sqlalchemy.orm import Session
 
 import pv_site_api
@@ -223,6 +224,7 @@ def get_sites(
 # post_pv_actual: sends data to us, and we save to database
 @app.post("/sites/{site_uuid}/pv_actual", tags=["Generation"])
 def post_pv_actual(
+    request: Request,
     site_uuid: str,
     pv_actual: MultiplePVActual,
     session: Session = Depends(get_session),
@@ -246,6 +248,13 @@ def post_pv_actual(
     All datetimes are in UTC.
 
     """
+
+    # limit payload size to 1 MB, raise 413 if exceeded
+    content_length = int(request.headers.get("Content-Length", 0))
+    max_payload_size = 1024 * 1024
+
+    if content_length > max_payload_size:
+        raise HTTPException(status_code=413, detail="Payload too large")
 
     if is_fake():
         print(f"Got {pv_actual.model_dump()} for site {site_uuid}")
@@ -273,22 +282,44 @@ def post_pv_actual(
     session.commit()
 
 
-# Comment this out, until we have security on this
-# # put_site_info: client can update a site
-# @app.put("/sites/{site_uuid}")
-# def put_site_info(site_info: PVSiteMetadata):
-#     """
-#     ### This route allows a user to update site information for a single site.
-#
-#     """
-#
-#     if is_fake():
-#         print(f"Successfully updated {site_info.model_dump()} for site {site_info.client_site_name
-# }")
-#         print("Not doing anything with it (yet!)")
-#         return
-#
-#     raise Exception(NotImplemented)
+# put_site_info: client can update a site
+@app.put("/sites/{site_uuid}", response_model=PVSiteMetadata, tags=["Sites"])
+def put_site_info(
+    site_uuid: str,
+    site_info: PVSiteEditMetadata,
+    session: Session = Depends(get_session),
+    auth: dict = Depends(auth),
+) -> PVSiteMetadata:
+    """
+    ### This route allows a user to update site information for a single site.
+
+    #### Parameters
+    - **site_uuid**: The site uuid, for example '8d39a579-8bed-490e-800e-1395a8eb6535'
+    - **site_info**: The site informations to update.
+        You can update one or more fields at a time. For example :
+        {"orientation": 170, "tilt": 35, "module_capacity_kw": 5}
+    """
+
+    if is_fake():
+        print(f"Successfully updated {site_info.model_dump()} for site {site_uuid}")
+        print("Not doing anything with it (yet!)")
+        site = make_fake_site().site_list[0]
+        return site
+
+    site_exists = does_site_exist(session, site_uuid)
+
+    if not site_exists:
+        raise HTTPException(status_code=404, detail=f"Site with {site_uuid=} does not exist")
+
+    # make sure user has access to this site
+    check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
+
+    # update site informations
+    site, message = edit_site(session=session, site_uuid=site_uuid, site_info=site_info)
+
+    logger.debug(message)
+
+    return site_to_pydantic(site)
 
 
 @app.post("/sites", status_code=201, response_model=PVSiteMetadata, tags=["Sites"])
@@ -414,6 +445,8 @@ def get_pv_actual_many_sites(
     sum_by: Optional[str] = None,
     auth: dict = Depends(auth),
     compact: bool = False,
+    start_utc: Optional[str] = None,
+    end_utc: Optional[str] = None,
 ):
     """
     ### Get the actual power generation for a list of sites.
@@ -438,6 +471,11 @@ def get_pv_actual_many_sites(
     site_uuids = site_uuids.replace(" ", "")
     site_uuids_list = site_uuids.split(",")
 
+    if start_utc is not None:
+        start_utc = datetime.fromisoformat(start_utc)
+    if end_utc is not None:
+        end_utc = datetime.fromisoformat(end_utc)
+
     if is_fake():
         return [make_fake_pv_generation(site_uuid) for site_uuid in site_uuids_list]
 
@@ -449,10 +487,16 @@ def get_pv_actual_many_sites(
 
     check_user_has_access_to_sites(session=session, auth=auth, site_uuids=site_uuids_list)
 
-    start_utc = get_yesterday_midnight()
+    if start_utc is None:
+        start_utc = get_yesterday_midnight()
 
     return get_generation_by_sites(
-        session, site_uuids=site_uuids_list, start_utc=start_utc, compact=compact, sum_by=sum_by
+        session,
+        site_uuids=site_uuids_list,
+        start_utc=start_utc,
+        compact=compact,
+        sum_by=sum_by,
+        end_utc=end_utc,
     )
 
 
@@ -510,6 +554,8 @@ def get_pv_forecast_many_sites(
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
     sum_by: Optional[str] = None,
+    start_utc: Optional[str] = None,
+    end_utc: Optional[str] = None,
     compact: bool = False,
 ):
     """
@@ -535,12 +581,19 @@ def get_pv_forecast_many_sites(
     if is_fake():
         return [make_fake_forecast(fake_site_uuid)]
 
-    start_utc = get_yesterday_midnight()
+    if start_utc is not None:
+        start_utc = datetime.fromisoformat(start_utc)
+    if end_utc is not None:
+        end_utc = datetime.fromisoformat(end_utc)
+
+    if start_utc is None:
+        start_utc = get_yesterday_midnight()
 
     if (site_uuids == "[]") or (site_uuids == ""):
         return []
 
     site_uuids = site_uuids.replace(" ", "")
+
     site_uuids_list = site_uuids.split(",")
 
     # check that uuids are given
@@ -557,6 +610,7 @@ def get_pv_forecast_many_sites(
         session,
         site_uuids=site_uuids_list,
         start_utc=start_utc,
+        end_utc=end_utc,
         horizon_minutes=0,
         compact=compact,
         sum_by=sum_by,
