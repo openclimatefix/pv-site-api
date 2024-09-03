@@ -93,6 +93,8 @@ sentry_sdk.init(
     environment=os.getenv("ENVIRONMENT", "local"),
     traces_sampler=traces_sampler,
 )
+sentry_sdk.set_tag("app_name", "quartz-solar-api-site")
+sentry_sdk.set_tag("app_version", pv_site_api.__version__)
 
 app = FastAPI(docs_url="/swagger", redoc_url=None)
 
