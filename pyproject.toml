@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pv-site-api"
-version = "1.0.45"
+version = "1.0.46"
 description = ""
 authors = ["Open Climate Fix"]
 readme = "README.md"
