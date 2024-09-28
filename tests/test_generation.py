@@ -1,16 +1,31 @@
 """ Test for main app """
 
 import json
-import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
-from pvsite_datamodel.pydantic_models import GenerationSum
-from pvsite_datamodel.sqlmodels import GenerationSQL
+from pvsite_datamodel.pydantic_models import PVSiteEditMetadata
 
-from pv_site_api.pydantic_models import MultiplePVActual, MultipleSitePVActualCompact, PVActualValue
+from pv_site_api import __version__
+from pv_site_api.pydantic_models import MultiplePVActual, PVActualValue, PVSiteAPIStatus
 
 
-def test_pv_actual_fake(client, fake):
+def test_read_main(client):
+    """Check main route works"""
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json()["version"] == __version__
+
+
+def test_get_status(client, fake):
+    response = client.get("/api_status")
+    assert response.status_code == 200
+
+    returned_status = PVSiteAPIStatus(**response.json())
+    assert returned_status.status == "ok"
+    assert returned_status.message == "The API is up and running"
+
+
+def test_pv_actual(client, fake):
     response = client.get("/sites/fff-fff-fff/pv_actual")
     assert response.status_code == 200
 
@@ -18,114 +33,7 @@ def test_pv_actual_fake(client, fake):
     assert len(pv_actuals.pv_actual_values) > 0
 
 
-def test_pv_actual_many_sites_fake(client, fake):
-    resp = client.get("/sites/pv_actual?site_uuids=fff-fff-fff")
-
-    pv_actuals = [MultiplePVActual(**x) for x in resp.json()]
-    assert len(pv_actuals) == 1
-    assert len(pv_actuals[0].pv_actual_values) > 0
-
-
-def test_pv_actual(client, generations):
-    site_uuid = generations[0].site_uuid
-
-    response = client.get(f"/sites/{site_uuid}/pv_actual")
-    assert response.status_code == 200
-
-    pv_actuals = MultiplePVActual(**response.json())
-    assert len(pv_actuals.pv_actual_values) == 10
-
-
-def test_pv_actual_many_sites(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
-    site_uuid_str = ",".join(site_uuids)
-
-    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}")
-
-    assert resp.status_code == 200
-
-    pv_actuals = [MultiplePVActual(**x) for x in resp.json()]
-    assert len(pv_actuals) == len(sites)
-
-
-def test_pv_actual_many_sites_compact(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
-    site_uuid_str = ",".join(site_uuids)
-
-    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&compact=true")
-
-    assert resp.status_code == 200
-
-    pv_actuals = MultipleSitePVActualCompact(**resp.json())
-    assert len(pv_actuals.pv_actual_values_many_site) == len(sites)
-
-
-def test_pv_actual_many_sites_total(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
-    site_uuid_str = ",".join(site_uuids)
-
-    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&sum_by=total")
-
-    assert resp.status_code == 200
-
-    pv_actuals = [GenerationSum(**x) for x in resp.json()]
-    assert len(pv_actuals) == 10
-
-
-def test_pv_actual_many_sites_dno(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
-    site_uuid_str = ",".join(site_uuids)
-
-    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&sum_by=dno")
-
-    assert resp.status_code == 200
-
-    pv_actuals = [GenerationSum(**x) for x in resp.json()]
-    assert len(pv_actuals) == 30
-
-
-def test_pv_actual_many_sites_start(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
-    site_uuid_str = ",".join(site_uuids)
-    start_utc = (datetime.today() - timedelta(minutes=5)).isoformat()
-
-    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&start_utc={start_utc}")
-
-    assert resp.status_code == 200
-
-    pv_actuals = [MultiplePVActual(**x) for x in resp.json()]
-    assert len(pv_actuals) == len(sites)
-    assert len(pv_actuals[0].pv_actual_values) == 5
-
-
-def test_pv_actual_many_sites_end(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
-    site_uuid_str = ",".join(site_uuids)
-    end_utc = (datetime.today()).isoformat()
-
-    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&end_utc={end_utc}")
-
-    assert resp.status_code == 200
-
-    pv_actuals = [MultiplePVActual(**x) for x in resp.json()]
-    assert len(pv_actuals) == len(sites)
-    # only 5 generations are later than now, the other 5 all stop before now
-    assert len(pv_actuals[0].pv_actual_values) == 5
-
-
-def test_pv_actual_many_sites_gsp(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
-    site_uuid_str = ",".join(site_uuids)
-
-    resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&sum_by=gsp")
-
-    assert resp.status_code == 200
-
-    pv_actuals = [GenerationSum(**x) for x in resp.json()]
-    assert len(pv_actuals) == 30
-
-
-def test_post_fake_pv_actual(client, fake):
+def test_post_pv_actual(client, fake):
     pv_actual_value = PVActualValue(
         datetime_utc=datetime.now(timezone.utc), actual_generation_kw=73.3
     )
@@ -142,58 +50,38 @@ def test_post_fake_pv_actual(client, fake):
     assert response.status_code == 200
 
 
-def test_post_pv_actual(db_session, client, sites):
-    db_session.query(GenerationSQL).delete()
-
-    site_uuid = sites[0].site_uuid
-
+def test_post_too_large_pv_actual(client, fake):
     pv_actual_value = PVActualValue(
         datetime_utc=datetime.now(timezone.utc), actual_generation_kw=73.3
     )
 
-    # make iteration of pv values for one day at a specific site
-    pv_actual_iteration = MultiplePVActual(
-        site_uuid=str(site_uuid), pv_actual_values=[pv_actual_value]
+    # make fake iteration of pv values that is bigger than 1 MB
+    fake_pv_actual_iteration = MultiplePVActual(
+        # 30000 {key:value} pairs ~ 1 MB
+        site_uuid="fff-fff",
+        pv_actual_values=[pv_actual_value] * 30000,
     )
 
     # this makes sure the datetimes are iso strings
-    pv_actual_dict = json.loads(pv_actual_iteration.json())
+    obj = json.loads(fake_pv_actual_iteration.json())
 
-    response = client.post(f"/sites/{site_uuid}/pv_actual", json=pv_actual_dict)
-    assert response.status_code == 200, response.text
+    response = client.post("/sites/fff-fff-fff/pv_actual", json=obj)
 
-    generations = db_session.query(GenerationSQL).all()
-    assert len(generations) == 1
-    assert str(generations[0].site_uuid) == str(pv_actual_iteration.site_uuid)
+    assert response.status_code == 413
+    assert response.json() == {"detail": "Payload too large"}
 
 
-def test_pv_actual_no_data(db_session, client, sites):
-    # Get forecasts from that site with no actuals.
-    resp = client.get(f"/sites/{sites[0].site_uuid}/pv_actual")
-    assert resp.status_code == 204
+def test_delete_site(client, fake):
+    response = client.delete("/sites/delete/fff-fff-fff")
+
+    assert response.json()["message"] == "Site deleted successfully"
+    assert response.status_code == 200
 
 
-def test_pv_actual_incorrect_site_uuid(db_session, client):
-    # Get forecasts from that site with no actuals.
-    resp = client.get("/sites/pv_actual?site_uuids=ff-ff-ff")
-    assert resp.status_code == 422
+def test_put_site_info(client, fake):
+    info_to_edit = PVSiteEditMetadata(orientation=25)
 
+    obj = json.loads(info_to_edit.model_dump_json())
 
-def test_pv_actual_no_data_multiple_sites(db_session, client):
-    # Get forecasts from that site with no actuals.
-    resp = client.get("/sites/pv_actual?site_uuids=[]")
-    assert resp.status_code == 200
-    assert resp.json() == []
-
-
-def test_pv_actual_empty_multiple_sites(db_session, client):
-    # Get forecasts from that site with no actuals.
-    resp = client.get("/sites/pv_actual?site_uuids=&UI")
-    assert resp.status_code == 200
-    assert resp.json() == []
-
-
-def test_pv_actual_404(db_session, client):
-    """If we get actuals for an unknown site, we get a 404."""
-    resp = client.get(f"/sites/{uuid.uuid4()}/pv_actual")
-    assert resp.status_code == 404
+    response = client.put("/sites/fff-fff-fff", json=obj)
+    assert response.status_code == 200
