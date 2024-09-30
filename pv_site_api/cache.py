@@ -20,36 +20,44 @@ delete_cache_time_seconds = int(os.getenv("DELETE_CACHE_TIME_SECONDS", DELETE_CA
 cache_lock = Lock()
 
 def remove_old_cache(
-    last_updated: dict,
-    response: dict,
-    remove_cache_time_seconds: float = delete_cache_time_seconds
-):
-    """
-    Remove old cache entries from the cache
+        last_updated: dict,
+        response: dict,
+        remove_cache_time_seconds: float = delete_cache_time_seconds
+    ):
+        """
+        Remove old cache entries from the cache
 
-    :param last_updated: dict of last updatedtimes
-    :param response: dict of responses, same keys as last_updated
-    :param remove_cache_time_seconds: the amount of time, after which the cache should be removed
-    """
+        :param last_updated: dict of last updatedtimes
+        :param response: dict of responses, same keys as last_updated
+        :param remove_cache_time_seconds: the amount of time, after which the cache should be removed
+        """
 
-    now = datetime.now(tz=timezone.utc)
-    logger.info("Removing old cache entries")
-    keys_to_remove = []
+        now = datetime.now(tz=timezone.utc)
+        logger.info("Removing old cache entries")
 
-    with cache_lock:
-        for key, value in last_updated.items():
-            if now - timedelta(seconds=remove_cache_time_seconds) > value:
-                logger.debug(f"Removing {key} from cache, ({value})")
-                keys_to_remove.append(key)
+        """
+        To check if cache removal is needed 
+        """
+        if not any(now - timedelta(seconds=remove_cache_time_seconds) > value for value in last_updated.values()):
+            logger.debug("No old cache entries to remove, skipping.")
+            return last_updated, response
 
-    for key in keys_to_remove:
-        last_updated.pop(key, None)
-        response.pop(key, None)
+        keys_to_remove = []
 
-    process = psutil.Process(os.getpid())
-    logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
+        with cache_lock:
+            for key, value in last_updated.items():
+                if now - timedelta(seconds=remove_cache_time_seconds) > value:  
+                    logger.debug(f"Removing {key} from cache, ({value})")
+                    keys_to_remove.append(key)
 
-    return last_updated, response
+        for key in keys_to_remove:
+            last_updated.pop(key, None)         
+            response.pop(key, None)
+
+        process = psutil.Process(os.getpid())
+        logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
+
+        return last_updated, response
 
 
 def cache_response(func):
