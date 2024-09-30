@@ -281,7 +281,7 @@ def post_pv_actual(
     site = get_site_by_uuid(session=session, site_uuid=site_uuid)
     site_capacity_kw = site.capacity_kw
     exceeded_capacity = generation_values_df[generation_values_df["power_kw"] > site_capacity_kw]
-    if not exceeded_capacity.empty:
+    if len(exceeded_capacity) > 0:
         raise HTTPException(
             status_code=102,
             detail=f"We processed your generation values, but noticed one (or more) values are "

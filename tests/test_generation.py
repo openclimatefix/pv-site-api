@@ -168,6 +168,13 @@ def test_post_pv_actual(db_session, client, sites):
     assert len(generations) == 1
     assert str(generations[0].site_uuid) == str(pv_actual_iteration_below.site_uuid)
 
+
+def test_post_pv_actual_above_capacity(db_session, client, sites):
+    db_session.query(GenerationSQL).delete()
+
+    site_uuid = sites[0].site_uuid
+    site_capacity_kw = sites[0].capacity_kw
+
     # above capacity testcase
     pv_actual_above_capacity = PVActualValue(
         datetime_utc=datetime.now(timezone.utc), actual_generation_kw=site_capacity_kw + 1
