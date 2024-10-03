@@ -1,6 +1,5 @@
 """ Test for main app """
 import json
-import os
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -174,7 +173,7 @@ def test_post_pv_actual_above_capacity(db_session, client, sites):
 
     site_uuid = sites[0].site_uuid
     site_capacity_kw = sites[0].capacity_kw
-    capacity_factor = float(os.getenv("ERROR_GENERATION_CAPACITY_FACTOR", 1.1))
+    capacity_factor = 1.1
 
     # above capacity testcase
     pv_actual_above_capacity = PVActualValue(
