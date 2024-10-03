@@ -1,6 +1,6 @@
 """ Test for main app """
-
 import json
+import os
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -174,10 +174,12 @@ def test_post_pv_actual_above_capacity(db_session, client, sites):
 
     site_uuid = sites[0].site_uuid
     site_capacity_kw = sites[0].capacity_kw
+    capacity_factor = float(os.getenv("ERROR_GENERATION_CAPACITY_FACTOR", 1.1))
 
     # above capacity testcase
     pv_actual_above_capacity = PVActualValue(
-        datetime_utc=datetime.now(timezone.utc), actual_generation_kw=site_capacity_kw + 1
+        datetime_utc=datetime.now(timezone.utc),
+        actual_generation_kw=(site_capacity_kw * capacity_factor) + 1,
     )
 
     # make iteration of pv values for one day at a specific site
@@ -189,7 +191,7 @@ def test_post_pv_actual_above_capacity(db_session, client, sites):
     pv_actual_dict_above = json.loads(pv_actual_iteration_above.json())
     response_above = client.post(f"/sites/{site_uuid}/pv_actual", json=pv_actual_dict_above)
 
-    assert response_above.status_code == 102, response_above.text
+    assert response_above.status_code == 422, response_above.text
 
 
 def test_pv_actual_no_data(db_session, client, sites):

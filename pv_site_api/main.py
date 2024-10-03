@@ -277,15 +277,25 @@ def post_pv_actual(
             }
         )
 
+    # Set the error generation capacity factor from environment variable
+    capacity_factor = float(os.getenv("ERROR_GENERATION_CAPACITY_FACTOR", 1.1))
+
     generation_values_df = pd.DataFrame(generations)
     site = get_site_by_uuid(session=session, site_uuid=site_uuid)
     site_capacity_kw = site.capacity_kw
-    exceeded_capacity = generation_values_df[generation_values_df["power_kw"] > site_capacity_kw]
+    exceeded_capacity = generation_values_df[
+        generation_values_df["power_kw"] > site_capacity_kw * capacity_factor
+    ]
     if len(exceeded_capacity) > 0:
         raise HTTPException(
             status_code=102,
-            detail=f"We processed your generation values, but noticed one (or more) values are "
-            f"larger than the site capacity of {site_capacity_kw} kW.",
+            detail=(
+                "Error processing generation values. "
+                "One (or more) values are larger than {capacity_factor} "
+                "times the site capacity of {site_capacity_kw} kWp. "
+                "Please adjust this generation value, the site capacity, "
+                "or contact quartz.support@openclimatefix.org."
+            ),
         )
 
     logger.debug(f"Adding {len(generation_values_df)} generation values")
