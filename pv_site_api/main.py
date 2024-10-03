@@ -288,7 +288,7 @@ def post_pv_actual(
     ]
     if len(exceeded_capacity) > 0:
         raise HTTPException(
-            status_code=102,
+            status_code=422,
             detail=(
                 "Error processing generation values. "
                 "One (or more) values are larger than {capacity_factor} "
