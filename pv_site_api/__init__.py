@@ -5,7 +5,7 @@ import os
 
 import structlog
 
-__version__ = "1.0.48"
+__version__ = "1.0.49"
 
 # Set the loglevel
 LOGLEVEL = os.getenv("LOGLEVEL", "DEBUG").upper()
