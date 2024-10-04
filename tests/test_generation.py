@@ -1,5 +1,4 @@
 """ Test for main app """
-
 import json
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -146,25 +145,52 @@ def test_post_pv_actual(db_session, client, sites):
     db_session.query(GenerationSQL).delete()
 
     site_uuid = sites[0].site_uuid
+    site_capacity_kw = sites[0].capacity_kw
 
-    pv_actual_value = PVActualValue(
-        datetime_utc=datetime.now(timezone.utc), actual_generation_kw=73.3
+    # below capacity testcase
+    pv_actual_below_capacity = PVActualValue(
+        datetime_utc=datetime.now(timezone.utc), actual_generation_kw=site_capacity_kw - 1
     )
 
     # make iteration of pv values for one day at a specific site
-    pv_actual_iteration = MultiplePVActual(
-        site_uuid=str(site_uuid), pv_actual_values=[pv_actual_value]
+    pv_actual_iteration_below = MultiplePVActual(
+        site_uuid=str(site_uuid), pv_actual_values=[pv_actual_below_capacity]
     )
 
     # this makes sure the datetimes are iso strings
-    pv_actual_dict = json.loads(pv_actual_iteration.json())
+    pv_actual_dict_below = json.loads(pv_actual_iteration_below.json())
 
-    response = client.post(f"/sites/{site_uuid}/pv_actual", json=pv_actual_dict)
+    response = client.post(f"/sites/{site_uuid}/pv_actual", json=pv_actual_dict_below)
     assert response.status_code == 200, response.text
 
     generations = db_session.query(GenerationSQL).all()
     assert len(generations) == 1
-    assert str(generations[0].site_uuid) == str(pv_actual_iteration.site_uuid)
+    assert str(generations[0].site_uuid) == str(pv_actual_iteration_below.site_uuid)
+
+
+def test_post_pv_actual_above_capacity(db_session, client, sites):
+    db_session.query(GenerationSQL).delete()
+
+    site_uuid = sites[0].site_uuid
+    site_capacity_kw = sites[0].capacity_kw
+    capacity_factor = 1.1
+
+    # above capacity testcase
+    pv_actual_above_capacity = PVActualValue(
+        datetime_utc=datetime.now(timezone.utc),
+        actual_generation_kw=(site_capacity_kw * capacity_factor) + 1,
+    )
+
+    # make iteration of pv values for one day at a specific site
+    pv_actual_iteration_above = MultiplePVActual(
+        site_uuid=str(site_uuid), pv_actual_values=[pv_actual_above_capacity]
+    )
+
+    # this makes sure the datetimes are iso strings
+    pv_actual_dict_above = json.loads(pv_actual_iteration_above.json())
+    response_above = client.post(f"/sites/{site_uuid}/pv_actual", json=pv_actual_dict_above)
+
+    assert response_above.status_code == 422, response_above.text
 
 
 def test_pv_actual_no_data(db_session, client, sites):
