@@ -290,9 +290,9 @@ def post_pv_actual(
         raise HTTPException(
             status_code=422,
             detail=(
-                "Error processing generation values. "
-                "One (or more) values are larger than {capacity_factor} "
-                "times the site capacity of {site_capacity_kw} kWp. "
+                f"Error processing generation values. "
+                f"One (or more) values are larger than {capacity_factor} "
+                f"times the site capacity of {site_capacity_kw} kWp. "
                 "Please adjust this generation value, the site capacity, "
                 "or contact quartz.support@openclimatefix.org."
             ),
