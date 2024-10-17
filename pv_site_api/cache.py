@@ -31,7 +31,8 @@ def remove_old_cache(
     now = datetime.now(tz=timezone.utc)
     logger.info("Removing old cache entries")
     keys_to_remove = []
-    for key, value in last_updated.items():
+    last_updated_copy = last_updated.copy()
+    for key, value in last_updated_copy.items():
         if now - timedelta(seconds=remove_cache_time_seconds) > value:
             logger.debug(f"Removing {key} from cache, ({value})")
             keys_to_remove.append(key)
