@@ -16,6 +16,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, Response
 from pvlib import irradiance, location, pvsystem
 from pvsite_datamodel.pydantic_models import GenerationSum, PVSiteEditMetadata
+from pvsite_datamodel.read.site import get_site_by_uuid
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.write.generation import insert_generation_values
@@ -276,7 +277,26 @@ def post_pv_actual(
             }
         )
 
+    # Set the error generation capacity factor from environment variable
+    capacity_factor = float(os.getenv("ERROR_GENERATION_CAPACITY_FACTOR", 1.1))
+
     generation_values_df = pd.DataFrame(generations)
+    site = get_site_by_uuid(session=session, site_uuid=site_uuid)
+    site_capacity_kw = site.capacity_kw
+    exceeded_capacity = generation_values_df[
+        generation_values_df["power_kw"] > site_capacity_kw * capacity_factor
+    ]
+    if len(exceeded_capacity) > 0:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Error processing generation values. "
+                f"One (or more) values are larger than {capacity_factor} "
+                f"times the site capacity of {site_capacity_kw} kWp. "
+                "Please adjust this generation value, the site capacity, "
+                "or contact quartz.support@openclimatefix.org."
+            ),
+        )
 
     logger.debug(f"Adding {len(generation_values_df)} generation values")
 
