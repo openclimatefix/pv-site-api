@@ -233,23 +233,29 @@ def post_pv_actual(
     session: Session = Depends(get_session),
     auth: auth = Depends(auth),
 ):
-    """### This route is used to input actual PV generation.
+    """
+    ### This route is used to input actual PV generation.
 
     Users will upload actual PV generation
-    readings at regular intervals throughout a given day.
+    readings in kilowatts (KW) at regular intervals throughout a given day.
 
     #### Parameters
     - **site_uuid**: The unique identifier for the site.
     - **pv_actual**: The actual PV generation values for the site.
-        You can add one at a time, or many. For example
-        { "site_uuid": "e6dc5077-0a8e-44b7-aa91-ef6084d66b81", "pv_actual_values": [
-           {
-               "datetime_utc": "2024-02-09T17:19:35.986Z",
-               "actual_generation_kw": 0
-         }]}
-
+        You can add one at a time or many. For example:
+        {
+            "site_uuid": "e6dc5077-0a8e-44b7-aa91-ef6084d66b81",
+            "pv_actual_values": [
+                {
+                    "datetime_utc": "2024-02-09T17:19:35.986Z",
+                    "actual_generation_kw": 0
+                }
+            ]
+        }
+    
     All datetimes are in UTC.
 
+    **Note**: Users should wait up to 7 days to start experiencing the full effects from using live PV data.
     """
 
     # limit payload size to 1 MB, raise 413 if exceeded
