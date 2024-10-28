@@ -1,6 +1,6 @@
 # PVSiteAPI
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-10-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 API for PV site level forecasting
@@ -56,6 +56,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ProfessionalCaddie"><img src="https://avatars.githubusercontent.com/u/180212671?v=4?s=100" width="100px;" alt="Nicholas Tucker"/><br /><sub><b>Nicholas Tucker</b></sub></a><br /><a href="https://github.com/openclimatefix/pv-site-api/commits?author=ProfessionalCaddie" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://anaskhan.me"><img src="https://avatars.githubusercontent.com/u/83116240?v=4?s=100" width="100px;" alt="Anas Khan"/><br /><sub><b>Anas Khan</b></sub></a><br /><a href="https://github.com/openclimatefix/pv-site-api/commits?author=anxkhn" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Sigma-Verma"><img src="https://avatars.githubusercontent.com/u/131307209?v=4?s=100" width="100px;" alt="Utkarsh Verma"/><br /><sub><b>Utkarsh Verma</b></sub></a><br /><a href="https://github.com/openclimatefix/pv-site-api/commits?author=Sigma-Verma" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
