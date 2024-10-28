@@ -294,6 +294,14 @@ def post_pv_actual(
         generation_values_df["power_kw"] > site_capacity_kw * capacity_factor
     ]
     if len(exceeded_capacity) > 0:
+        # alert Sentry and return 422 validation error
+        sentry_sdk.capture_message(
+            f"Error processing generation values. "
+            f"One (or more) values are larger than {capacity_factor} "
+            f"times the site capacity of {site_capacity_kw} kWp. "
+            f"User: {auth['https://openclimatefix.org/email']}"
+            f"Site: {site_uuid}"
+        )
         raise HTTPException(
             status_code=422,
             detail=(
