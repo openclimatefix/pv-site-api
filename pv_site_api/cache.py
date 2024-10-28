@@ -4,6 +4,7 @@ import json
 import os
 from datetime import datetime, timedelta, timezone
 from functools import wraps
+from threading import Lock
 
 import psutil
 import structlog
@@ -17,6 +18,8 @@ DELETE_CACHE_TIME_SECONDS = 240
 cache_time_seconds = int(os.getenv("CACHE_TIME_SECONDS", CACHE_TIME_SECONDS))
 delete_cache_time_seconds = int(os.getenv("DELETE_CACHE_TIME_SECONDS", DELETE_CACHE_TIME_SECONDS))
 
+cache_lock = Lock()
+
 
 def remove_old_cache(
     last_updated: dict, response: dict, remove_cache_time_seconds: float = delete_cache_time_seconds
@@ -28,18 +31,31 @@ def remove_old_cache(
     :param response: dict of responses, same keys as last_updated
     :param remove_cache_time_seconds: the amount of time, after which the cache should be removed
     """
+
     now = datetime.now(tz=timezone.utc)
     logger.info("Removing old cache entries")
+
+    """
+    To check if cache removal is needed 
+    """
+    if not any(
+        now - timedelta(seconds=remove_cache_time_seconds) > value
+        for value in last_updated.values()
+    ):
+        logger.debug("No old cache entries to remove, skipping.")
+        return last_updated, response
+
     keys_to_remove = []
-    last_updated_copy = last_updated.copy()
-    for key, value in last_updated_copy.items():
-        if now - timedelta(seconds=remove_cache_time_seconds) > value:
-            logger.debug(f"Removing {key} from cache, ({value})")
-            keys_to_remove.append(key)
+
+    with cache_lock:
+        for key, value in last_updated.items():
+            if now - timedelta(seconds=remove_cache_time_seconds) > value:
+                logger.debug(f"Removing {key} from cache, ({value})")
+                keys_to_remove.append(key)
 
     for key in keys_to_remove:
-        last_updated.pop(key)
-        response.pop(key)
+        last_updated.pop(key, None)
+        response.pop(key, None)
 
     process = psutil.Process(os.getpid())
     logger.debug(f"Memory is {process.memory_info().rss / 10 ** 6} MB")
