@@ -19,10 +19,9 @@ delete_cache_time_seconds = int(os.getenv("DELETE_CACHE_TIME_SECONDS", DELETE_CA
 
 cache_lock = Lock()
 
+
 def remove_old_cache(
-    last_updated: dict,
-    response: dict,
-    remove_cache_time_seconds: float = delete_cache_time_seconds
+    last_updated: dict, response: dict, remove_cache_time_seconds: float = delete_cache_time_seconds
 ):
     """
     Remove old cache entries from the cache
@@ -38,7 +37,10 @@ def remove_old_cache(
     """
     To check if cache removal is needed 
     """
-    if not any(now - timedelta(seconds=remove_cache_time_seconds) > value for value in last_updated.values()):
+    if not any(
+        now - timedelta(seconds=remove_cache_time_seconds) > value
+        for value in last_updated.values()
+    ):
         logger.debug("No old cache entries to remove, skipping.")
         return last_updated, response
 
@@ -46,12 +48,12 @@ def remove_old_cache(
 
     with cache_lock:
         for key, value in last_updated.items():
-            if now - timedelta(seconds=remove_cache_time_seconds) > value:  
+            if now - timedelta(seconds=remove_cache_time_seconds) > value:
                 logger.debug(f"Removing {key} from cache, ({value})")
                 keys_to_remove.append(key)
 
     for key in keys_to_remove:
-        last_updated.pop(key, None)         
+        last_updated.pop(key, None)
         response.pop(key, None)
 
     process = psutil.Process(os.getpid())
