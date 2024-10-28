@@ -48,7 +48,8 @@ def remove_old_cache(
     keys_to_remove = []
 
     with cache_lock:
-        for key, value in last_updated.items():
+        last_updated_copy = last_updated.copy()
+        for key, value in last_updated_copy.items():
             if now - timedelta(seconds=remove_cache_time_seconds) > value:
                 logger.debug(f"Removing {key} from cache, ({value})")
                 keys_to_remove.append(key)
