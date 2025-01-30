@@ -237,18 +237,22 @@ def post_pv_actual(
     ### This route is used to input actual PV generation.
 
     Users will upload actual PV generation
-    readings in kilowatts (KW) at regular intervals throughout a given day.
+    readings in kilowatts (kW) at intervals throughout a given day.
+    For example: the average power in kW every 5,10,15 or 30 minutes.
+
+    The actual_generation_kw values should be non-negative floating point numbers
+    (e.g., 0.0, 1.5, 10.753, etc).
 
     #### Parameters
     - **site_uuid**: The unique identifier for the site.
-    - **pv_actual**: The actual PV generation values for the site.
+    - **pv_actual_values**: The actual PV generation values for the site.
         You can add one at a time or many. For example:
         {
             "site_uuid": "e6dc5077-0a8e-44b7-aa91-ef6084d66b81",
             "pv_actual_values": [
                 {
                     "datetime_utc": "2024-02-09T17:19:35.986Z",
-                    "actual_generation_kw": 0
+                    "actual_generation_kw": 1.452
                 }
             ]
         }
