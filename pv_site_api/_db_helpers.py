@@ -103,31 +103,33 @@ def _get_latest_forecast_by_sites(
 ) -> list[Row]:
     """Get the latest forecast for given site uuids."""
     # Get the latest forecast for each site.
-    subquery = (
-        session.query(ForecastSQL)
+    forecasts = (
+        session.query(ForecastSQL.forecast_uuid)
         .distinct(ForecastSQL.site_uuid)
         .filter(ForecastSQL.site_uuid.in_([uuid.UUID(su) for su in site_uuids]))
         .order_by(
             ForecastSQL.site_uuid,
             ForecastSQL.timestamp_utc.desc(),
         )
-    ).subquery()
-
-    forecast_subq = aliased(ForecastSQL, subquery, name="ForecastSQL")
+    ).all()
+    forecast_uuids = [forecast.forecast_uuid for forecast in forecasts]
 
     # Join the forecast values.
-    query = session.query(forecast_subq, ForecastValueSQL)
+    query = session.query(ForecastSQL, ForecastValueSQL)
     query = query.join(ForecastValueSQL)
+    query = query.where(ForecastSQL.forecast_uuid.in_(forecast_uuids))
 
     # only get future forecast values. This solves the case when a forecast is made 1 day a go,
     # but since then, no new forecast have been made
     if start_utc is not None:
         query = query.filter(ForecastValueSQL.start_utc >= start_utc)
+        query = query.filter(ForecastValueSQL.end_utc >= start_utc)
 
     if end_utc is not None:
         query = query.filter(ForecastValueSQL.end_utc <= end_utc)
+        query = query.filter(ForecastValueSQL.start_utc <= end_utc)
 
-    query.order_by(forecast_subq.timestamp_utc, ForecastValueSQL.start_utc)
+    query.order_by(ForecastSQL.timestamp_utc, ForecastValueSQL.start_utc)
 
     if sum_by is None:
         return query.all()
