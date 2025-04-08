@@ -46,8 +46,7 @@ def forecast_rows_to_pydantic_compact(rows: list[Row]) -> ManyForecastCompact:
         start_utc = row.ForecastValueSQL.start_utc
         expected_generation_kw = round(row.ForecastValueSQL.forecast_power_kw, 3)
 
-        if ~np.isnan(expected_generation_kw):
-
+        if not np.isnan(expected_generation_kw):
 
             if start_utc not in start_utc_idx:
                 start_utc_idx[start_utc] = len(start_utc_idx)
