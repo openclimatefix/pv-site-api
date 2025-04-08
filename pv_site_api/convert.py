@@ -46,20 +46,23 @@ def forecast_rows_to_pydantic_compact(rows: list[Row]) -> ManyForecastCompact:
         start_utc = row.ForecastValueSQL.start_utc
         expected_generation_kw = round(row.ForecastValueSQL.forecast_power_kw, 3)
 
-        if start_utc not in start_utc_idx:
-            start_utc_idx[start_utc] = len(start_utc_idx)
-        idx = start_utc_idx[start_utc]
+        if ~np.isnan(expected_generation_kw):
 
-        if site_uuid not in data:
-            data[site_uuid]["site_uuid"] = site_uuid
-            data[site_uuid]["forecast_uuid"] = str(row.ForecastSQL.forecast_uuid)
-            data[site_uuid]["forecast_creation_datetime"] = row.ForecastSQL.timestamp_utc
-            data[site_uuid]["forecast_version"] = row.ForecastSQL.forecast_version
 
-        if site_uuid not in fv_uuids:
-            fv_uuids[site_uuid] = {idx: expected_generation_kw}
-        else:
-            fv_uuids[site_uuid][idx] = expected_generation_kw
+            if start_utc not in start_utc_idx:
+                start_utc_idx[start_utc] = len(start_utc_idx)
+            idx = start_utc_idx[start_utc]
+
+            if site_uuid not in data:
+                data[site_uuid]["site_uuid"] = site_uuid
+                data[site_uuid]["forecast_uuid"] = str(row.ForecastSQL.forecast_uuid)
+                data[site_uuid]["forecast_creation_datetime"] = row.ForecastSQL.timestamp_utc
+                data[site_uuid]["forecast_version"] = row.ForecastSQL.forecast_version
+
+            if site_uuid not in fv_uuids:
+                fv_uuids[site_uuid] = {idx: expected_generation_kw}
+            else:
+                fv_uuids[site_uuid][idx] = expected_generation_kw
 
     forecasts = [
         ForecastCompact(
