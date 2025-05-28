@@ -70,11 +70,12 @@ def _get_forecasts_for_horizon(
         # time. In practice this shouldn't happen often.
         .distinct(ForecastSQL.site_uuid, ForecastSQL.timestamp_utc)
         .join(ForecastValueSQL)
+        .where(ForecastSQL.site_uuid.in_(site_uuids))
+        # filter on site ml model, if not null
         .join(SiteSQL)
         .join(m_site, SiteSQL.ml_model, isouter=True)
         .join(m_fv, ForecastValueSQL.ml_model, isouter=True)
-        .where(ForecastSQL.site_uuid.in_(site_uuids))
-        .filter(or_(a, b))
+        .where(or_(a, b))
         # Also filtering on `timestamp_utc` makes the query faster.
         .where(ForecastSQL.timestamp_utc >= start_utc - dt.timedelta(minutes=horizon_minutes))
         .where(ForecastSQL.timestamp_utc < end_utc)
@@ -140,7 +141,7 @@ def _get_latest_forecast_by_sites(
     query = query.join(SiteSQL)
     query = query.join(m_site, SiteSQL.ml_model, isouter=True)
     query = query.join(m_fv, ForecastValueSQL.ml_model, isouter=True)
-    query = query.filter(or_(a, b))
+    query = query.where(or_(a, b))
 
     # only get future forecast values. This solves the case when a forecast is made 1 day a go,
     # but since then, no new forecast have been made
