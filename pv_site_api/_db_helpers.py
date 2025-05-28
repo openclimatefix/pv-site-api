@@ -14,11 +14,17 @@ from typing import Any, Optional, Union
 import sqlalchemy as sa
 import structlog
 from fastapi import HTTPException
-from pvsite_datamodel import MLModelSQL, SiteGroupSQL, UserSQL
+from pvsite_datamodel import SiteGroupSQL, UserSQL
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.user import get_user_by_email
-from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteGroupSiteSQL, SiteSQL
-from sqlalchemy import func
+from pvsite_datamodel.sqlmodels import (
+    ForecastSQL,
+    ForecastValueSQL,
+    MLModelSQL,
+    SiteGroupSiteSQL,
+    SiteSQL,
+)
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session, aliased
 
 from .convert import (
@@ -55,8 +61,13 @@ def _get_forecasts_for_horizon(
 ) -> list[Row]:
     """Get the forecasts for given sites for a given horizon."""
 
-    m1 = aliased(MLModelSQL)
-    m2 = aliased(MLModelSQL)
+    m_site = aliased(MLModelSQL)
+    m_fv = aliased(MLModelSQL)
+    # we want to do some filter on the following conditions
+    # 1. If site and forecast value ml model are set, we want to filter on them being the same.
+    a = and_((m_site.name.isnot(None)), (m_fv.name.isnot(None)), (m_site.name == m_fv.name))
+    # 2. If both site ml model is not set,
+    b = m_site.name.is_(None)
 
     query = (
         session.query(ForecastSQL, ForecastValueSQL)
@@ -65,14 +76,10 @@ def _get_forecasts_for_horizon(
         .distinct(ForecastSQL.site_uuid, ForecastSQL.timestamp_utc)
         .join(ForecastValueSQL)
         .join(SiteSQL)
-        .join(m1, SiteSQL.ml_model)
-        .join(m2, ForecastValueSQL.ml_model)
+        .join(m_site, SiteSQL.ml_model, isouter=True)
+        .join(m_fv, ForecastValueSQL.ml_model, isouter=True)
         .where(ForecastSQL.site_uuid.in_(site_uuids))
-        # filter on site ml model, if not null
-        .where(
-            (SiteSQL.ml_model_uuid.isnot_(None))
-            & (m1.ml_model_uuid == m2.ml_model_uuid)
-        )
+        .filter(or_(a, b))
         # Also filtering on `timestamp_utc` makes the query faster.
         .where(ForecastSQL.timestamp_utc >= start_utc - dt.timedelta(minutes=horizon_minutes))
         .where(ForecastSQL.timestamp_utc < end_utc)
@@ -126,8 +133,13 @@ def _get_latest_forecast_by_sites(
     ).all()
     forecast_uuids = [forecast.forecast_uuid for forecast in forecasts]
 
-    m1 = aliased(MLModelSQL)
-    m2 = aliased(MLModelSQL)
+    m_site = aliased(MLModelSQL)
+    m_fv = aliased(MLModelSQL)
+    # we want to do some filter on the following conditions
+    # 1. If site and forecast value ml model are set, we want to filter on them being the same.
+    a = and_((m_site.name.isnot(None)), (m_fv.name.isnot(None)), (m_site.name == m_fv.name))
+    # 2. If both site ml model is not set,
+    b = m_site.name.is_(None)
 
     # Join the forecast values.
     query = session.query(ForecastSQL, ForecastValueSQL)
@@ -136,10 +148,9 @@ def _get_latest_forecast_by_sites(
 
     # filter on site ml model, if not null
     query = query.join(SiteSQL)
-    query = query.where(
-        (SiteSQL.ml_model_uuid.isnot_(None))
-        & (m1.ml_model_uuid == m2.ml_model_uuid)
-    )
+    query = query.join(m_site, SiteSQL.ml_model, isouter=True)
+    query = query.join(m_fv, ForecastValueSQL.ml_model, isouter=True)
+    query = query.filter(or_(a, b))
 
     # only get future forecast values. This solves the case when a forecast is made 1 day a go,
     # but since then, no new forecast have been made
