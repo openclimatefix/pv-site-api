@@ -362,8 +362,8 @@ def make_ml_model_alias_and_conditions():
     We make a pair of aliased MLModelSQL objects to represent the site and forecast value
     ML models. This allows us to filter on the site and forecast value ML models being the same.
     And we make two conditions to filter on:
-    1. If both site and forecast value ML models are set, we want to filter on them being the same.
-    2. If the site ML model is not set, we want to filter on the forecast value ML model being set.
+    A. If both site and forecast value ML models are set, we want to filter on them being the same.
+    B. If the site ML model is not set, we want to get all forecast values
     """
     m_site = aliased(MLModelSQL)
     m_fv = aliased(MLModelSQL)
