@@ -61,13 +61,8 @@ def _get_forecasts_for_horizon(
 ) -> list[Row]:
     """Get the forecasts for given sites for a given horizon."""
 
-    m_site = aliased(MLModelSQL)
-    m_fv = aliased(MLModelSQL)
-    # we want to do some filter on the following conditions
-    # 1. If site and forecast value ml model are set, we want to filter on them being the same.
-    a = and_((m_site.name.isnot(None)), (m_fv.name.isnot(None)), (m_site.name == m_fv.name))
-    # 2. If both site ml model is not set,
-    b = m_site.name.is_(None)
+    # make conditions and aliases for ML models
+    a, b, m_fv, m_site = make_ml_model_alias_and_conditions()
 
     query = (
         session.query(ForecastSQL, ForecastValueSQL)
@@ -133,13 +128,8 @@ def _get_latest_forecast_by_sites(
     ).all()
     forecast_uuids = [forecast.forecast_uuid for forecast in forecasts]
 
-    m_site = aliased(MLModelSQL)
-    m_fv = aliased(MLModelSQL)
-    # we want to do some filter on the following conditions
-    # 1. If site and forecast value ml model are set, we want to filter on them being the same.
-    a = and_((m_site.name.isnot(None)), (m_fv.name.isnot(None)), (m_site.name == m_fv.name))
-    # 2. If both site ml model is not set,
-    b = m_site.name.is_(None)
+    # make conditions and aliases for ML models
+    a, b, m_fv, m_site = make_ml_model_alias_and_conditions()
 
     # Join the forecast values.
     query = session.query(ForecastSQL, ForecastValueSQL)
@@ -363,3 +353,20 @@ def get_sites_from_user(session, user, lat_lon_limits: Optional[LatitudeLongitud
     else:
         sites = user.site_group.sites
     return sites
+
+
+def make_ml_model_alias_and_conditions():
+    """Make ML model Aliases and conditions for filtering.
+
+    We make a pair of aliased MLModelSQL objects to represent the site and forecast value
+    ML models. This allows us to filter on the site and forecast value ML models being the same.
+    And we make two conditions to filter on:
+    1. If both site and forecast value ML models are set, we want to filter on them being the same.
+    2. If the site ML model is not set, we want to filter on the forecast value ML model being set.
+    """
+    m_site = aliased(MLModelSQL)
+    m_fv = aliased(MLModelSQL)
+
+    a = and_((m_site.name.isnot(None)), (m_fv.name.isnot(None)), (m_site.name == m_fv.name))
+    b = m_site.name.is_(None)
+    return a, b, m_fv, m_site
