@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from freezegun import freeze_time
 from pvsite_datamodel.pydantic_models import ForecastValueSum
+from pvsite_datamodel.read.model import get_or_create_model
 from pvsite_datamodel.sqlmodels import SiteSQL
 
 from pv_site_api.pydantic_models import Forecast, ManyForecastCompact
@@ -34,6 +35,36 @@ def test_get_forecast(db_session, client, forecast_values):
 
     forecast = Forecast(**response.json())
     assert len(forecast.forecast_values) > 0
+
+
+def test_get_forecast_filter_ml_model(db_session, client, forecast_values, sites):
+    site_uuid = forecast_values[0].forecast.site_uuid
+    site = db_session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).first()
+
+    # same model name, but different version
+    site.ml_model = get_or_create_model(
+        db_session=db_session, model_name="test_model", model_version="0.0.2"
+    )
+
+    response = client.get(f"/sites/{site_uuid}/pv_forecast")
+    assert response.status_code == 200
+
+    forecast = Forecast(**response.json())
+    assert len(forecast.forecast_values) > 0
+
+
+def test_get_forecast_filter_ml_model_no_data(db_session, client, forecast_values):
+    site_uuid = forecast_values[0].forecast.site_uuid
+    site = db_session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).first()
+
+    site.ml_model = get_or_create_model(
+        db_session=db_session, model_name="test_model_2", model_version="0.0.1"
+    )
+    response = client.get(f"/sites/{site_uuid}/pv_forecast")
+    assert response.status_code == 200
+
+    forecast = Forecast(**response.json())
+    assert len(forecast.forecast_values) == 0
 
 
 def test_get_forecast_many_sites(db_session, client, forecast_values, sites):

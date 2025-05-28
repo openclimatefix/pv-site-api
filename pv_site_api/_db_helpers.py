@@ -14,12 +14,12 @@ from typing import Any, Optional, Union
 import sqlalchemy as sa
 import structlog
 from fastapi import HTTPException
-from pvsite_datamodel import SiteGroupSQL, UserSQL
+from pvsite_datamodel import MLModelSQL, SiteGroupSQL, UserSQL
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.sqlmodels import ForecastSQL, ForecastValueSQL, SiteGroupSiteSQL, SiteSQL
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from .convert import (
     forecast_rows_sums_to_pydantic_objects,
@@ -54,6 +54,10 @@ def _get_forecasts_for_horizon(
     sum_by: Optional[str] = None,
 ) -> list[Row]:
     """Get the forecasts for given sites for a given horizon."""
+
+    m1 = aliased(MLModelSQL)
+    m2 = aliased(MLModelSQL)
+
     query = (
         session.query(ForecastSQL, ForecastValueSQL)
         # We need a DISTINCT ON statement in cases where we have run two forecasts for the same
@@ -61,11 +65,13 @@ def _get_forecasts_for_horizon(
         .distinct(ForecastSQL.site_uuid, ForecastSQL.timestamp_utc)
         .join(ForecastValueSQL)
         .join(SiteSQL)
+        .join(m1, SiteSQL.ml_model)
+        .join(m2, ForecastValueSQL.ml_model)
         .where(ForecastSQL.site_uuid.in_(site_uuids))
         # filter on site ml model, if not null
         .where(
             (SiteSQL.ml_model_uuid.isnot_(None))
-            & (ForecastValueSQL.ml_model_uuid == SiteSQL.ml_model_uuid)
+            & (m1.ml_model_uuid == m2.ml_model_uuid)
         )
         # Also filtering on `timestamp_utc` makes the query faster.
         .where(ForecastSQL.timestamp_utc >= start_utc - dt.timedelta(minutes=horizon_minutes))
@@ -120,6 +126,9 @@ def _get_latest_forecast_by_sites(
     ).all()
     forecast_uuids = [forecast.forecast_uuid for forecast in forecasts]
 
+    m1 = aliased(MLModelSQL)
+    m2 = aliased(MLModelSQL)
+
     # Join the forecast values.
     query = session.query(ForecastSQL, ForecastValueSQL)
     query = query.join(ForecastValueSQL)
@@ -129,7 +138,7 @@ def _get_latest_forecast_by_sites(
     query = query.join(SiteSQL)
     query = query.where(
         (SiteSQL.ml_model_uuid.isnot_(None))
-        & (ForecastValueSQL.ml_model_uuid == SiteSQL.ml_model_uuid)
+        & (m1.ml_model_uuid == m2.ml_model_uuid)
     )
 
     # only get future forecast values. This solves the case when a forecast is made 1 day a go,
