@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import freezegun
 import pytest
 from fastapi.testclient import TestClient
+from pvsite_datamodel.read.model import get_or_create_model
 from pvsite_datamodel.sqlmodels import Base, ForecastSQL, ForecastValueSQL, GenerationSQL, StatusSQL
 from pvsite_datamodel.write.user_and_site import create_site_group, create_user, make_fake_site
 from sqlalchemy import create_engine
@@ -141,6 +142,11 @@ def forecast_values(db_session, sites):
     # To make things trickier we make a second forecast at the same for one of the timestamps.
     timestamps = timestamps + timestamps[-1:]
 
+    # get model
+    model = get_or_create_model(session=db_session, name="test_model", version="0.0.1")
+    db_session.add(model)
+    db_session.commit()
+
     for site in sites:
         for timestamp in timestamps:
             forecast: ForecastSQL = ForecastSQL(
@@ -161,6 +167,7 @@ def forecast_values(db_session, sites):
                     end_utc=timestamp + timedelta(minutes=horizon + duration),
                     horizon_minutes=horizon,
                 )
+                forecast_value.ml_model = model
 
                 forecast_values.append(forecast_value)
 
