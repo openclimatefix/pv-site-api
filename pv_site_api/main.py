@@ -437,7 +437,7 @@ def delete_site_info(
 
     logger.info(f"Remove site {site_uuid} for user {user.email} ")
 
-    # remove site fromr user group,
+    # remove site from user group,
     remove_site_from_site_group(
         session=session, site_uuid=site_uuid, site_group_name=user.site_group.site_group_name
     )
