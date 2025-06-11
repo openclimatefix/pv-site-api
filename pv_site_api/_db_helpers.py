@@ -309,8 +309,6 @@ def check_user_has_access_to_site(session: Session, auth: dict, site_uuid: str) 
             f"User has access to {site_uuids}",
         )
 
-    return user
-
 
 def check_user_has_access_to_sites(session: Session, auth: dict, site_uuids: list[str]):
     """

@@ -418,7 +418,7 @@ def post_site_info(
 
 
 @app.delete("/sites/delete/{site_uuid}", tags=["Sites"])
-def delete_site_info(
+def delete_site(
     site_uuid: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
@@ -433,8 +433,9 @@ def delete_site_info(
         return {"message": "Site deleted successfully"}
 
     # check user has access to site
-    user = check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
+    check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
+    user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
     logger.info(f"Remove site {site_uuid} for user {user.email} ")
 
     # remove site fromr user group,
