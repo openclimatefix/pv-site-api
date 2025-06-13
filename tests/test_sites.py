@@ -23,6 +23,23 @@ def test_get_site_list(client, sites):
     assert len(pv_sites.site_list) > 0
 
 
+def test_get_site_list__one_inactive(client, sites):
+    response = client.get("/sites")
+    assert response.status_code == 200, response.text
+    pv_sites = PVSites(**response.json())
+
+    assert len(pv_sites.site_list) == 3
+
+    # set one to inactive
+    sites[0].active = False
+
+    response = client.get("/sites")
+    assert response.status_code == 200, response.text
+    pv_sites = PVSites(**response.json())
+
+    assert len(pv_sites.site_list) == 2
+
+
 def test_get_site_list_max(client, sites):
     # examples sites are at 51,3
     response = client.get("/sites?latitude_longitude_max=50,4")

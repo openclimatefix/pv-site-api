@@ -217,6 +217,9 @@ def get_sites(
         user=user,
     )
 
+    # only select active sites
+    sites = [site for site in sites if site.active]
+
     logger.debug(f"Found {len(sites)} sites")
 
     # order sites
