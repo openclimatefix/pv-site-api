@@ -20,7 +20,12 @@ from pvsite_datamodel.read.site import get_site_by_uuid
 from pvsite_datamodel.read.status import get_latest_status
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.write.generation import insert_generation_values
-from pvsite_datamodel.write.user_and_site import create_site, delete_site, edit_site
+from pvsite_datamodel.write.user_and_site import (
+    create_site,
+    edit_site,
+    remove_site_from_site_group,
+    set_site_to_inactive_if_not_in_site_group,
+)
 from sqlalchemy.orm import Session
 
 import pv_site_api
@@ -413,7 +418,7 @@ def post_site_info(
 
 
 @app.delete("/sites/delete/{site_uuid}", tags=["Sites"])
-def delete_site_info(
+def delete_site(
     site_uuid: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
@@ -430,10 +435,21 @@ def delete_site_info(
     # check user has access to site
     check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
-    # delete site
-    message = delete_site(session=session, site_uuid=site_uuid)
+    user = get_user_by_email(session=session, email=auth["https://openclimatefix.org/email"])
+    logger.info(f"Remove site {site_uuid} for user {user.email} ")
 
-    return message
+    # remove site from user group,
+    remove_site_from_site_group(
+        session=session, site_uuid=site_uuid, site_group_name=user.site_group.site_group_name
+    )
+
+    site = get_site_by_uuid(session=session, site_uuid=site_uuid)
+    logger.info(f" Site {site_uuid} is in {len(site.site_groups)} site groups")
+
+    # set to inactive, if not left in any group
+    set_site_to_inactive_if_not_in_site_group(
+        session=session, site_uuid=site_uuid, user_uuid=user.user_uuid
+    )
 
 
 # get_pv_actual: the client can read pv data from the past

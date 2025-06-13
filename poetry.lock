@@ -1321,13 +1321,13 @@ test = ["pytest", "pytest-cov", "pytest-mock", "pytest-remotedata", "pytest-reru
 
 [[package]]
 name = "pvsite-datamodel"
-version = "1.0.57"
+version = "1.0.58"
 description = "SDK for interacting with the PVSite database"
 optional = false
 python-versions = "<4.0,>=3.11"
 files = [
-    {file = "pvsite_datamodel-1.0.57-py3-none-any.whl", hash = "sha256:eb49bed9f145dbb028bc43e433ff4f1a93e4a40d574d59dc3161146389d3562c"},
-    {file = "pvsite_datamodel-1.0.57.tar.gz", hash = "sha256:055f98636832824404b83b8ee66fc997aab317f9874fa5c966957b08ed323b93"},
+    {file = "pvsite_datamodel-1.0.58-py3-none-any.whl", hash = "sha256:d11621a0ab8f978301a29f2bce259a96cb53deeb38e22816e4a2128c8e9643b9"},
+    {file = "pvsite_datamodel-1.0.58.tar.gz", hash = "sha256:352cfb00d5d4597b5d8e52036fbbc01ef529639b7adaf6dec857fb386960d95e"},
 ]
 
 [package.dependencies]
@@ -2503,4 +2503,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "2d41d1c7658758d974b0cb67d03a3defd7d9782bf9a07384bbf608e69fce9cfd"
+content-hash = "8a31a23c1254e804fffe92fd6f7cf5bfac4cf9ec654351a4a6e2f7dec530728e"

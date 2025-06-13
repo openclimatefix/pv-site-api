@@ -292,7 +292,7 @@ def does_site_exist(session: Session, site_uuid: str) -> bool:
     )
 
 
-def check_user_has_access_to_site(session: Session, auth: dict, site_uuid: str):
+def check_user_has_access_to_site(session: Session, auth: dict, site_uuid: str) -> UserSQL:
     """
     Checks if a user has access to a site.
     """
