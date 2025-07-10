@@ -64,7 +64,7 @@ def sites(db_session):
 
     site_group = create_site_group(db_session=db_session)
     create_user(
-        session=db_session, email="test@test.com", site_group_name=site_group.site_group_name
+        session=db_session, email="test@test.com", site_group_name=site_group.location_group_name
     )
 
     sites = []
@@ -75,7 +75,7 @@ def sites(db_session):
         site.gsp = f"test_gsp_{j}"
 
         sites.append(site)
-        site_group.sites.append(site)
+        site_group.locations.append(site)
 
     db_session.add_all(sites)
     db_session.commit()
@@ -92,7 +92,7 @@ def generations(db_session, sites):
     for site in sites:
         for i in range(0, 10):
             generation = GenerationSQL(
-                site_uuid=site.site_uuid,
+                location_uuid=site.location_uuid,
                 generation_power_kw=i,
                 start_utc=start_times[i],
                 end_utc=start_times[i] + timedelta(minutes=5),
@@ -150,7 +150,7 @@ def forecast_values(db_session, sites):
     for site in sites:
         for timestamp in timestamps:
             forecast: ForecastSQL = ForecastSQL(
-                site_uuid=site.site_uuid, forecast_version=forecast_version, timestamp_utc=timestamp
+                location_uuid=site.location_uuid, forecast_version=forecast_version, timestamp_utc=timestamp
             )
 
             db_session.add(forecast)

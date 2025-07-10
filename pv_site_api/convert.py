@@ -41,7 +41,7 @@ def forecast_rows_to_pydantic_compact(rows: list[Row]) -> ManyForecastCompact:
     start_utc_idx: dict[str, int] = {}
 
     for row in rows:
-        site_uuid = str(row.ForecastSQL.site_uuid)
+        site_uuid = str(row.ForecastSQL.location_uuid)
 
         start_utc = row.ForecastValueSQL.start_utc
         expected_generation_kw = round(row.ForecastValueSQL.forecast_power_kw, 3)
@@ -89,7 +89,7 @@ def forecast_rows_to_pydantic(rows: list[Row]) -> list[Forecast]:
     fv_uuids: dict[str, set[uuid.UUID]] = defaultdict(set)
 
     for row in rows:
-        site_uuid = str(row.ForecastSQL.site_uuid)
+        site_uuid = str(row.ForecastSQL.location_uuid)
 
         if site_uuid not in data:
             data[site_uuid]["site_uuid"] = site_uuid
@@ -127,7 +127,7 @@ def generation_rows_to_pydantic(pv_actual_values_per_site, rows, site_uuids):
     """Convert generation rows to a MultiplePVActual object."""
     logger.info("Formatting generation 1")
     for row in rows:
-        site_uuid = str(row.site_uuid)
+        site_uuid = str(row.location_uuid)
         generation_power_kw = np.round(row.generation_power_kw, 3)
         pv_actual_values_per_site[site_uuid].append(
             PVActualValue(
@@ -152,7 +152,7 @@ def generation_rows_to_pydantic_compact(rows) -> MultipleSitePVActualCompact:
     pv_actual_values_per_site = {}
     start_utc_idx = {}
     for row in rows:
-        site_uuid = str(row.site_uuid)
+        site_uuid = str(row.location_uuid)
         start_utc = row.start_utc
         generation_power_kw = np.round(row.generation_power_kw, 3)
 

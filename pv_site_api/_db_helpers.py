@@ -14,15 +14,15 @@ from typing import Any, Optional, Union
 import sqlalchemy as sa
 import structlog
 from fastapi import HTTPException
-from pvsite_datamodel import SiteGroupSQL, UserSQL
+from pvsite_datamodel import LocationGroupSQL, UserSQL
 from pvsite_datamodel.read.generation import get_pv_generation_by_sites
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.sqlmodels import (
     ForecastSQL,
     ForecastValueSQL,
     MLModelSQL,
-    SiteGroupSiteSQL,
-    SiteSQL,
+    LocationGroupLocationSQL,
+    LocationSQL,
 )
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session, aliased
@@ -68,12 +68,12 @@ def _get_forecasts_for_horizon(
         session.query(ForecastSQL, ForecastValueSQL)
         # We need a DISTINCT ON statement in cases where we have run two forecasts for the same
         # time. In practice this shouldn't happen often.
-        .distinct(ForecastSQL.site_uuid, ForecastSQL.timestamp_utc)
+        .distinct(ForecastSQL.location_uuid, ForecastSQL.timestamp_utc)
         .join(ForecastValueSQL)
-        .where(ForecastSQL.site_uuid.in_(site_uuids))
+        .where(ForecastSQL.location_uuid.in_(site_uuids))
         # filter on site ml model, if not null
-        .join(SiteSQL)
-        .join(m_site, SiteSQL.ml_model, isouter=True)
+        .join(LocationSQL)
+        .join(m_site, LocationSQL.ml_model, isouter=True)
         .join(m_fv, ForecastValueSQL.ml_model, isouter=True)
         .where(or_(a, b))
         # Also filtering on `timestamp_utc` makes the query faster.
@@ -82,7 +82,7 @@ def _get_forecasts_for_horizon(
         .where(ForecastValueSQL.horizon_minutes == horizon_minutes)
         .where(ForecastValueSQL.start_utc >= start_utc)
         .where(ForecastValueSQL.start_utc < end_utc)
-        .order_by(ForecastSQL.site_uuid, ForecastSQL.timestamp_utc)
+        .order_by(ForecastSQL.location_uuid, ForecastSQL.timestamp_utc)
     )
 
     if sum_by is not None:
@@ -90,15 +90,15 @@ def _get_forecasts_for_horizon(
 
         group_by_variables = [subquery.c.start_utc]
         if sum_by == "dno":
-            group_by_variables.append(SiteSQL.dno)
+            group_by_variables.append(LocationSQL.dno)
         if sum_by == "gsp":
-            group_by_variables.append(SiteSQL.gsp)
+            group_by_variables.append(LocationSQL.gsp)
         query_variables = group_by_variables.copy()
         query_variables.append(func.sum(subquery.c.forecast_power_kw))
 
         query = session.query(*query_variables)
         query = query.join(ForecastSQL, ForecastSQL.forecast_uuid == subquery.c.forecast_uuid)
-        query = query.join(SiteSQL)
+        query = query.join(LocationSQL)
         query = query.group_by(*group_by_variables)
         query = query.order_by(*group_by_variables)
         forecasts_raw = query.all()
@@ -120,10 +120,10 @@ def _get_latest_forecast_by_sites(
     # Get the latest forecast for each site.
     forecasts = (
         session.query(ForecastSQL.forecast_uuid)
-        .distinct(ForecastSQL.site_uuid)
-        .filter(ForecastSQL.site_uuid.in_([uuid.UUID(su) for su in site_uuids]))
+        .distinct(ForecastSQL.location_uuid)
+        .filter(ForecastSQL.location_uuid.in_([uuid.UUID(su) for su in site_uuids]))
         .order_by(
-            ForecastSQL.site_uuid,
+            ForecastSQL.location_uuid,
             ForecastSQL.timestamp_utc.desc(),
         )
     ).all()
@@ -138,8 +138,8 @@ def _get_latest_forecast_by_sites(
     query = query.where(ForecastSQL.forecast_uuid.in_(forecast_uuids))
 
     # filter on site ml model, if not null
-    query = query.join(SiteSQL)
-    query = query.join(m_site, SiteSQL.ml_model, isouter=True)
+    query = query.join(LocationSQL)
+    query = query.join(m_site, LocationSQL.ml_model, isouter=True)
     query = query.join(m_fv, ForecastValueSQL.ml_model, isouter=True)
     query = query.where(or_(a, b))
 
@@ -162,15 +162,15 @@ def _get_latest_forecast_by_sites(
 
         group_by_variables = [subquery.c.start_utc]
         if sum_by == "dno":
-            group_by_variables.append(SiteSQL.dno)
+            group_by_variables.append(LocationSQL.dno)
         if sum_by == "gsp":
-            group_by_variables.append(SiteSQL.gsp)
+            group_by_variables.append(LocationSQL.gsp)
         query_variables = group_by_variables.copy()
         query_variables.append(func.sum(subquery.c.forecast_power_kw))
 
         query = session.query(*query_variables)
         query = query.join(ForecastSQL, ForecastSQL.forecast_uuid == subquery.c.forecast_uuid)
-        query = query.join(SiteSQL)
+        query = query.join(LocationSQL)
         query = query.group_by(*group_by_variables)
         query = query.order_by(*group_by_variables)
         forecasts_raw = query.all()
@@ -258,17 +258,17 @@ def get_generation_by_sites(
 
 
 def get_sites_by_uuids(session: Session, site_uuids: list[str]) -> list[PVSiteMetadata]:
-    sites = session.query(SiteSQL).where(SiteSQL.site_uuid.in_(site_uuids)).all()
+    sites = session.query(LocationSQL).where(LocationSQL.location_uuid.in_(site_uuids)).all()
     pydantic_sites = [site_to_pydantic(site) for site in sites]
     return pydantic_sites
 
 
-def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
-    """Converts a SiteSQL object into a PVSiteMetadata object."""
+def site_to_pydantic(site: LocationSQL) -> PVSiteMetadata:
+    """Converts a LocationSQL object into a PVSiteMetadata object."""
     pv_site = PVSiteMetadata(
-        site_uuid=str(site.site_uuid),
-        client_site_id=str(site.client_site_id),
-        client_site_name=str(site.client_site_name),
+        site_uuid=str(site.location_uuid),
+        client_site_id=str(site.client_location_id),
+        client_site_name=str(site.client_location_name),
         region=site.region,
         dno=site.dno,
         gsp=site.gsp,
@@ -287,7 +287,7 @@ def site_to_pydantic(site: SiteSQL) -> PVSiteMetadata:
 def does_site_exist(session: Session, site_uuid: str) -> bool:
     """Checks if a site exists."""
     return (
-        session.execute(sa.select(SiteSQL).where(SiteSQL.site_uuid == site_uuid)).one_or_none()
+        session.execute(sa.select(LocationSQL).where(LocationSQL.location_uuid == site_uuid)).one_or_none()
         is not None
     )
 
@@ -300,7 +300,7 @@ def check_user_has_access_to_site(session: Session, auth: dict, site_uuid: str) 
     email = auth["https://openclimatefix.org/email"]
 
     user = get_user_by_email(session=session, email=email)
-    site_uuids = [str(site.site_uuid) for site in user.site_group.sites]
+    site_uuids = [str(site.location_uuid) for site in user.location_group.locations]
     if site_uuid not in site_uuids:
         raise HTTPException(
             status_code=403,
@@ -318,7 +318,7 @@ def check_user_has_access_to_sites(session: Session, auth: dict, site_uuids: lis
     email = auth["https://openclimatefix.org/email"]
 
     user = get_user_by_email(session=session, email=email)
-    user_site_uuids = sorted([str(site.site_uuid) for site in user.site_group.sites])
+    user_site_uuids = sorted([str(site.location_uuid) for site in user.location_group.locations])
     site_uuids = sorted(site_uuids)
 
     if user_site_uuids != site_uuids:
@@ -341,18 +341,18 @@ def get_sites_from_user(session, user, lat_lon_limits: Optional[LatitudeLongitud
 
     # get sites and filter if required
     if lat_lon_limits is not None:
-        query = session.query(SiteSQL)
-        query = query.join(SiteGroupSiteSQL)
-        query = query.join(SiteGroupSQL)
+        query = session.query(LocationSQL)
+        query = query.join(LocationGroupLocationSQL)
+        query = query.join(LocationGroupSQL)
         query = query.join(UserSQL)
-        query = query.filter(SiteSQL.latitude <= lat_lon_limits.latitude_max)
-        query = query.filter(SiteSQL.latitude >= lat_lon_limits.latitude_min)
-        query = query.filter(SiteSQL.longitude <= lat_lon_limits.longitude_max)
-        query = query.filter(SiteSQL.longitude >= lat_lon_limits.longitude_min)
+        query = query.filter(LocationSQL.latitude <= lat_lon_limits.latitude_max)
+        query = query.filter(LocationSQL.latitude >= lat_lon_limits.latitude_min)
+        query = query.filter(LocationSQL.longitude <= lat_lon_limits.longitude_max)
+        query = query.filter(LocationSQL.longitude >= lat_lon_limits.longitude_min)
         sites = query.all()
 
     else:
-        sites = user.site_group.sites
+        sites = user.location_group.locations
     return sites
 
 

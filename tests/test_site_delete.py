@@ -2,7 +2,7 @@
 import json
 from datetime import datetime, timezone
 
-from pvsite_datamodel.sqlmodels import SiteSQL
+from pvsite_datamodel.sqlmodels import LocationSQL
 from pvsite_datamodel.write.user_and_site import (
     add_site_to_site_group,
     create_site_group,
@@ -35,13 +35,13 @@ def test_delete_site(db_session, client):
     response = client.post("/sites", json=pv_site_dict)
     assert response.status_code == 201, response.text
 
-    sites = db_session.query(SiteSQL).all()
+    sites = db_session.query(LocationSQL).all()
     assert len(sites) == 1
 
     # delete the site
-    response = client.delete(f"/sites/delete/{sites[0].site_uuid}")
+    response = client.delete(f"/sites/delete/{sites[0].location_uuid}")
 
-    sites = db_session.query(SiteSQL).all()
+    sites = db_session.query(LocationSQL).all()
     assert len(sites) == 1
     assert sites[0].active is False
 
@@ -69,25 +69,25 @@ def test_delete_site_two_users(db_session, client):
     response = client.post("/sites", json=pv_site_dict)
     assert response.status_code == 201, response.text
 
-    sites = db_session.query(SiteSQL).all()
+    sites = db_session.query(LocationSQL).all()
     assert len(sites) == 1
-    assert len(sites[0].site_groups) == 1
+    assert len(sites[0].location_groups) == 1
 
     # now lets make sure the site is in another site group
     site_group = create_site_group(db_session=db_session, site_group_name="test_group2")
     user = create_user(session=db_session, email="test2@test.com", site_group_name="test_group2")
     user.site_group = site_group
     add_site_to_site_group(
-        session=db_session, site_group_name=site_group.site_group_name, site_uuid=sites[0].site_uuid
+        session=db_session, site_group_name=site_group.location_group_name, site_uuid=sites[0].location_uuid
     )
 
-    assert len(sites[0].site_groups) == 2
+    assert len(sites[0].location_groups) == 2
 
     # delete the site
-    response = client.delete(f"/sites/delete/{sites[0].site_uuid}")
+    response = client.delete(f"/sites/delete/{sites[0].location_uuid}")
     assert response.status_code == 200
 
-    sites = db_session.query(SiteSQL).all()
+    sites = db_session.query(LocationSQL).all()
     assert len(sites) == 1
     assert sites[0].active  # is True
 
@@ -115,24 +115,24 @@ def test_delete_site_two_users_but_second_is_ocf(db_session, client):
     response = client.post("/sites", json=pv_site_dict)
     assert response.status_code == 201, response.text
 
-    sites = db_session.query(SiteSQL).all()
+    sites = db_session.query(LocationSQL).all()
     assert len(sites) == 1
-    assert len(sites[0].site_groups) == 1
+    assert len(sites[0].location_groups) == 1
 
     # now lets make sure the site is in another site group
     site_group = create_site_group(db_session=db_session, site_group_name="ocf")
     user = create_user(session=db_session, email="test2@test.com", site_group_name="ocf")
     user.site_group = site_group
     add_site_to_site_group(
-        session=db_session, site_group_name=site_group.site_group_name, site_uuid=sites[0].site_uuid
+        session=db_session, site_group_name=site_group.location_group_name, site_uuid=sites[0].location_uuid
     )
 
-    assert len(sites[0].site_groups) == 2
+    assert len(sites[0].location_groups) == 2
 
     # delete the site
-    response = client.delete(f"/sites/delete/{sites[0].site_uuid}")
+    response = client.delete(f"/sites/delete/{sites[0].location_uuid}")
     assert response.status_code == 200
 
-    sites = db_session.query(SiteSQL).all()
+    sites = db_session.query(LocationSQL).all()
     assert len(sites) == 1
     assert not sites[0].active
