@@ -21,7 +21,7 @@ def test_get_clearsky_many_sites_fake(client, fake):
 
 
 def test_get_clearsky(db_session, client, sites):
-    site_uuid = sites[0].site_uuid
+    site_uuid = sites[0].location_uuid
     response = client.get(f"/sites/{site_uuid}/clearsky_estimate")
     assert response.status_code == 200
 
@@ -30,7 +30,7 @@ def test_get_clearsky(db_session, client, sites):
 
 
 def test_get_clearsky_many_sites(db_session, client, sites):
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
 
     resp = client.get(f"/sites/clearsky_estimate?site_uuids={site_uuids_str}")

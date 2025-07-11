@@ -223,7 +223,7 @@ def get_sites(
     logger.debug(f"Found {len(sites)} sites")
 
     # order sites
-    sites = sorted(sites, key=lambda site: site.site_uuid)
+    sites = sorted(sites, key=lambda site: site.location_uuid)
 
     pv_sites = []
     for site in sites:
@@ -414,7 +414,7 @@ def post_site_info(
     session.commit()
 
     # make sure the user is added to the site
-    user.site_group.sites.append(site)
+    user.location_group.locations.append(site)
     session.commit()
 
     return site_to_pydantic(site)
@@ -443,11 +443,13 @@ def delete_site(
 
     # remove site from user group,
     remove_site_from_site_group(
-        session=session, site_uuid=site_uuid, site_group_name=user.site_group.site_group_name
+        session=session,
+        site_uuid=site_uuid,
+        site_group_name=user.location_group.location_group_name,
     )
 
     site = get_site_by_uuid(session=session, site_uuid=site_uuid)
-    logger.info(f" Site {site_uuid} is in {len(site.site_groups)} site groups")
+    logger.info(f" Site {site_uuid} is in {len(site.location_groups)} site groups")
 
     # set to inactive, if not left in any group
     set_site_to_inactive_if_not_in_site_group(

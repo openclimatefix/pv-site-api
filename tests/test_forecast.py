@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from freezegun import freeze_time
 from pvsite_datamodel.pydantic_models import ForecastValueSum
 from pvsite_datamodel.read.model import get_or_create_model
-from pvsite_datamodel.sqlmodels import SiteSQL
+from pvsite_datamodel.sqlmodels import LocationSQL
 
 from pv_site_api.pydantic_models import Forecast, ManyForecastCompact
 
@@ -29,7 +29,7 @@ def test_get_forecast_many_sites_fake(client, fake):
 
 
 def test_get_forecast(db_session, client, forecast_values):
-    site_uuid = forecast_values[0].forecast.site_uuid
+    site_uuid = forecast_values[0].forecast.location_uuid
     response = client.get(f"/sites/{site_uuid}/pv_forecast")
     assert response.status_code == 200
 
@@ -38,8 +38,8 @@ def test_get_forecast(db_session, client, forecast_values):
 
 
 def test_get_forecast_filter_ml_model(db_session, client, forecast_values, sites):
-    site_uuid = forecast_values[0].forecast.site_uuid
-    site = db_session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).first()
+    site_uuid = forecast_values[0].forecast.location_uuid
+    site = db_session.query(LocationSQL).filter(LocationSQL.location_uuid == site_uuid).first()
 
     # same model name, but different version
     site.ml_model = get_or_create_model(session=db_session, name="test_model", version="0.0.2")
@@ -52,8 +52,8 @@ def test_get_forecast_filter_ml_model(db_session, client, forecast_values, sites
 
 
 def test_get_forecast_filter_ml_model_no_data(db_session, client, forecast_values):
-    site_uuid = forecast_values[0].forecast.site_uuid
-    site = db_session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).first()
+    site_uuid = forecast_values[0].forecast.location_uuid
+    site = db_session.query(LocationSQL).filter(LocationSQL.location_uuid == site_uuid).first()
 
     site.ml_model = get_or_create_model(session=db_session, name="test_model_2", version="0.0.1")
     response = client.get(f"/sites/{site_uuid}/pv_forecast")
@@ -61,7 +61,7 @@ def test_get_forecast_filter_ml_model_no_data(db_session, client, forecast_value
 
 
 def test_get_forecast_many_sites(db_session, client, forecast_values, sites):
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
 
     resp = client.get(f"/sites/pv_forecast?site_uuids={site_uuids_str}")
@@ -84,7 +84,7 @@ def test_get_forecast_many_sites(db_session, client, forecast_values, sites):
 
 def test_get_forecast_many_sites_late_forecast_one_week(db_session, client, forecast_values, sites):
     """Test the case where the forecast stop working 1 week ago"""
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
 
     one_week_from_now = datetime.utcnow() + timedelta(days=7)
@@ -99,7 +99,7 @@ def test_get_forecast_many_sites_late_forecast_one_week(db_session, client, fore
 
 def test_get_forecast_many_sites_late_forecast_one_day(db_session, client, forecast_values, sites):
     """Test the case where the forecast stop working 1 day ago"""
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
     one_day_from_now = datetime.utcnow() + timedelta(days=1)
 
@@ -129,7 +129,7 @@ def test_get_forecast_many_sites_late_forecast_one_day(db_session, client, forec
 
 def test_get_forecast_many_sites_late_forecast_start(db_session, client, forecast_values, sites):
     """Test the case where the forecast stop working 1 day ago"""
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
     one_day_from_now = datetime.utcnow() + timedelta(days=1)
     start_utc = (datetime.utcnow() - timedelta(minutes=5)).isoformat()
@@ -147,7 +147,7 @@ def test_get_forecast_many_sites_late_forecast_start(db_session, client, forecas
 
 def test_get_forecast_many_sites_late_forecast_end(db_session, client, forecast_values, sites):
     """Test the case where the forecast stop working 1 day ago"""
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
     one_day_from_now = datetime.utcnow() + timedelta(days=1)
     end_utc = (datetime.utcnow() - timedelta(minutes=5)).isoformat()
@@ -167,7 +167,7 @@ def test_get_forecast_many_sites_late_forecast_one_day_compact(
     db_session, client, forecast_values, sites
 ):
     """Test the case where the forecast stop working 1 day ago"""
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
     one_day_from_now = datetime.utcnow() + timedelta(days=1)
 
@@ -188,7 +188,7 @@ def test_get_forecast_many_sites_late_forecast_one_day_total(
     db_session, client, forecast_values, sites
 ):
     """Test the case where the forecast stop working 1 day ago"""
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
     one_day_from_now = datetime.utcnow() + timedelta(days=1)
 
@@ -208,7 +208,7 @@ def test_get_forecast_many_sites_late_forecast_one_day_dno(
     db_session, client, forecast_values, sites
 ):
     """Test the case where the forecast stop working 1 day ago"""
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
     one_day_from_now = datetime.utcnow() + timedelta(days=1)
 
@@ -228,7 +228,7 @@ def test_get_forecast_many_sites_late_forecast_one_day_gsp(
     db_session, client, forecast_values, sites
 ):
     """Test the case where the forecast stop working 1 day ago"""
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuids_str = ",".join(site_uuids)
     one_day_from_now = datetime.utcnow() + timedelta(days=1)
 
@@ -245,10 +245,10 @@ def test_get_forecast_many_sites_late_forecast_one_day_gsp(
 
 
 def test_get_forecast_no_data(db_session, client, sites):
-    site = db_session.query(SiteSQL).first()
+    site = db_session.query(LocationSQL).first()
 
     # Get forecasts from that site with no forecasts.
-    resp = client.get(f"/sites/{site.site_uuid}/pv_forecast")
+    resp = client.get(f"/sites/{site.location_uuid}/pv_forecast")
     assert resp.status_code == 204
 
 
@@ -273,12 +273,12 @@ def test_get_forecast_empty_data_multiple_sites(db_session, client):
 
 def test_get_forecast_user_no_access(db_session, client, sites):
     # Make a brand new site.
-    site = SiteSQL(ml_id=123)
+    site = LocationSQL(ml_id=123)
     db_session.add(site)
     db_session.commit()
 
     # Get forecasts, but the user has no access to the site.
-    resp = client.get(f"/sites/{site.site_uuid}/pv_forecast")
+    resp = client.get(f"/sites/{site.location_uuid}/pv_forecast")
     assert resp.status_code == 403
 
 

@@ -26,7 +26,7 @@ def test_pv_actual_many_sites_fake(client, fake):
 
 
 def test_pv_actual(client, generations):
-    site_uuid = generations[0].site_uuid
+    site_uuid = generations[0].location_uuid
 
     response = client.get(f"/sites/{site_uuid}/pv_actual")
     assert response.status_code == 200
@@ -36,7 +36,7 @@ def test_pv_actual(client, generations):
 
 
 def test_pv_actual_many_sites(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuid_str = ",".join(site_uuids)
 
     resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}")
@@ -48,7 +48,7 @@ def test_pv_actual_many_sites(client, sites, generations):
 
 
 def test_pv_actual_many_sites_compact(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuid_str = ",".join(site_uuids)
 
     resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&compact=true")
@@ -60,7 +60,7 @@ def test_pv_actual_many_sites_compact(client, sites, generations):
 
 
 def test_pv_actual_many_sites_total(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuid_str = ",".join(site_uuids)
 
     resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&sum_by=total")
@@ -72,7 +72,7 @@ def test_pv_actual_many_sites_total(client, sites, generations):
 
 
 def test_pv_actual_many_sites_dno(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuid_str = ",".join(site_uuids)
 
     resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&sum_by=dno")
@@ -84,7 +84,7 @@ def test_pv_actual_many_sites_dno(client, sites, generations):
 
 
 def test_pv_actual_many_sites_start(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuid_str = ",".join(site_uuids)
     start_utc = (datetime.today() - timedelta(minutes=5)).isoformat()
 
@@ -98,7 +98,7 @@ def test_pv_actual_many_sites_start(client, sites, generations):
 
 
 def test_pv_actual_many_sites_end(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuid_str = ",".join(site_uuids)
     end_utc = (datetime.today()).isoformat()
 
@@ -113,7 +113,7 @@ def test_pv_actual_many_sites_end(client, sites, generations):
 
 
 def test_pv_actual_many_sites_gsp(client, sites, generations):
-    site_uuids = [str(s.site_uuid) for s in sites]
+    site_uuids = [str(s.location_uuid) for s in sites]
     site_uuid_str = ",".join(site_uuids)
 
     resp = client.get(f"/sites/pv_actual?site_uuids={site_uuid_str}&sum_by=gsp")
@@ -144,7 +144,7 @@ def test_post_fake_pv_actual(client, fake):
 def test_post_pv_actual(db_session, client, sites):
     db_session.query(GenerationSQL).delete()
 
-    site_uuid = sites[0].site_uuid
+    site_uuid = sites[0].location_uuid
     site_capacity_kw = sites[0].capacity_kw
 
     # below capacity testcase
@@ -165,13 +165,13 @@ def test_post_pv_actual(db_session, client, sites):
 
     generations = db_session.query(GenerationSQL).all()
     assert len(generations) == 1
-    assert str(generations[0].site_uuid) == str(pv_actual_iteration_below.site_uuid)
+    assert str(generations[0].location_uuid) == str(pv_actual_iteration_below.site_uuid)
 
 
 def test_post_pv_actual_above_capacity(db_session, client, sites):
     db_session.query(GenerationSQL).delete()
 
-    site_uuid = sites[0].site_uuid
+    site_uuid = sites[0].location_uuid
     site_capacity_kw = sites[0].capacity_kw
     capacity_factor = 1.1
 
@@ -195,7 +195,7 @@ def test_post_pv_actual_above_capacity(db_session, client, sites):
 
 def test_pv_actual_no_data(db_session, client, sites):
     # Get forecasts from that site with no actuals.
-    resp = client.get(f"/sites/{sites[0].site_uuid}/pv_actual")
+    resp = client.get(f"/sites/{sites[0].location_uuid}/pv_actual")
     assert resp.status_code == 204
 
 

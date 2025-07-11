@@ -2,7 +2,7 @@
 import json
 from datetime import datetime, timezone
 
-from pvsite_datamodel.sqlmodels import SiteSQL
+from pvsite_datamodel.sqlmodels import LocationSQL
 
 from pv_site_api.pydantic_models import PVSiteInputMetadata, PVSites
 
@@ -110,15 +110,15 @@ def test_put_site(db_session, client):
     response = client.post("/sites", json=pv_site_dict)
     assert response.status_code == 201, response.text
 
-    sites = db_session.query(SiteSQL).all()
+    sites = db_session.query(LocationSQL).all()
     assert len(sites) == 1
-    assert sites[0].site_uuid is not None
+    assert sites[0].location_uuid is not None
     assert sites[0].ml_id == 1
 
     response = client.post("/sites", json=pv_site_dict)
     assert response.status_code == 201, response.text
 
-    sites = db_session.query(SiteSQL).all()
+    sites = db_session.query(LocationSQL).all()
     assert len(sites) == 2
     assert sites[0].ml_id == 1
     assert sites[1].ml_id == 2
@@ -152,7 +152,7 @@ def test_put_site_and_update(db_session, client):
     response = client.put(f"sites/{site_uuid}", json={"orientation": 120})
     assert response.status_code == 200, response.text
 
-    sites = db_session.query(SiteSQL).all()
+    sites = db_session.query(LocationSQL).all()
     assert len(sites) == 1
     assert sites[0].orientation == 120
     assert sites[0].tilt == 90
