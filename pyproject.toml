@@ -20,7 +20,7 @@ structlog = "^22.3.0"
 pyjwt = {extras = ["crypto"], version = "^2.6.0"}
 geopandas = "^0.14.2"
 psutil = "^6.0.0"
-pvsite-datamodel = {git = "https://github.com/openclimatefix/pv-site-datamodel.git", branch = "site-location"}
+pvsite-datamodel = "1.2.0"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.12.0"
