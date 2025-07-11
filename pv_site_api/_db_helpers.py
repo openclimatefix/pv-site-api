@@ -20,9 +20,9 @@ from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.sqlmodels import (
     ForecastSQL,
     ForecastValueSQL,
-    MLModelSQL,
     LocationGroupLocationSQL,
     LocationSQL,
+    MLModelSQL,
 )
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session, aliased
