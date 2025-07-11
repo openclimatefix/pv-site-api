@@ -150,7 +150,9 @@ def forecast_values(db_session, sites):
     for site in sites:
         for timestamp in timestamps:
             forecast: ForecastSQL = ForecastSQL(
-                location_uuid=site.location_uuid, forecast_version=forecast_version, timestamp_utc=timestamp
+                location_uuid=site.location_uuid,
+                forecast_version=forecast_version,
+                timestamp_utc=timestamp,
             )
 
             db_session.add(forecast)

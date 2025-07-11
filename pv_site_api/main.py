@@ -443,7 +443,9 @@ def delete_site(
 
     # remove site from user group,
     remove_site_from_site_group(
-        session=session, site_uuid=site_uuid, site_group_name=user.location_group.location_group_name
+        session=session,
+        site_uuid=site_uuid,
+        site_group_name=user.location_group.location_group_name
     )
 
     site = get_site_by_uuid(session=session, site_uuid=site_uuid)

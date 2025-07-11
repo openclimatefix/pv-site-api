@@ -78,7 +78,9 @@ def test_delete_site_two_users(db_session, client):
     user = create_user(session=db_session, email="test2@test.com", site_group_name="test_group2")
     user.site_group = site_group
     add_site_to_site_group(
-        session=db_session, site_group_name=site_group.location_group_name, site_uuid=sites[0].location_uuid
+        session=db_session,
+        site_group_name=site_group.location_group_name,
+        site_uuid=sites[0].location_uuid,
     )
 
     assert len(sites[0].location_groups) == 2
@@ -124,7 +126,9 @@ def test_delete_site_two_users_but_second_is_ocf(db_session, client):
     user = create_user(session=db_session, email="test2@test.com", site_group_name="ocf")
     user.site_group = site_group
     add_site_to_site_group(
-        session=db_session, site_group_name=site_group.location_group_name, site_uuid=sites[0].location_uuid
+        session=db_session,
+        site_group_name=site_group.location_group_name,
+        site_uuid=sites[0].location_uuid,
     )
 
     assert len(sites[0].location_groups) == 2
