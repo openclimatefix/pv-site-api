@@ -3,6 +3,8 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-10-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
+⚠️ Note this repo will soon be deprecated in favour of [quartz-api](https://github.com/openclimatefix/quartz-api)
+
 API for PV site level forecasting
 
 
