@@ -247,12 +247,12 @@ def get_forecasts_by_sites(
         horizon_minutes=horizon_minutes,
         sum_by=sum_by,
     )
-    logger.info("Found %s past forecasts", len(rows_past))
+    logger.debug("Found %s past forecasts", len(rows_past))
 
     rows_future = _get_latest_forecast_by_sites(
         session=session, site_uuids=site_uuids, start_utc=start_utc, sum_by=sum_by, end_utc=end_utc
     )
-    logger.info("Found %s future forecasts", len(rows_future))
+    logger.debug("Found %s future forecasts", len(rows_future))
 
     if sum_by is not None:
         forecasts = forecast_rows_sums_to_pydantic_objects(rows_future + rows_past)
