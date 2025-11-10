@@ -27,14 +27,14 @@ from pvsite_datamodel.sqlmodels import (
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session, aliased
 
-from .convert import (
+from pv_site_api.convert import (
     forecast_rows_sums_to_pydantic_objects,
     forecast_rows_to_pydantic,
     forecast_rows_to_pydantic_compact,
     generation_rows_to_pydantic,
     generation_rows_to_pydantic_compact,
 )
-from .pydantic_models import (
+from pv_site_api.pydantic_models import (
     Forecast,
     LatitudeLongitudeLimits,
     ManyForecastCompact,
@@ -117,20 +117,23 @@ def _get_latest_forecast_by_sites(
     sum_by: Optional[str] = None,
 ) -> list[Row]:
     """Get the latest forecast for given site uuids."""
+
+    # make conditions and aliases for ML models
+    a, b, m_fv, m_site = make_ml_model_alias_and_conditions()
+
     # Get the latest forecast for each site.
     forecasts = (
         session.query(ForecastSQL.forecast_uuid)
+        .join(ForecastValueSQL)
         .distinct(ForecastSQL.location_uuid)
         .filter(ForecastSQL.location_uuid.in_([uuid.UUID(su) for su in site_uuids]))
+        .where(or_(a, b))
         .order_by(
             ForecastSQL.location_uuid,
             ForecastSQL.timestamp_utc.desc(),
         )
     ).all()
     forecast_uuids = [forecast.forecast_uuid for forecast in forecasts]
-
-    # make conditions and aliases for ML models
-    a, b, m_fv, m_site = make_ml_model_alias_and_conditions()
 
     # Join the forecast values.
     query = session.query(ForecastSQL, ForecastValueSQL)
@@ -206,12 +209,12 @@ def get_forecasts_by_sites(
         horizon_minutes=horizon_minutes,
         sum_by=sum_by,
     )
-    logger.debug("Found %s past forecasts", len(rows_past))
+    logger.info("Found %s past forecasts", len(rows_past))
 
     rows_future = _get_latest_forecast_by_sites(
         session=session, site_uuids=site_uuids, start_utc=start_utc, sum_by=sum_by, end_utc=end_utc
     )
-    logger.debug("Found %s future forecasts", len(rows_future))
+    logger.info("Found %s future forecasts", len(rows_future))
 
     if sum_by is not None:
         forecasts = forecast_rows_sums_to_pydantic_objects(rows_future + rows_past)
