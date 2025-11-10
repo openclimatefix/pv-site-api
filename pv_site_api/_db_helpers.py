@@ -124,8 +124,10 @@ def _get_latest_forecast_by_sites(
     # find locations, some with ml model attached, some without
     locations = session.query(LocationSQL).where(LocationSQL.location_uuid.in_(site_uuids)).all()
 
-    location_uuids_wth_ml_models = [loc.location_uuid for loc in locations if loc.ml_model_uuid is not None]
-    location_uuids_wthout_ml_models = [loc.location_uuid for loc in locations if loc.ml_model_uuid is None]
+    location_uuids_wth_ml_models = \
+        [loc.location_uuid for loc in locations if loc.ml_model_uuid is not None]
+    location_uuids_wthout_ml_models = \
+        [loc.location_uuid for loc in locations if loc.ml_model_uuid is None]
 
     logger.info(
         f"Getting latest forecast for {len(location_uuids_wth_ml_models)} sites with ML models "
