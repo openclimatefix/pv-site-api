@@ -117,7 +117,7 @@ def _get_latest_forecast_by_sites(
     sum_by: Optional[str] = None,
 ) -> list[Row]:
     """Get the latest forecast for given site uuids.
-    
+
     Here are the following steps we do
     1. Get all locations, and split between those with ML models and those without
     2. For those locations with ML models, get the latest forecast uuid where the ML model matches
