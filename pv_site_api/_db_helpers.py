@@ -27,14 +27,14 @@ from pvsite_datamodel.sqlmodels import (
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session, aliased
 
-from pv_site_api.convert import (
+from .convert import (
     forecast_rows_sums_to_pydantic_objects,
     forecast_rows_to_pydantic,
     forecast_rows_to_pydantic_compact,
     generation_rows_to_pydantic,
     generation_rows_to_pydantic_compact,
 )
-from pv_site_api.pydantic_models import (
+from .pydantic_models import (
     Forecast,
     LatitudeLongitudeLimits,
     ManyForecastCompact,
@@ -124,16 +124,16 @@ def _get_latest_forecast_by_sites(
     # find locations, some with ml model attached, some without
     locations = session.query(LocationSQL).where(LocationSQL.location_uuid.in_(site_uuids)).all()
 
-    location_uuids_wth_ml_models = [
+    location_uuids_with_ml_models = [
         loc.location_uuid for loc in locations if loc.ml_model_uuid is not None
     ]
-    location_uuids_wthout_ml_models = [
+    location_uuids_without_ml_models = [
         loc.location_uuid for loc in locations if loc.ml_model_uuid is None
     ]
 
     logger.info(
-        f"Getting latest forecast for {len(location_uuids_wth_ml_models)} sites with ML models "
-        f"and {len(location_uuids_wthout_ml_models)} sites without ML models"
+        f"Getting latest forecast for {len(location_uuids_with_ml_models)} sites with ML models "
+        f"and {len(location_uuids_without_ml_models)} sites without ML models"
     )
 
     # Get the latest forecast for each site.
@@ -144,7 +144,7 @@ def _get_latest_forecast_by_sites(
             session.query(ForecastSQL.forecast_uuid)
             .join(ForecastValueSQL)
             .distinct(ForecastSQL.location_uuid)
-            .filter(ForecastSQL.location_uuid.in_([su for su in location_uuids_wth_ml_models]))
+            .filter(ForecastSQL.location_uuid.in_([su for su in location_uuids_with_ml_models]))
             .join(LocationSQL)
             .join(m_site, LocationSQL.ml_model, isouter=True)
             .join(m_fv, ForecastValueSQL.ml_model, isouter=True)
@@ -165,7 +165,7 @@ def _get_latest_forecast_by_sites(
         forecasts = (
             session.query(ForecastSQL.forecast_uuid)
             .distinct(ForecastSQL.location_uuid)
-            .filter(ForecastSQL.location_uuid.in_([su for su in location_uuids_wthout_ml_models]))
+            .filter(ForecastSQL.location_uuid.in_([su for su in location_uuids_without_ml_models]))
             .order_by(
                 ForecastSQL.location_uuid,
                 ForecastSQL.timestamp_utc.desc(),
