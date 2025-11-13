@@ -112,27 +112,78 @@ def _get_forecasts_for_horizon(
 def _get_latest_forecast_by_sites(
     session: Session,
     site_uuids: list[str],
-    start_utc: Optional[dt.datetime] = None,
+    start_utc: dt.datetime,
     end_utc: Optional[dt.datetime] = None,
     sum_by: Optional[str] = None,
 ) -> list[Row]:
-    """Get the latest forecast for given site uuids."""
-    # Get the latest forecast for each site.
-    forecasts = (
-        session.query(ForecastSQL.forecast_uuid)
-        .distinct(ForecastSQL.location_uuid)
-        .filter(ForecastSQL.location_uuid.in_([uuid.UUID(su) for su in site_uuids]))
-        .order_by(
-            ForecastSQL.location_uuid,
-            ForecastSQL.timestamp_utc.desc(),
-        )
-    ).all()
-    forecast_uuids = [forecast.forecast_uuid for forecast in forecasts]
+    """Get the latest forecast for given site uuids.
+
+    Here are the following steps we do
+    1. Get all locations, and split between those with ML models and those without
+    2. For those locations with ML models, get the latest forecast uuid where the ML model matches
+         the site's ML model
+    3. For those without ML models, get the latest forecast uuid
+    4. Get the forecast values for all those forecast uuids from 2. and 3.
+    5. Optionally group by dno or gsp
+    """
 
     # make conditions and aliases for ML models
     a, b, m_fv, m_site = make_ml_model_alias_and_conditions()
 
-    # Join the forecast values.
+    # 1. find locations, some with ml model attached, some without
+    locations = session.query(LocationSQL).where(LocationSQL.location_uuid.in_(site_uuids)).all()
+
+    location_uuids_with_ml_models = [
+        loc.location_uuid for loc in locations if loc.ml_model_uuid is not None
+    ]
+    location_uuids_without_ml_models = [
+        loc.location_uuid for loc in locations if loc.ml_model_uuid is None
+    ]
+
+    logger.info(
+        f"Getting latest forecast for {len(location_uuids_with_ml_models)} sites with ML models "
+        f"and {len(location_uuids_without_ml_models)} sites without ML models"
+    )
+
+    # 2. Get the latest forecast for each site.
+    # for sites with ml models
+    forecast_uuids = []
+    if len(location_uuids_with_ml_models) > 0:
+        forecasts = (
+            session.query(ForecastSQL.forecast_uuid)
+            .join(ForecastValueSQL)
+            .distinct(ForecastSQL.location_uuid)
+            .filter(ForecastSQL.location_uuid.in_([su for su in location_uuids_with_ml_models]))
+            .join(LocationSQL)
+            .join(m_site, LocationSQL.ml_model, isouter=True)
+            .join(m_fv, ForecastValueSQL.ml_model, isouter=True)
+            .where(or_(a, b))
+            .where(ForecastValueSQL.start_utc >= start_utc)
+            .where(ForecastValueSQL.horizon_minutes == 15)
+            .where(ForecastSQL.timestamp_utc >= start_utc)
+            .order_by(
+                ForecastSQL.location_uuid,
+                ForecastSQL.timestamp_utc.desc(),
+            )
+        ).all()
+        forecast_uuids += [forecast.forecast_uuid for forecast in forecasts]
+
+    # 3. Get the latest forecast for each site.
+    # for sites without ml models
+    if len(location_uuids_without_ml_models) > 0:
+        forecasts = (
+            session.query(ForecastSQL.forecast_uuid)
+            .distinct(ForecastSQL.location_uuid)
+            .filter(ForecastSQL.location_uuid.in_([su for su in location_uuids_without_ml_models]))
+            .order_by(
+                ForecastSQL.location_uuid,
+                ForecastSQL.timestamp_utc.desc(),
+            )
+        ).all()
+        forecast_uuids += [forecast.forecast_uuid for forecast in forecasts]
+
+    # 4. Get the forecast values.
+    # Set up and filter on forecast uuids
     query = session.query(ForecastSQL, ForecastValueSQL)
     query = query.join(ForecastValueSQL)
     query = query.where(ForecastSQL.forecast_uuid.in_(forecast_uuids))
@@ -158,6 +209,7 @@ def _get_latest_forecast_by_sites(
     if sum_by is None:
         return query.all()
     else:
+        # 5. Optional group by dno or gsp
         subquery = query.subquery()
 
         group_by_variables = [subquery.c.start_utc]
