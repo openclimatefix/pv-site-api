@@ -841,7 +841,7 @@ def custom_openapi():
         contact={
             "name": "Quartz Solar by Open Climate Fix",
             "url": "https://quartz.solar",
-            "email": "info@openclimatefix.org",
+            "email": "support@quartz.solar",
         },
         license_info={
             "name": "MIT License",
