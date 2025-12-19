@@ -321,7 +321,7 @@ def post_pv_actual(
                 f"One (or more) values are larger than {capacity_factor} "
                 f"times the site capacity of {site_capacity_kw} kWp. "
                 "Please adjust this generation value, the site capacity, "
-                "or contact quartz.support@openclimatefix.org."
+                "or contact support@quartz.solar."
             ),
         )
 
