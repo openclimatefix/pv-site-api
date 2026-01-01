@@ -321,7 +321,7 @@ def post_pv_actual(
                 f"One (or more) values are larger than {capacity_factor} "
                 f"times the site capacity of {site_capacity_kw} kWp. "
                 "Please adjust this generation value, the site capacity, "
-                "or contact quartz.support@openclimatefix.org."
+                "or contact support@quartz.solar."
             ),
         )
 
@@ -841,7 +841,7 @@ def custom_openapi():
         contact={
             "name": "Quartz Solar by Open Climate Fix",
             "url": "https://quartz.solar",
-            "email": "info@openclimatefix.org",
+            "email": "support@quartz.solar",
         },
         license_info={
             "name": "MIT License",
