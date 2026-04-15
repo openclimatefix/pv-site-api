@@ -70,9 +70,10 @@ def test_get_forecast_many_sites(db_session, client, forecast_values, sites):
     forecasts = [Forecast(**x) for x in resp.json()]
 
     assert len(forecasts) == len(sites)
-    # We have 10 forecasts with 11 values each.
-    # We should get 0 values for the latest forecast, and 20 values (all but the most recent)
-    # for the first prediction for each (other) forecast.
+    # We have 10 forecasts with 11 values each (horizon 0..150 in 15-min steps).
+    # rows_past (horizon_minutes=0) returns 10 H=0 values, one per past forecast.
+    # rows_future returns 11 values from the latest forecast.
+    # 1 overlap (the H=0 value from the latest forecast). Total: 10+11-1 = 20.
     assert len(forecasts[0].forecast_values) == 20
 
     # Also check that the forecasts values are sorted by date.
@@ -111,8 +112,9 @@ def test_get_forecast_many_sites_late_forecast_one_day(db_session, client, forec
 
     assert len(forecasts) == len(sites)
     # We have 10 forecasts with 11 values each.
-    # We should get 11 values for the latest forecast, and 9 values (all but the most recent)
-    # for the first prediction for each (other) forecast.
+    # All 10 forecasts' horizon=15 values are in the past relative to now+1day,
+    # so rows_past = 10. rows_future = 11 from the latest forecast, with 1 overlap
+    # (the horizon=15 value at now+15 appears in both). Total: 10+11-1 = 20.
     assert len(forecasts[0].forecast_values) == 20
 
     # Also check that the forecasts values are sorted by date.
@@ -141,7 +143,9 @@ def test_get_forecast_many_sites_late_forecast_start(db_session, client, forecas
         forecasts = [Forecast(**x) for x in resp.json()]
 
     assert len(forecasts) == len(sites)
-    # We have 10 forecasts
+    # start_utc = real_now-5min. rows_past (horizon_minutes=0): only the forecast at T=now
+    # has its H=0 value (at T=now) >= start_utc; earlier forecasts' H=0 values are < start_utc.
+    # rows_future = 11. 1 overlap (H=0 from T=now). Total: 1+11-1 = 11.
     assert len(forecasts[0].forecast_values) == 11
 
 
@@ -159,7 +163,9 @@ def test_get_forecast_many_sites_late_forecast_end(db_session, client, forecast_
         forecasts = [Forecast(**x) for x in resp.json()]
 
     assert len(forecasts) == len(sites)
-    # We have 10 forecasts
+    # end_utc = real_now-5min. rows_past (horizon_minutes=0): forecasts at T=now-10 through
+    # T=now-90 have H=0 values < end_utc (T=now's H=0 value is >= end_utc). 9 past values.
+    # rows_future = 0 (latest forecast's values all start at >= now > end_utc). Total: 9.
     assert len(forecasts[0].forecast_values) == 9
 
 

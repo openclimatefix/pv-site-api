@@ -116,7 +116,7 @@ def forecast_rows_to_pydantic(rows: list[Row]) -> list[Forecast]:
 
     return [
         Forecast(
-            forecast_values=values[site_uuid],
+            forecast_values=sorted(values[site_uuid], key=lambda fv: fv.target_datetime_utc),
             **data[site_uuid],
         )
         for site_uuid in data.keys()

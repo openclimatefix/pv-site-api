@@ -569,6 +569,8 @@ def get_pv_forecast(
     site_uuid: str,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
+    start_utc: Optional[str] = None,
+    end_utc: Optional[str] = None,
 ):
     """
     ### This route is where you can pull a forecast for a single site.
@@ -584,6 +586,8 @@ def get_pv_forecast(
 
     #### Parameters
     - **site_uuid**: The site uuid, for example '8d39a579-8bed-490e-800e-1395a8eb6535'
+    - **start_utc**: Optional start datetime filter (ISO format), defaults to yesterday midnight
+    - **end_utc**: Optional end datetime filter (ISO format)
     """
     if is_fake():
         return make_fake_forecast(fake_site_uuid)
@@ -596,7 +600,12 @@ def get_pv_forecast(
     check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
     forecasts = get_pv_forecast_many_sites(
-        site_uuids=site_uuid, session=session, auth=auth, request=request
+        site_uuids=site_uuid,
+        session=session,
+        auth=auth,
+        request=request,
+        start_utc=start_utc,
+        end_utc=end_utc,
     )
 
     if len(forecasts) == 0:
@@ -618,6 +627,7 @@ def get_pv_forecast_many_sites(
     sum_by: Optional[str] = None,
     start_utc: Optional[str] = None,
     end_utc: Optional[str] = None,
+    horizon_minutes: Optional[int] = 0,
     compact: bool = False,
 ):
     """
@@ -636,6 +646,8 @@ def get_pv_forecast_many_sites(
     - **compact**: if True, the response will compact the data.
         This can be useful when pulling data for a large number of sites.
         If True the response object is _ManyForecastCompact_
+    - **horizon_minutes**: if > 0, only forecasts with horizon_minutes <= horizon will be returned.
+        The default is 0, which returns the latest forecast values.
     """
 
     logger.info(f"Getting forecasts for {site_uuids}")
@@ -673,7 +685,7 @@ def get_pv_forecast_many_sites(
         site_uuids=site_uuids_list,
         start_utc=start_utc,
         end_utc=end_utc,
-        horizon_minutes=0,
+        horizon_minutes=horizon_minutes,
         compact=compact,
         sum_by=sum_by,
     )
