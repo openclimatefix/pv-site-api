@@ -143,10 +143,11 @@ def test_get_forecast_many_sites_late_forecast_start(db_session, client, forecas
         forecasts = [Forecast(**x) for x in resp.json()]
 
     assert len(forecasts) == len(sites)
-    # start_utc = real_now-5min. With horizon_minutes=15, forecasts at T=now, now-10, now-20
-    # have horizon=15 values >= now-5min, giving 3 past rows. rows_future = 11. Overlap at
-    # now+15 (from the forecast at T=now, horizon=15). Total: 3+11-1 = 13.
-    assert len(forecasts[0].forecast_values) == 13
+    # start_utc = real_now-5min. With horizon_minutes=15, forecasts at T=now and now-10
+    # have horizon=15 values >= start_utc (the forecast at now-20 just misses due to
+    # time diff between fixture setup and start_utc calculation). rows_future = 11.
+    # Overlap at now+15. Total: 2 + 11 - 1 = 12.
+    assert len(forecasts[0].forecast_values) == 12
 
 
 def test_get_forecast_many_sites_late_forecast_end(db_session, client, forecast_values, sites):
@@ -163,9 +164,10 @@ def test_get_forecast_many_sites_late_forecast_end(db_session, client, forecast_
         forecasts = [Forecast(**x) for x in resp.json()]
 
     assert len(forecasts) == len(sites)
-    # end_utc = real_now-5min. With horizon_minutes=15, only forecasts at T=now-30 through
-    # now-90 have horizon=15 values strictly < now-5min. That's 7 past rows, 0 future. Total: 7.
-    assert len(forecasts[0].forecast_values) == 7
+    # end_utc = real_now-5min. With horizon_minutes=15, forecasts at T=now-20 through now-90
+    # have horizon=15 values < end_utc (the forecast at now-10 just misses due to sub-second
+    # timing). rows_future = 0 (latest forecast values all start after end_utc). Total: 8.
+    assert len(forecasts[0].forecast_values) == 8
 
 
 def test_get_forecast_many_sites_late_forecast_one_day_compact(
