@@ -600,8 +600,12 @@ def get_pv_forecast(
     check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
     forecasts = get_pv_forecast_many_sites(
-        site_uuids=site_uuid, session=session, auth=auth, request=request,
-        start_utc=start_utc, end_utc=end_utc,
+        site_uuids=site_uuid,
+        session=session,
+        auth=auth,
+        request=request,
+        start_utc=start_utc,
+        end_utc=end_utc,
     )
 
     if len(forecasts) == 0:
