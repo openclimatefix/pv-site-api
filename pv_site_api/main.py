@@ -627,6 +627,7 @@ def get_pv_forecast_many_sites(
     sum_by: Optional[str] = None,
     start_utc: Optional[str] = None,
     end_utc: Optional[str] = None,
+    horizon_minutes: Optional[int] = 0,
     compact: bool = False,
 ):
     """
@@ -645,6 +646,8 @@ def get_pv_forecast_many_sites(
     - **compact**: if True, the response will compact the data.
         This can be useful when pulling data for a large number of sites.
         If True the response object is _ManyForecastCompact_
+    - **horizon_minutes**: if > 0, only forecasts with horizon_minutes <= horizon will be returned.
+        The default is 0, which returns the latest forecast values.
     """
 
     logger.info(f"Getting forecasts for {site_uuids}")
@@ -682,7 +685,7 @@ def get_pv_forecast_many_sites(
         site_uuids=site_uuids_list,
         start_utc=start_utc,
         end_utc=end_utc,
-        horizon_minutes=15,
+        horizon_minutes=horizon_minutes,
         compact=compact,
         sum_by=sum_by,
     )

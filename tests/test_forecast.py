@@ -71,10 +71,10 @@ def test_get_forecast_many_sites(db_session, client, forecast_values, sites):
 
     assert len(forecasts) == len(sites)
     # We have 10 forecasts with 11 values each (horizon 0..150 in 15-min steps).
-    # rows_past uses horizon_minutes=15, so only forecasts where T+15 < now qualify.
-    # Forecasts at now and now-10 are excluded (their horizon=15 values are still in the future).
-    # That gives 8 past values + 11 future values (latest forecast) = 19.
-    assert len(forecasts[0].forecast_values) == 19
+    # rows_past (horizon_minutes=0) returns 10 H=0 values, one per past forecast.
+    # rows_future returns 11 values from the latest forecast.
+    # 1 overlap (the H=0 value from the latest forecast). Total: 10+11-1 = 20.
+    assert len(forecasts[0].forecast_values) == 20
 
     # Also check that the forecasts values are sorted by date.
     assert (
@@ -143,11 +143,10 @@ def test_get_forecast_many_sites_late_forecast_start(db_session, client, forecas
         forecasts = [Forecast(**x) for x in resp.json()]
 
     assert len(forecasts) == len(sites)
-    # start_utc = real_now-5min. With horizon_minutes=15, forecasts at T=now and now-10
-    # have horizon=15 values >= start_utc (the forecast at now-20 just misses due to
-    # time diff between fixture setup and start_utc calculation). rows_future = 11.
-    # Overlap at now+15. Total: 2 + 11 - 1 = 12.
-    assert len(forecasts[0].forecast_values) == 12
+    # start_utc = real_now-5min. rows_past (horizon_minutes=0): only the forecast at T=now
+    # has its H=0 value (at T=now) >= start_utc; earlier forecasts' H=0 values are < start_utc.
+    # rows_future = 11. 1 overlap (H=0 from T=now). Total: 1+11-1 = 11.
+    assert len(forecasts[0].forecast_values) == 11
 
 
 def test_get_forecast_many_sites_late_forecast_end(db_session, client, forecast_values, sites):
@@ -164,10 +163,10 @@ def test_get_forecast_many_sites_late_forecast_end(db_session, client, forecast_
         forecasts = [Forecast(**x) for x in resp.json()]
 
     assert len(forecasts) == len(sites)
-    # end_utc = real_now-5min. With horizon_minutes=15, forecasts at T=now-20 through now-90
-    # have horizon=15 values < end_utc (the forecast at now-10 just misses due to sub-second
-    # timing). rows_future = 0 (latest forecast values all start after end_utc). Total: 8.
-    assert len(forecasts[0].forecast_values) == 8
+    # end_utc = real_now-5min. rows_past (horizon_minutes=0): forecasts at T=now-10 through
+    # T=now-90 have H=0 values < end_utc (T=now's H=0 value is >= end_utc). 9 past values.
+    # rows_future = 0 (latest forecast's values all start at >= now > end_utc). Total: 9.
+    assert len(forecasts[0].forecast_values) == 9
 
 
 def test_get_forecast_many_sites_late_forecast_one_day_compact(
