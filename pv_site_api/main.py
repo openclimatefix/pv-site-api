@@ -9,6 +9,7 @@ from typing import Optional, Union
 import pandas as pd
 import sentry_sdk
 import structlog
+from apitally.fastapi import ApitallyMiddleware
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -136,6 +137,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+apitally_client_id = os.getenv("APITALLY_CLIENT_ID")
+
+if apitally_client_id:
+    app.add_middleware(
+        ApitallyMiddleware,
+        client_id=apitally_client_id,
+        env=os.getenv("ENVIRONMENT", "local"),
+        enable_request_logging=True,
+    )
 
 auth = Auth(
     domain=os.getenv("AUTH0_DOMAIN"),

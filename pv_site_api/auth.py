@@ -1,5 +1,6 @@
 import jwt
-from fastapi import Depends, HTTPException
+from apitally.fastapi import set_consumer
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 token_auth_scheme = HTTPBearer()
@@ -15,7 +16,11 @@ class Auth:
 
         self._jwks_client = jwt.PyJWKClient(f"https://{domain}/.well-known/jwks.json")
 
-    def __call__(self, auth_credentials: HTTPAuthorizationCredentials = Depends(token_auth_scheme)):
+    def __call__(
+        self,
+        request: Request,
+        auth_credentials: HTTPAuthorizationCredentials = Depends(token_auth_scheme),
+    ):
         token = auth_credentials.credentials
 
         try:
@@ -33,5 +38,9 @@ class Auth:
             )
         except Exception as e:
             raise HTTPException(status_code=401, detail=str(e))
+
+        email = payload.get("https://openclimatefix.org/email")
+        if email:
+            set_consumer(request, identifier=email)
 
         return payload
