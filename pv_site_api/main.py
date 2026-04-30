@@ -144,7 +144,7 @@ if apitally_client_id:
     app.add_middleware(
         ApitallyMiddleware,
         client_id=apitally_client_id,
-        env=os.getenv("ENVIRONMENT", "local"),
+        env=os.getenv("APITALLY_ENVIRONMENT", "local"),
         enable_request_logging=True,
     )
 
