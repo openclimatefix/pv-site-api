@@ -21,6 +21,7 @@ pyjwt = {extras = ["crypto"], version = "^2.6.0"}
 geopandas = "^0.14.2"
 psutil = "^6.0.0"
 pvsite-datamodel = "1.2.0"
+apitally = {extras = ["fastapi"], version = "^0.24.4"}
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.12.0"
