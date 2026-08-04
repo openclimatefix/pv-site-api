@@ -24,8 +24,25 @@ API for PV site level forecasting
 
 ## Running the tests
 
-    poetry run pytest tests
+    uv run pytest tests
 
+## Data Platform Integration
+
+To enable forwarding generation values to the OCF Data Platform via gRPC, configure the following environment variables:
+
+| Environment Variable | Default | Description |
+| --- | --- | --- |
+| `DATA_PLATFORM_ENABLED` | `false` | Set to `true` or `1` to enable Data Platform streaming |
+| `DATA_PLATFORM_HOST` | `localhost` | gRPC host for Data Platform service |
+| `DATA_PLATFORM_PORT` | `50051` | gRPC port for Data Platform service |
+
+### Manual Observer Creation (Pre-requisite)
+
+Before sending observations to a new Data Platform environment, create/register the `pv_actual` observer using the provided setup script:
+
+```bash
+uv run python scripts/create_observer.py pv_actual
+```
 
 ## Coding style
 

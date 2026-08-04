@@ -1,5 +1,6 @@
 """Main API Routes"""
 
+import asyncio
 import os
 import time
 import uuid
@@ -43,6 +44,7 @@ from ._db_helpers import (
 )
 from .auth import Auth
 from .cache import cache_response
+from .dataplatform_client import is_dataplatform_enabled, send_generation_data_to_platform
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -340,6 +342,17 @@ def post_pv_actual(
 
     insert_generation_values(session, generation_values_df)
     session.commit()
+
+    if is_dataplatform_enabled():
+        try:
+            asyncio.run(
+                send_generation_data_to_platform(
+                    site_uuid=site_uuid,
+                    generation_records=generations,
+                )
+            )
+        except Exception as exc:
+            logger.error(f"Failed to stream generation data to Data Platform for site {site_uuid}: {exc}")
 
 
 # put_site_info: client can update a site
