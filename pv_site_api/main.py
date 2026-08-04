@@ -352,7 +352,9 @@ def post_pv_actual(
                 )
             )
         except Exception as exc:
-            logger.error(f"Failed to stream generation data to Data Platform for site {site_uuid}: {exc}")
+            logger.error(
+                f"Failed to stream generation data to Data Platform for site {site_uuid}: {exc}"
+            )
 
 
 # put_site_info: client can update a site

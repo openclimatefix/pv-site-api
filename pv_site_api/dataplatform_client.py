@@ -47,7 +47,9 @@ def _parse_datetime(dt_val: Any) -> datetime:
         raise ValueError(f"Unsupported datetime type: {type(dt_val)}")
 
 
-async def send_generation_data_to_platform(site_uuid: str, generation_records: List[Dict[str, Any]]) -> None:
+async def send_generation_data_to_platform(
+    site_uuid: str, generation_records: List[Dict[str, Any]]
+) -> None:
     """
     Send generation observation actuals to the OCF Data Platform via gRPC CreateObservations.
 
@@ -55,7 +57,9 @@ async def send_generation_data_to_platform(site_uuid: str, generation_records: L
     :param generation_records: List of dicts with 'start_utc' and 'power_kw'
     """
     if not is_dataplatform_enabled():
-        logger.debug("Data Platform integration disabled (DATA_PLATFORM_ENABLED is false). Skipping.")
+        logger.debug(
+            "Data Platform integration disabled (DATA_PLATFORM_ENABLED is false). Skipping."
+        )
         return
 
     if not generation_records:
@@ -66,7 +70,8 @@ async def send_generation_data_to_platform(site_uuid: str, generation_records: L
     target = get_dataplatform_target()
 
     logger.info(
-        f"Sending {len(generation_records)} generation observations to Data Platform at {target} for site {site_uuid}"
+        f"Sending {len(generation_records)} generation observations to Data Platform "
+        f"at {target} for site {site_uuid}"
     )
 
     try:
@@ -113,7 +118,8 @@ async def send_generation_data_to_platform(site_uuid: str, generation_records: L
                                 req.location_uuid = loc_name
                                 await client.CreateObservations(req, timeout=5.0)
                                 logger.info(
-                                    f"Successfully sent {len(observation_values)} observations for location {loc_name} to Data Platform."
+                                    f"Successfully sent {len(observation_values)} observations "
+                                    f"for location {loc_name} to Data Platform."
                                 )
                                 return
                     except Exception:
@@ -121,7 +127,8 @@ async def send_generation_data_to_platform(site_uuid: str, generation_records: L
                 raise first_exc
 
         logger.info(
-            f"Successfully sent {len(observation_values)} observations for site {site_uuid} to Data Platform."
+            f"Successfully sent {len(observation_values)} observations for site {site_uuid} "
+            "to Data Platform."
         )
 
     except Exception as exc:

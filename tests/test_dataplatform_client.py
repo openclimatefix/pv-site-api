@@ -11,7 +11,7 @@ from pv_site_api.dataplatform_client import _parse_datetime, send_generation_dat
 
 @pytest.fixture(autouse=True)
 def db_session():
-    """Override autouse db_session fixture so dataplatform client unit tests do not require DB/Docker."""
+    """Override autouse db_session fixture so these unit tests do not require DB/Docker."""
     yield None
 
 
@@ -51,7 +51,9 @@ async def test_send_generation_enabled(monkeypatch):
     mock_channel.__aenter__.return_value = mock_channel
 
     with patch("grpc.aio.secure_channel", return_value=mock_channel):
-        with patch("ocf.dp.dp_data.service_pb2_grpc.DataPlatformDataServiceStub", return_value=mock_stub):
+        with patch(
+            "ocf.dp.dp_data.service_pb2_grpc.DataPlatformDataServiceStub", return_value=mock_stub
+        ):
             await send_generation_data_to_platform("test-site-uuid", records)
 
             assert mock_stub.CreateObservations.called
@@ -79,7 +81,9 @@ async def test_send_generation_grpc_failure_reports_to_sentry(monkeypatch):
     mock_channel.__aenter__.return_value = mock_channel
 
     with patch("grpc.aio.secure_channel", return_value=mock_channel):
-        with patch("ocf.dp.dp_data.service_pb2_grpc.DataPlatformDataServiceStub", return_value=mock_stub):
+        with patch(
+            "ocf.dp.dp_data.service_pb2_grpc.DataPlatformDataServiceStub", return_value=mock_stub
+        ):
             with patch.object(sentry_sdk, "capture_exception") as mock_capture:
                 # Should not raise: failures are handled internally.
                 await send_generation_data_to_platform("test-site-uuid", records)
