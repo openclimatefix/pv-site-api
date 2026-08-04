@@ -44,7 +44,12 @@ from ._db_helpers import (
 )
 from .auth import Auth
 from .cache import cache_response
-from .dataplatform_client import is_dataplatform_enabled, send_generation_data_to_platform
+from .dataplatform_client import (
+    create_dataplatform_location,
+    is_dataplatform_enabled,
+    send_generation_data_to_platform,
+    update_dataplatform_location,
+)
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -389,6 +394,17 @@ def put_site_info(
 
     logger.debug(message)
 
+    if is_dataplatform_enabled():
+        asyncio.run(
+            update_dataplatform_location(
+                site_uuid=site.location_uuid,
+                client_site_name=site.client_location_name,
+                latitude=site.latitude,
+                longitude=site.longitude,
+                capacity_kw=site.capacity_kw,
+            )
+        )
+
     return site_to_pydantic(site)
 
 
@@ -437,6 +453,17 @@ def post_site_info(
     # make sure the user is added to the site
     user.location_group.locations.append(site)
     session.commit()
+
+    if is_dataplatform_enabled():
+        asyncio.run(
+            create_dataplatform_location(
+                site_uuid=site.location_uuid,
+                client_site_name=site.client_location_name,
+                latitude=site.latitude,
+                longitude=site.longitude,
+                capacity_kw=site.capacity_kw,
+            )
+        )
 
     return site_to_pydantic(site)
 

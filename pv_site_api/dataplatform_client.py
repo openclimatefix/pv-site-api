@@ -105,3 +105,107 @@ async def send_generation_data_to_platform(
             exc_info=True,
         )
         sentry_sdk.capture_exception(exc)
+
+
+async def create_dataplatform_location(
+    site_uuid: str,
+    client_site_name: str,
+    latitude: float,
+    longitude: float,
+    capacity_kw: float,
+) -> None:
+    """
+    Register a new PV site as a location with the OCF Data Platform via gRPC CreateLocation.
+
+    The location is created with `location_name` set to the site's own UUID (rather than its
+    client-facing name) so that later observation streaming, which looks up locations via
+    `location_uuid=site_uuid`, resolves correctly.
+    :param site_uuid: UUID string of the newly created PV site
+    :param client_site_name: client-facing site name, used for logging only
+    :param latitude: site latitude
+    :param longitude: site longitude
+    :param capacity_kw: site capacity in kW
+    """
+    target = get_dataplatform_target()
+
+    logger.info(
+        f"Creating Data Platform location for site {site_uuid} ({client_site_name}) at {target}"
+    )
+
+    try:
+        ts = Timestamp()
+        ts.FromDatetime(datetime.now(timezone.utc))
+
+        req = messages_pb2.CreateLocationRequest(
+            location_name=str(site_uuid),
+            energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+            effective_capacity_watts=round(capacity_kw * 1000.0),
+            location_type=common_pb2.LocationType.LOCATION_TYPE_SITE,
+            valid_from_utc=ts,
+            associated_latlng=common_pb2.LatLng(latitude=latitude, longitude=longitude),
+        )
+
+        async with get_dataplatform_channel(target) as channel:
+            client = service_pb2_grpc.DataPlatformDataServiceStub(channel)
+            await client.CreateLocation(req, timeout=5.0)
+
+        logger.info(f"Successfully created Data Platform location for site {site_uuid}.")
+
+    except Exception as exc:
+        logger.error(
+            f"Failed to create Data Platform location for site {site_uuid}: {exc}",
+            exc_info=True,
+        )
+        sentry_sdk.capture_exception(exc)
+
+
+async def update_dataplatform_location(
+    site_uuid: str,
+    client_site_name: str,
+    latitude: float,
+    longitude: float,
+    capacity_kw: float,
+) -> None:
+    """
+    Update an existing Data Platform location via gRPC UpdateLocation.
+
+    The site's own UUID is passed directly as `location_uuid`, matching the assumption already
+    made by `send_generation_data_to_platform` that this app's site UUID is the Data Platform
+    location UUID.
+    :param site_uuid: UUID string of the PV site, used directly as the Data Platform location_uuid
+    :param client_site_name: client-facing site name, set as the location's new name
+    :param latitude: site latitude (unused: UpdateLocationRequest has no lat/lng field, kept for a
+        symmetric call signature with create_dataplatform_location)
+    :param longitude: site longitude (unused, see latitude)
+    :param capacity_kw: site capacity in kW
+    """
+    target = get_dataplatform_target()
+
+    logger.info(
+        f"Updating Data Platform location for site {site_uuid} ({client_site_name}) at {target}"
+    )
+
+    try:
+        ts = Timestamp()
+        ts.FromDatetime(datetime.now(timezone.utc))
+
+        req = messages_pb2.UpdateLocationRequest(
+            location_uuid=str(site_uuid),
+            energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+            new_location_name=client_site_name,
+            new_effective_capacity_watts=round(capacity_kw * 1000.0),
+            valid_from_utc=ts,
+        )
+
+        async with get_dataplatform_channel(target) as channel:
+            client = service_pb2_grpc.DataPlatformDataServiceStub(channel)
+            await client.UpdateLocation(req, timeout=5.0)
+
+        logger.info(f"Successfully updated Data Platform location for site {site_uuid}.")
+
+    except Exception as exc:
+        logger.error(
+            f"Failed to update Data Platform location for site {site_uuid}: {exc}",
+            exc_info=True,
+        )
+        sentry_sdk.capture_exception(exc)
