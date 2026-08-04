@@ -4,8 +4,15 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
+import grpc
 import sentry_sdk
 import structlog
+from google.protobuf.timestamp_pb2 import Timestamp
+from ocf.dp.dp import common_pb2
+from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
+from pvsite_datamodel.read.site import get_site_by_uuid
+
+from pv_site_api.session import connection
 
 logger = structlog.stdlib.get_logger()
 
@@ -24,9 +31,7 @@ def get_dataplatform_target() -> str:
 
 def get_dataplatform_channel(target: str):
     """Open a TLS-secured gRPC channel to the Data Platform."""
-    import grpc
-
-    if os.getenv("DATA_PLATFORM_INSECURE", "false").lower() in ("true", "1"):
+    if os.getenv("DATA_PLATFORM_INSECURE", "false").lower() == "true":
         return grpc.aio.insecure_channel(target)
 
     return grpc.aio.secure_channel(target, grpc.ssl_channel_credentials())
@@ -75,10 +80,6 @@ async def send_generation_data_to_platform(
     )
 
     try:
-        from google.protobuf.timestamp_pb2 import Timestamp
-        from ocf.dp.dp import common_pb2
-        from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
-
         observation_values = []
         for record in generation_records:
             dt_obj = _parse_datetime(record["start_utc"])
@@ -109,8 +110,6 @@ async def send_generation_data_to_platform(
             except Exception as first_exc:
                 if "no location found" in str(first_exc):
                     try:
-                        from pv_site_api.session import connection
-                        from pvsite_datamodel.read.site import get_site_by_uuid
                         with connection.get_session() as s:
                             site = get_site_by_uuid(session=s, site_uuid=site_uuid)
                             if site and site.client_location_name:
