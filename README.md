@@ -32,7 +32,7 @@ To enable forwarding generation values to the OCF Data Platform via gRPC, config
 
 | Environment Variable | Default | Description |
 | --- | --- | --- |
-| `DATA_PLATFORM_ENABLED` | `false` | Set to `true` or `1` to enable Data Platform streaming |
+| `SAVE_TO_DATA_PLATFORM` | `false` | Set to `true` or `1` to enable Data Platform streaming |
 | `DATA_PLATFORM_HOST` | `localhost` | gRPC host for Data Platform service |
 | `DATA_PLATFORM_PORT` | `50051` | gRPC port for Data Platform service |
 

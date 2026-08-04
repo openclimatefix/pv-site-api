@@ -28,7 +28,7 @@ def test_parse_datetime():
 
 @pytest.mark.asyncio
 async def test_send_generation_disabled(monkeypatch):
-    monkeypatch.setenv("DATA_PLATFORM_ENABLED", "false")
+    monkeypatch.setenv("SAVE_TO_DATA_PLATFORM", "false")
     records = [{"start_utc": "2026-07-23T12:00:00Z", "power_kw": 5.5}]
     # Should complete without error when disabled
     await send_generation_data_to_platform("test-site-uuid", records)
@@ -36,7 +36,7 @@ async def test_send_generation_disabled(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_send_generation_enabled(monkeypatch):
-    monkeypatch.setenv("DATA_PLATFORM_ENABLED", "true")
+    monkeypatch.setenv("SAVE_TO_DATA_PLATFORM", "true")
     monkeypatch.setenv("DATA_PLATFORM_HOST", "localhost")
     monkeypatch.setenv("DATA_PLATFORM_PORT", "50051")
     monkeypatch.setenv("DATA_PLATFORM_OBSERVER_NAME", "pv_actual")
@@ -70,7 +70,7 @@ async def test_send_generation_enabled(monkeypatch):
 @pytest.mark.asyncio
 async def test_send_generation_grpc_failure_reports_to_sentry(monkeypatch):
     """If the gRPC call raises, the error is swallowed and reported to Sentry (not propagated)."""
-    monkeypatch.setenv("DATA_PLATFORM_ENABLED", "true")
+    monkeypatch.setenv("SAVE_TO_DATA_PLATFORM", "true")
 
     records = [{"start_utc": "2026-07-23T12:00:00Z", "power_kw": 1.0}]
 

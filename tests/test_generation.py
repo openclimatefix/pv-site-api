@@ -226,8 +226,8 @@ def test_pv_actual_404(db_session, client):
 
 
 def test_post_pv_actual_with_dataplatform(db_session, client, sites, monkeypatch):
-    """Test posting actual generation when DATA_PLATFORM_ENABLED is true."""
-    monkeypatch.setenv("DATA_PLATFORM_ENABLED", "true")
+    """Test posting actual generation when SAVE_TO_DATA_PLATFORM is true."""
+    monkeypatch.setenv("SAVE_TO_DATA_PLATFORM", "true")
     called_records = []
 
     async def mock_send(site_uuid, generation_records):
@@ -258,7 +258,7 @@ def test_post_pv_actual_with_dataplatform(db_session, client, sites, monkeypatch
 
 def test_post_pv_actual_without_dataplatform(db_session, client, sites, monkeypatch):
     """Test posting actual generation does not call Data Platform when it's disabled."""
-    monkeypatch.delenv("DATA_PLATFORM_ENABLED", raising=False)
+    monkeypatch.delenv("SAVE_TO_DATA_PLATFORM", raising=False)
     called_records = []
 
     async def mock_send(site_uuid, generation_records):

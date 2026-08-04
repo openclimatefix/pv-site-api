@@ -18,8 +18,8 @@ logger = structlog.stdlib.get_logger()
 
 
 def is_dataplatform_enabled() -> bool:
-    """Whether Data Platform gRPC streaming is enabled via DATA_PLATFORM_ENABLED."""
-    return os.getenv("DATA_PLATFORM_ENABLED", "false").lower() in ("true", "1")
+    """Whether Data Platform gRPC streaming is enabled via SAVE_TO_DATA_PLATFORM."""
+    return os.getenv("SAVE_TO_DATA_PLATFORM", "false").lower() in ("true", "1")
 
 
 def get_dataplatform_target() -> str:
@@ -63,7 +63,7 @@ async def send_generation_data_to_platform(
     """
     if not is_dataplatform_enabled():
         logger.debug(
-            "Data Platform integration disabled (DATA_PLATFORM_ENABLED is false). Skipping."
+            "Data Platform integration disabled (SAVE_TO_DATA_PLATFORM is false). Skipping."
         )
         return
 
