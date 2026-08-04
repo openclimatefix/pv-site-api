@@ -344,17 +344,12 @@ def post_pv_actual(
     session.commit()
 
     if is_dataplatform_enabled():
-        try:
-            asyncio.run(
-                send_generation_data_to_platform(
-                    site_uuid=site_uuid,
-                    generation_records=generations,
-                )
+        asyncio.run(
+            send_generation_data_to_platform(
+                site_uuid=site_uuid,
+                generation_records=generations,
             )
-        except Exception as exc:
-            logger.error(
-                f"Failed to stream generation data to Data Platform for site {site_uuid}: {exc}"
-            )
+        )
 
 
 # put_site_info: client can update a site

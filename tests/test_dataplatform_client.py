@@ -41,7 +41,7 @@ async def test_send_generation_enabled(monkeypatch):
     mock_channel = AsyncMock()
     mock_channel.__aenter__.return_value = mock_channel
 
-    with patch("grpc.aio.secure_channel", return_value=mock_channel):
+    with patch("grpc.aio.insecure_channel", return_value=mock_channel):
         with patch(
             "ocf.dp.dp_data.service_pb2_grpc.DataPlatformDataServiceStub", return_value=mock_stub
         ):
@@ -69,7 +69,7 @@ async def test_send_generation_grpc_failure_reports_to_sentry():
     mock_channel = AsyncMock()
     mock_channel.__aenter__.return_value = mock_channel
 
-    with patch("grpc.aio.secure_channel", return_value=mock_channel):
+    with patch("grpc.aio.insecure_channel", return_value=mock_channel):
         with patch(
             "ocf.dp.dp_data.service_pb2_grpc.DataPlatformDataServiceStub", return_value=mock_stub
         ):

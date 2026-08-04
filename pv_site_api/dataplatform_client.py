@@ -27,7 +27,7 @@ def get_dataplatform_target() -> str:
 
 
 def get_dataplatform_channel(target: str):
-    """Open a TLS-secured gRPC channel to the Data Platform."""
+    """Open an insecure (non-TLS) gRPC channel to the Data Platform."""
     return grpc.aio.insecure_channel(target)
 
 
