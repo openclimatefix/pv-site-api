@@ -10,7 +10,6 @@ import structlog
 from google.protobuf.timestamp_pb2 import Timestamp
 from ocf.dp.dp import common_pb2
 from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
-from pvsite_datamodel.read.site import get_site_by_uuid
 
 logger = structlog.stdlib.get_logger()
 
@@ -93,27 +92,7 @@ async def send_generation_data_to_platform(
 
         async with get_dataplatform_channel(target) as channel:
             client = service_pb2_grpc.DataPlatformDataServiceStub(channel)
-            try:
-                await client.CreateObservations(req, timeout=5.0)
-            except Exception as first_exc:
-                if "no location found" in str(first_exc):
-                    try:
-                        from pv_site_api.session import connection
-
-                        with connection.get_session() as s:
-                            site = get_site_by_uuid(session=s, site_uuid=site_uuid)
-                            if site and site.client_location_name:
-                                loc_name = site.client_location_name.replace(".", "_")
-                                req.location_uuid = loc_name
-                                await client.CreateObservations(req, timeout=5.0)
-                                logger.info(
-                                    f"Successfully sent {len(observation_values)} observations "
-                                    f"for location {loc_name} to Data Platform."
-                                )
-                                return
-                    except Exception:
-                        pass
-                raise first_exc
+            await client.CreateObservations(req, timeout=5.0)
 
         logger.info(
             f"Successfully sent {len(observation_values)} observations for site {site_uuid} "
