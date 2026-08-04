@@ -34,7 +34,6 @@ def get_dataplatform_channel(target: str):
     return grpc.aio.insecure_channel(target)
 
 
-
 def _parse_datetime(dt_val: Any) -> datetime:
     """Parse datetime from datetime object or ISO format string."""
     if isinstance(dt_val, datetime):

@@ -233,9 +233,7 @@ def test_post_pv_actual_with_dataplatform(db_session, client, sites, monkeypatch
     async def mock_send(site_uuid, generation_records):
         called_records.append((site_uuid, generation_records))
 
-    monkeypatch.setattr(
-        "pv_site_api.main.send_generation_data_to_platform", mock_send
-    )
+    monkeypatch.setattr("pv_site_api.main.send_generation_data_to_platform", mock_send)
 
     site_uuid = str(sites[0].location_uuid)
     site_capacity_kw = sites[0].capacity_kw
@@ -264,9 +262,7 @@ def test_post_pv_actual_without_dataplatform(db_session, client, sites, monkeypa
     async def mock_send(site_uuid, generation_records):
         called_records.append((site_uuid, generation_records))
 
-    monkeypatch.setattr(
-        "pv_site_api.main.send_generation_data_to_platform", mock_send
-    )
+    monkeypatch.setattr("pv_site_api.main.send_generation_data_to_platform", mock_send)
 
     site_uuid = str(sites[0].location_uuid)
     site_capacity_kw = sites[0].capacity_kw
@@ -282,4 +278,3 @@ def test_post_pv_actual_without_dataplatform(db_session, client, sites, monkeypa
     assert response.status_code == 200
 
     assert called_records == []
-
