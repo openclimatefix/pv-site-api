@@ -233,7 +233,11 @@ def test_post_pv_actual_with_dataplatform(db_session, client, sites, monkeypatch
     async def mock_send(site_uuid, generation_records):
         called_records.append((site_uuid, generation_records))
 
+    async def mock_resolve(client_location_name):
+        return site_uuid
+
     monkeypatch.setattr("pv_site_api.main.send_generation_data_to_platform", mock_send)
+    monkeypatch.setattr("pv_site_api.main.resolve_site_uuid", mock_resolve)
 
     site_uuid = str(sites[0].location_uuid)
     site_capacity_kw = sites[0].capacity_kw
@@ -252,6 +256,36 @@ def test_post_pv_actual_with_dataplatform(db_session, client, sites, monkeypatch
     assert called_records[0][0] == site_uuid
     assert len(called_records[0][1]) == 1
     assert called_records[0][1][0]["power_kw"] == site_capacity_kw - 1
+
+
+def test_post_pv_actual_with_dataplatform_unresolved_uuid(db_session, client, sites, monkeypatch):
+    """If the Data Platform location UUID can't be resolved, we skip sending, not send blank."""
+    monkeypatch.setenv("SAVE_TO_DATA_PLATFORM", "true")
+    called_records = []
+
+    async def mock_send(site_uuid, generation_records):
+        called_records.append((site_uuid, generation_records))
+
+    async def mock_resolve(client_location_name):
+        return None
+
+    monkeypatch.setattr("pv_site_api.main.send_generation_data_to_platform", mock_send)
+    monkeypatch.setattr("pv_site_api.main.resolve_site_uuid", mock_resolve)
+
+    site_uuid = str(sites[0].location_uuid)
+    site_capacity_kw = sites[0].capacity_kw
+
+    pv_actual_val = PVActualValue(
+        datetime_utc=datetime.now(timezone.utc), actual_generation_kw=site_capacity_kw - 1
+    )
+    payload = json.loads(
+        MultiplePVActual(site_uuid=site_uuid, pv_actual_values=[pv_actual_val]).json()
+    )
+
+    response = client.post(f"/sites/{site_uuid}/pv_actual", json=payload)
+    assert response.status_code == 200
+
+    assert called_records == []
 
 
 def test_post_pv_actual_without_dataplatform(db_session, client, sites, monkeypatch):

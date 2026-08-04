@@ -6,7 +6,11 @@ from unittest.mock import AsyncMock, patch
 import pytest
 import sentry_sdk
 
-from pv_site_api.dataplatform_client import _parse_datetime, send_generation_data_to_platform
+from pv_site_api.dataplatform_client import (
+    _parse_datetime,
+    resolve_site_uuid,
+    send_generation_data_to_platform,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -78,3 +82,65 @@ async def test_send_generation_grpc_failure_reports_to_sentry():
                 await send_generation_data_to_platform("test-site-uuid", records)
 
                 mock_capture.assert_called_once_with(grpc_error)
+
+
+@pytest.mark.asyncio
+async def test_resolve_site_uuid_match_found():
+    mock_location = AsyncMock()
+    mock_location.location_uuid = "resolved-dp-uuid"
+
+    mock_resp = AsyncMock()
+    mock_resp.locations = [mock_location]
+
+    mock_stub = AsyncMock()
+    mock_stub.ListLocations.return_value = mock_resp
+
+    mock_channel = AsyncMock()
+    mock_channel.__aenter__.return_value = mock_channel
+
+    with patch("grpc.aio.insecure_channel", return_value=mock_channel):
+        with patch(
+            "ocf.dp.dp_data.service_pb2_grpc.DataPlatformDataServiceStub", return_value=mock_stub
+        ):
+            res = await resolve_site_uuid("pvoutput.org_10020")
+            assert res == "resolved-dp-uuid"
+
+
+@pytest.mark.asyncio
+async def test_resolve_site_uuid_no_match():
+    mock_resp = AsyncMock()
+    mock_resp.locations = []
+
+    mock_stub = AsyncMock()
+    mock_stub.ListLocations.return_value = mock_resp
+
+    mock_channel = AsyncMock()
+    mock_channel.__aenter__.return_value = mock_channel
+
+    with patch("grpc.aio.insecure_channel", return_value=mock_channel):
+        with patch(
+            "ocf.dp.dp_data.service_pb2_grpc.DataPlatformDataServiceStub", return_value=mock_stub
+        ):
+            res = await resolve_site_uuid("unknown_site")
+            assert res is None
+
+
+@pytest.mark.asyncio
+async def test_resolve_site_uuid_empty_client_location_name():
+    res = await resolve_site_uuid("")
+    assert res is None
+
+
+@pytest.mark.asyncio
+async def test_resolve_site_uuid_grpc_failure_reports_to_sentry():
+    grpc_error = Exception("boom")
+
+    mock_channel = AsyncMock()
+    mock_channel.__aenter__.side_effect = grpc_error
+
+    with patch("grpc.aio.insecure_channel", return_value=mock_channel):
+        with patch.object(sentry_sdk, "capture_exception") as mock_capture:
+            res = await resolve_site_uuid("pvoutput.org_10020")
+
+            assert res is None
+            mock_capture.assert_called_once_with(grpc_error)

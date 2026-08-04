@@ -44,7 +44,11 @@ from ._db_helpers import (
 )
 from .auth import Auth
 from .cache import cache_response
-from .dataplatform_client import is_dataplatform_enabled, send_generation_data_to_platform
+from .dataplatform_client import (
+    is_dataplatform_enabled,
+    resolve_site_uuid,
+    send_generation_data_to_platform,
+)
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -344,12 +348,27 @@ def post_pv_actual(
     session.commit()
 
     if is_dataplatform_enabled():
-        asyncio.run(
-            send_generation_data_to_platform(
-                site_uuid=site_uuid,
+
+        async def _run_dp():
+            dp_uuid = await resolve_site_uuid(site.client_location_name)
+            if dp_uuid is None:
+                logger.warning(
+                    f"Skipping Data Platform stream: no location UUID found for site "
+                    f"{site_uuid} (client_location_name={site.client_location_name!r})"
+                )
+                return
+
+            await send_generation_data_to_platform(
+                site_uuid=dp_uuid,
                 generation_records=generations,
             )
-        )
+
+        try:
+            asyncio.run(_run_dp())
+        except Exception as exc:
+            logger.error(
+                f"Failed to stream generation data to Data Platform for site {site_uuid}: {exc}"
+            )
 
 
 # put_site_info: client can update a site

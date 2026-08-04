@@ -2,7 +2,7 @@
 
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import grpc
 import sentry_sdk
@@ -105,3 +105,34 @@ async def send_generation_data_to_platform(
             exc_info=True,
         )
         sentry_sdk.capture_exception(exc)
+
+
+async def resolve_site_uuid(client_location_name: str) -> Optional[str]:
+    """
+    Resolve a database site's client location name to its Data Platform location UUID.
+    :param client_location_name: the site's `client_location_name` in the database
+    :return: the matching Data Platform location UUID, or None if no match was found
+    """
+    if not client_location_name:
+        return None
+
+    target_names = {client_location_name, client_location_name.replace(".", "_")}
+    target = get_dataplatform_target()
+
+    try:
+        async with get_dataplatform_channel(target) as channel:
+            client = service_pb2_grpc.DataPlatformDataServiceStub(channel)
+            req = messages_pb2.ListLocationsRequest(location_names_filter=list(target_names))
+            resp = await client.ListLocations(req, timeout=5.0)
+
+        if resp.locations:
+            return resp.locations[0].location_uuid
+
+    except Exception as exc:
+        logger.error(
+            f"Failed to resolve Data Platform location UUID for '{client_location_name}': {exc}",
+            exc_info=True,
+        )
+        sentry_sdk.capture_exception(exc)
+
+    return None
