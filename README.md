@@ -38,11 +38,7 @@ To enable forwarding generation values to the OCF Data Platform via gRPC, config
 
 ### Manual Observer Creation (Pre-requisite)
 
-Before sending observations to a new Data Platform environment, create/register the `pv_actual` observer using the provided setup script:
-
-```bash
-uv run python scripts/create_observer.py pv_actual
-```
+Before sending observations to a new Data Platform environment, create/register the `pv_actual` observer.
 
 ## Coding style
 
