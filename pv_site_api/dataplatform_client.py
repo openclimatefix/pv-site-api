@@ -19,7 +19,7 @@ logger = structlog.stdlib.get_logger()
 
 def is_dataplatform_enabled() -> bool:
     """Whether Data Platform gRPC streaming is enabled via SAVE_TO_DATA_PLATFORM."""
-    return os.getenv("SAVE_TO_DATA_PLATFORM", "false").lower() in ("true", "1")
+    return os.getenv("SAVE_TO_DATA_PLATFORM", "false").lower() == "true"
 
 
 def get_dataplatform_target() -> str:
@@ -31,10 +31,8 @@ def get_dataplatform_target() -> str:
 
 def get_dataplatform_channel(target: str):
     """Open a TLS-secured gRPC channel to the Data Platform."""
-    if os.getenv("DATA_PLATFORM_INSECURE", "false").lower() == "true":
-        return grpc.aio.insecure_channel(target)
+    return grpc.aio.insecure_channel(target)
 
-    return grpc.aio.secure_channel(target, grpc.ssl_channel_credentials())
 
 
 def _parse_datetime(dt_val: Any) -> datetime:
@@ -57,16 +55,9 @@ async def send_generation_data_to_platform(
 ) -> None:
     """
     Send generation observation actuals to the OCF Data Platform via gRPC CreateObservations.
-
     :param site_uuid: UUID string of the target PV site location
     :param generation_records: List of dicts with 'start_utc' and 'power_kw'
     """
-    if not is_dataplatform_enabled():
-        logger.debug(
-            "Data Platform integration disabled (SAVE_TO_DATA_PLATFORM is false). Skipping."
-        )
-        return
-
     if not generation_records:
         logger.debug("No generation records to send to Data Platform.")
         return
