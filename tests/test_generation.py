@@ -223,3 +223,63 @@ def test_pv_actual_404(db_session, client):
     """If we get actuals for an unknown site, we get a 404."""
     resp = client.get(f"/sites/{uuid.uuid4()}/pv_actual")
     assert resp.status_code == 404
+
+
+def test_post_pv_actual_with_dataplatform(db_session, client, sites, monkeypatch):
+    """Test posting actual generation when DATA_PLATFORM_ENABLED is true."""
+    monkeypatch.setenv("DATA_PLATFORM_ENABLED", "true")
+    called_records = []
+
+    async def mock_send(site_uuid, generation_records):
+        called_records.append((site_uuid, generation_records))
+
+    monkeypatch.setattr(
+        "pv_site_api.main.send_generation_data_to_platform", mock_send
+    )
+
+    site_uuid = str(sites[0].location_uuid)
+    site_capacity_kw = sites[0].capacity_kw
+
+    pv_actual_val = PVActualValue(
+        datetime_utc=datetime.now(timezone.utc), actual_generation_kw=site_capacity_kw - 1
+    )
+    payload = json.loads(
+        MultiplePVActual(site_uuid=site_uuid, pv_actual_values=[pv_actual_val]).json()
+    )
+
+    response = client.post(f"/sites/{site_uuid}/pv_actual", json=payload)
+    assert response.status_code == 200
+
+    assert len(called_records) == 1
+    assert called_records[0][0] == site_uuid
+    assert len(called_records[0][1]) == 1
+    assert called_records[0][1][0]["power_kw"] == site_capacity_kw - 1
+
+
+def test_post_pv_actual_without_dataplatform(db_session, client, sites, monkeypatch):
+    """Test posting actual generation does not call Data Platform when it's disabled."""
+    monkeypatch.delenv("DATA_PLATFORM_ENABLED", raising=False)
+    called_records = []
+
+    async def mock_send(site_uuid, generation_records):
+        called_records.append((site_uuid, generation_records))
+
+    monkeypatch.setattr(
+        "pv_site_api.main.send_generation_data_to_platform", mock_send
+    )
+
+    site_uuid = str(sites[0].location_uuid)
+    site_capacity_kw = sites[0].capacity_kw
+
+    pv_actual_val = PVActualValue(
+        datetime_utc=datetime.now(timezone.utc), actual_generation_kw=site_capacity_kw - 1
+    )
+    payload = json.loads(
+        MultiplePVActual(site_uuid=site_uuid, pv_actual_values=[pv_actual_val]).json()
+    )
+
+    response = client.post(f"/sites/{site_uuid}/pv_actual", json=payload)
+    assert response.status_code == 200
+
+    assert called_records == []
+
