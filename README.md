@@ -24,7 +24,7 @@ API for PV site level forecasting
 
 ## Running the tests
 
-    uv run pytest tests
+    poetry run pytest tests
 
 ## Data Platform Integration
 
