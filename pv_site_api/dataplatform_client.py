@@ -12,8 +12,6 @@ from ocf.dp.dp import common_pb2
 from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
 from pvsite_datamodel.read.site import get_site_by_uuid
 
-from pv_site_api.session import connection
-
 logger = structlog.stdlib.get_logger()
 
 
@@ -100,6 +98,8 @@ async def send_generation_data_to_platform(
             except Exception as first_exc:
                 if "no location found" in str(first_exc):
                     try:
+                        from pv_site_api.session import connection
+
                         with connection.get_session() as s:
                             site = get_site_by_uuid(session=s, site_uuid=site_uuid)
                             if site and site.client_location_name:
