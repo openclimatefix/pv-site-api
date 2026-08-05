@@ -64,7 +64,7 @@ class DataPlatformClient:
 
         try:
             req = messages_pb2.ListLocationsRequest(location_names_filter=list(target_names))
-            resp = await self.stub.ListLocations(req, timeout=5.0)
+            resp = await self.stub.ListLocations(req)
 
             if resp.locations:
                 return resp.locations[0].location_uuid
@@ -122,7 +122,7 @@ class DataPlatformClient:
                 values=observation_values,
             )
 
-            await self.stub.CreateObservations(req, timeout=5.0)
+            await self.stub.CreateObservations(req)
 
             logger.info(
                 f"Successfully sent {len(observation_values)} observations for site {site_uuid} "
