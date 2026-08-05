@@ -14,21 +14,11 @@ from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
 logger = structlog.stdlib.get_logger()
 
 
-def is_dataplatform_enabled() -> bool:
-    """Whether Data Platform gRPC streaming is enabled via SAVE_TO_DATA_PLATFORM."""
-    return os.getenv("SAVE_TO_DATA_PLATFORM", "false").lower() == "true"
-
-
 def get_dataplatform_target() -> str:
     """Build the `host:port` gRPC target for the configured Data Platform instance."""
     host = os.getenv("DATA_PLATFORM_HOST", "localhost")
     port = os.getenv("DATA_PLATFORM_PORT", "50051")
     return f"{host}:{port}"
-
-
-def get_dataplatform_channel(target: str):
-    """Open an insecure (non-TLS) gRPC channel to the Data Platform."""
-    return grpc.aio.insecure_channel(target)
 
 
 def _parse_datetime(dt_val: Any) -> datetime:
@@ -46,93 +36,102 @@ def _parse_datetime(dt_val: Any) -> datetime:
         raise ValueError(f"Unsupported datetime type: {type(dt_val)}")
 
 
-async def send_generation_data_to_platform(
-    site_uuid: str, generation_records: List[Dict[str, Any]]
-) -> None:
+class DataPlatformClient:
+    """Wraps a single long-lived gRPC channel/stub to the OCF Data Platform.
+
+    Create one instance per app (e.g. in a FastAPI lifespan) and reuse it across
+    requests, rather than opening a new channel for every call.
     """
-    Send generation observation actuals to the OCF Data Platform via gRPC CreateObservations.
-    :param site_uuid: UUID string of the target PV site location
-    :param generation_records: List of dicts with 'start_utc' and 'power_kw'
-    """
-    if not generation_records:
-        logger.debug("No generation records to send to Data Platform.")
-        return
 
-    observer_name = os.getenv("DATA_PLATFORM_OBSERVER_NAME", "pv_actual")
-    target = get_dataplatform_target()
+    def __init__(self, channel: grpc.aio.Channel):
+        self.channel = channel
+        self.stub = service_pb2_grpc.DataPlatformDataServiceStub(channel)
 
-    logger.info(
-        f"Sending {len(generation_records)} generation observations to Data Platform "
-        f"at {target} for site {site_uuid}"
-    )
+    async def close(self) -> None:
+        await self.channel.close()
 
-    try:
-        observation_values = []
-        for record in generation_records:
-            dt_obj = _parse_datetime(record["start_utc"])
-            ts = Timestamp()
-            ts.FromDatetime(dt_obj)
+    async def resolve_site_uuid(self, client_location_name: str) -> Optional[str]:
+        """
+        Resolve a database site's client location name to its Data Platform location UUID.
+        :param client_location_name: the site's `client_location_name` in the database
+        :return: the matching Data Platform location UUID, or None if no match was found
+        """
+        if not client_location_name:
+            return None
 
-            power_kw = float(record["power_kw"])
-            value_watts = round(power_kw * 1000.0)
+        target_names = {client_location_name, client_location_name.replace(".", "_")}
 
-            observation_values.append(
-                messages_pb2.CreateObservationsRequest.Value(
-                    timestamp_utc=ts,
-                    value_watts=value_watts,
-                )
+        try:
+            req = messages_pb2.ListLocationsRequest(location_names_filter=list(target_names))
+            resp = await self.stub.ListLocations(req, timeout=5.0)
+
+            if resp.locations:
+                return resp.locations[0].location_uuid
+
+        except Exception as exc:
+            logger.error(
+                f"Failed to resolve Data Platform location UUID for "
+                f"'{client_location_name}': {exc}",
+                exc_info=True,
             )
+            sentry_sdk.capture_exception(exc)
 
-        req = messages_pb2.CreateObservationsRequest(
-            location_uuid=site_uuid,
-            energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
-            observer_name=observer_name,
-            values=observation_values,
-        )
-
-        async with get_dataplatform_channel(target) as channel:
-            client = service_pb2_grpc.DataPlatformDataServiceStub(channel)
-            await client.CreateObservations(req, timeout=5.0)
-
-        logger.info(
-            f"Successfully sent {len(observation_values)} observations for site {site_uuid} "
-            "to Data Platform."
-        )
-
-    except Exception as exc:
-        logger.error(
-            f"Failed to send generation observations to Data Platform for site {site_uuid}: {exc}",
-            exc_info=True,
-        )
-        sentry_sdk.capture_exception(exc)
-
-
-async def resolve_site_uuid(client_location_name: str) -> Optional[str]:
-    """
-    Resolve a database site's client location name to its Data Platform location UUID.
-    :param client_location_name: the site's `client_location_name` in the database
-    :return: the matching Data Platform location UUID, or None if no match was found
-    """
-    if not client_location_name:
         return None
 
-    target_names = {client_location_name, client_location_name.replace(".", "_")}
-    target = get_dataplatform_target()
+    async def send_generation_data_to_platform(
+        self, site_uuid: str, generation_records: List[Dict[str, Any]]
+    ) -> None:
+        """
+        Send generation observation actuals to the OCF Data Platform via gRPC CreateObservations.
+        :param site_uuid: Data Platform location UUID of the target PV site
+        :param generation_records: List of dicts with 'start_utc' and 'power_kw'
+        """
+        if not generation_records:
+            logger.debug("No generation records to send to Data Platform.")
+            return
 
-    try:
-        async with get_dataplatform_channel(target) as channel:
-            client = service_pb2_grpc.DataPlatformDataServiceStub(channel)
-            req = messages_pb2.ListLocationsRequest(location_names_filter=list(target_names))
-            resp = await client.ListLocations(req, timeout=5.0)
+        observer_name = os.getenv("DATA_PLATFORM_OBSERVER_NAME", "pv_actual")
 
-        if resp.locations:
-            return resp.locations[0].location_uuid
-
-    except Exception as exc:
-        logger.error(
-            f"Failed to resolve Data Platform location UUID for '{client_location_name}': {exc}",
-            exc_info=True,
+        logger.info(
+            f"Sending {len(generation_records)} generation observations to Data Platform "
+            f"for site {site_uuid}"
         )
-        sentry_sdk.capture_exception(exc)
 
-    return None
+        try:
+            observation_values = []
+            for record in generation_records:
+                dt_obj = _parse_datetime(record["start_utc"])
+                ts = Timestamp()
+                ts.FromDatetime(dt_obj)
+
+                power_kw = float(record["power_kw"])
+                value_watts = round(power_kw * 1000.0)
+
+                observation_values.append(
+                    messages_pb2.CreateObservationsRequest.Value(
+                        timestamp_utc=ts,
+                        value_watts=value_watts,
+                    )
+                )
+
+            req = messages_pb2.CreateObservationsRequest(
+                location_uuid=site_uuid,
+                energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+                observer_name=observer_name,
+                values=observation_values,
+            )
+
+            await self.stub.CreateObservations(req, timeout=5.0)
+
+            logger.info(
+                f"Successfully sent {len(observation_values)} observations for site {site_uuid} "
+                "to Data Platform."
+            )
+
+        except Exception as exc:
+            logger.error(
+                f"Failed to send generation observations to Data Platform "
+                f"for site {site_uuid}: {exc}",
+                exc_info=True,
+            )
+            sentry_sdk.capture_exception(exc)
