@@ -45,7 +45,11 @@ from ._db_helpers import (
 )
 from .auth import Auth
 from .cache import cache_response
-from .dataplatform_client import DataPlatformClient, get_dataplatform_target
+from .dataplatform_client import (
+    DataPlatformClient,
+    get_dataplatform_client,
+    get_dataplatform_target,
+)
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -102,11 +106,12 @@ def is_fake():
 async def lifespan(app: FastAPI):
     """Open a single long-lived Data Platform gRPC channel for the app's lifetime."""
     channel = grpc.aio.insecure_channel(get_dataplatform_target())
-    app.state.dataplatform_client = DataPlatformClient(channel)
+    dp_client = DataPlatformClient(channel)
+    app.dependency_overrides[get_dataplatform_client] = lambda: dp_client
 
     yield
 
-    await app.state.dataplatform_client.close()
+    await dp_client.close()
 
 
 sentry_sdk.init(
@@ -265,6 +270,7 @@ async def post_pv_actual(
     pv_actual: MultiplePVActual,
     session: Session = Depends(get_session),
     auth: auth = Depends(auth),
+    dp_client: DataPlatformClient = Depends(get_dataplatform_client),
 ):
     """
     ### This route is used to input actual PV generation.
@@ -355,7 +361,6 @@ async def post_pv_actual(
     insert_generation_values(session, generation_values_df)
     session.commit()
 
-    dp_client: DataPlatformClient = request.app.state.dataplatform_client
     dp_uuid = await dp_client.resolve_site_uuid(site.client_location_name)
     if dp_uuid is None:
         logger.warning(

@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 import grpc
 import sentry_sdk
 import structlog
+from fastapi import HTTPException
 from google.protobuf.timestamp_pb2 import Timestamp
 from ocf.dp.dp import common_pb2
 from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
@@ -135,3 +136,12 @@ class DataPlatformClient:
                 exc_info=True,
             )
             sentry_sdk.capture_exception(exc)
+
+
+def get_dataplatform_client() -> DataPlatformClient:
+    """Get the Data Platform client.
+
+    Note: this should be overridden via FastAPI's dependency injection system
+    (in the app's lifespan) with an actual DataPlatformClient instance.
+    """
+    raise HTTPException(status_code=500, detail="Data Platform client not configured")
