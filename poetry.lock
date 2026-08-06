@@ -575,13 +575,13 @@ websockets = ["websocket-client (>=1.3.0)"]
 
 [[package]]
 name = "dp-sdk"
-version = "0.32.0"
+version = "0.34.0"
 description = "Python client for OCF Data Platform API"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "dp_sdk-0.32.0-py3-none-any.whl", hash = "sha256:db08f2cd76cae4489e3f43f6987bcbf60bc0d7d00e701d1bcb9645f941b0026e"},
+    {file = "dp_sdk-0.34.0-py3-none-any.whl", hash = "sha256:8def8d9ac159521ffed67f5a732579164dbebaf13e0949e0869b64f109c896ac"},
 ]
 
 [package.dependencies]
@@ -591,8 +591,7 @@ protobuf = "7.34.1"
 
 [package.source]
 type = "url"
-url = "https://github.com/openclimatefix/data-platform/releases/download/v0.32.0/dp_sdk-0.32.0-py3-none-any.whl"
-
+url = "https://github.com/openclimatefix/data-platform/releases/download/v0.34.0/dp_sdk-0.34.0-py3-none-any.whl"
 [[package]]
 name = "executing"
 version = "2.0.1"
@@ -3127,4 +3126,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "c8c25b8715c566c5b2dbcf030813fe00457cfe851d00e1e3e8ae446ee82210be"
+content-hash = "a43959273b663ff07099cc03a358b4a87bc862f841237fa33c780048b1012e83"

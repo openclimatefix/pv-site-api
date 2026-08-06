@@ -363,7 +363,7 @@ async def post_pv_actual(
 
     dp_uuid = await dp_client.resolve_site_uuid(site.client_location_name)
     if dp_uuid is None:
-        logger.warning(
+        logger.error(
             f"Skipping Data Platform stream: no location UUID found for site "
             f"{site_uuid} (client_location_name={site.client_location_name!r})"
         )

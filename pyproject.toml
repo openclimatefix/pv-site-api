@@ -30,10 +30,10 @@ pvsite-datamodel = "1.2.0"
 apitally = {extras = ["fastapi"], version = "^0.24.4"}
 grpcio = "^1.50.0"
 protobuf = ">=5.26.0"
-dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.32.0/dp_sdk-0.32.0-py3-none-any.whl" }
+dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.34.0/dp_sdk-0.34.0-py3-none-any.whl" }
 
 [tool.uv.sources]
-dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.32.0/dp_sdk-0.32.0-py3-none-any.whl" }
+dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.34.0/dp_sdk-0.34.0-py3-none-any.whl" }
 
 
 [tool.poetry.group.dev.dependencies]
