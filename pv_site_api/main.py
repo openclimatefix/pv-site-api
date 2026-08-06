@@ -3,9 +3,11 @@
 import os
 import time
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Optional, Union
 
+import grpc
 import pandas as pd
 import sentry_sdk
 import structlog
@@ -43,6 +45,11 @@ from ._db_helpers import (
 )
 from .auth import Auth
 from .cache import cache_response
+from .dataplatform_client import (
+    DataPlatformClient,
+    get_dataplatform_client,
+    get_dataplatform_target,
+)
 from .fake import (
     fake_site_uuid,
     make_fake_forecast,
@@ -95,6 +102,18 @@ def is_fake():
     return int(os.environ.get("FAKE", 0))
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Open a single long-lived Data Platform gRPC channel for the app's lifetime."""
+    channel = grpc.aio.insecure_channel(get_dataplatform_target())
+    dp_client = DataPlatformClient(channel)
+    app.dependency_overrides[get_dataplatform_client] = lambda: dp_client
+
+    yield
+
+    await dp_client.close()
+
+
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN"),
     environment=os.getenv("ENVIRONMENT", "local"),
@@ -103,7 +122,7 @@ sentry_sdk.init(
 sentry_sdk.set_tag("app_name", "quartz-solar-api-site")
 sentry_sdk.set_tag("app_version", pv_site_api.__version__)
 
-app = FastAPI(docs_url="/swagger", redoc_url=None)
+app = FastAPI(docs_url="/swagger", redoc_url=None, lifespan=lifespan)
 
 title = "Quartz PV Site API"
 
@@ -245,12 +264,13 @@ def get_sites(
 
 # post_pv_actual: sends data to us, and we save to database
 @app.post("/sites/{site_uuid}/pv_actual", tags=["Generation"])
-def post_pv_actual(
+async def post_pv_actual(
     request: Request,
     site_uuid: str,
     pv_actual: MultiplePVActual,
     session: Session = Depends(get_session),
     auth: auth = Depends(auth),
+    dp_client: DataPlatformClient = Depends(get_dataplatform_client),
 ):
     """
     ### This route is used to input actual PV generation.
@@ -340,6 +360,18 @@ def post_pv_actual(
 
     insert_generation_values(session, generation_values_df)
     session.commit()
+
+    dp_uuid = await dp_client.resolve_site_uuid(site.client_location_name)
+    if dp_uuid is None:
+        logger.error(
+            f"Skipping Data Platform stream: no location UUID found for site "
+            f"{site_uuid} (client_location_name={site.client_location_name!r})"
+        )
+    else:
+        await dp_client.send_generation_data_to_platform(
+            site_uuid=dp_uuid,
+            generation_records=generations,
+        )
 
 
 # put_site_info: client can update a site

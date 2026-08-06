@@ -183,4 +183,5 @@ def forecast_values(db_session, sites):
 def client(db_session):
     app.dependency_overrides[get_session] = lambda: db_session
     app.dependency_overrides[auth] = lambda: {"https://openclimatefix.org/email": "test@test.com"}
-    return TestClient(app)
+    with TestClient(app) as test_client:
+        yield test_client

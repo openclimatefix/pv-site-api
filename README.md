@@ -26,6 +26,18 @@ API for PV site level forecasting
 
     poetry run pytest tests
 
+## Data Platform Integration
+
+Generation values are always forwarded to the OCF Data Platform via gRPC. Configure the following environment variables to point it at the right instance:
+
+| Environment Variable | Default | Description |
+| --- | --- | --- |
+| `DATA_PLATFORM_HOST` | `localhost` | gRPC host for Data Platform service |
+| `DATA_PLATFORM_PORT` | `50051` | gRPC port for Data Platform service |
+
+### Manual Observer Creation (Pre-requisite)
+
+Before sending observations to a new Data Platform environment, create/register the `pv_actual` observer.
 
 ## Coding style
 
