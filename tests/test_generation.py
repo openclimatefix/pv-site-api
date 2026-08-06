@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from pvsite_datamodel.pydantic_models import GenerationSum
 from pvsite_datamodel.sqlmodels import GenerationSQL
 
+from pv_site_api.dataplatform_client import DataPlatformClient
 from pv_site_api.pydantic_models import MultiplePVActual, MultipleSitePVActualCompact, PVActualValue
 
 
@@ -226,14 +227,17 @@ def test_pv_actual_404(db_session, client):
 
 
 def test_post_pv_actual_with_dataplatform(db_session, client, sites, monkeypatch):
-    """Test posting actual generation when SAVE_TO_DATA_PLATFORM is true."""
-    monkeypatch.setenv("SAVE_TO_DATA_PLATFORM", "true")
+    """Test posting actual generation streams it to the Data Platform."""
     called_records = []
 
-    async def mock_send(site_uuid, generation_records):
+    async def mock_send(self, site_uuid, generation_records):
         called_records.append((site_uuid, generation_records))
 
-    monkeypatch.setattr("pv_site_api.main.send_generation_data_to_platform", mock_send)
+    async def mock_resolve(self, client_location_name):
+        return site_uuid
+
+    monkeypatch.setattr(DataPlatformClient, "send_generation_data_to_platform", mock_send)
+    monkeypatch.setattr(DataPlatformClient, "resolve_site_uuid", mock_resolve)
 
     site_uuid = str(sites[0].location_uuid)
     site_capacity_kw = sites[0].capacity_kw
@@ -254,15 +258,18 @@ def test_post_pv_actual_with_dataplatform(db_session, client, sites, monkeypatch
     assert called_records[0][1][0]["power_kw"] == site_capacity_kw - 1
 
 
-def test_post_pv_actual_without_dataplatform(db_session, client, sites, monkeypatch):
-    """Test posting actual generation does not call Data Platform when it's disabled."""
-    monkeypatch.delenv("SAVE_TO_DATA_PLATFORM", raising=False)
+def test_post_pv_actual_with_dataplatform_unresolved_uuid(db_session, client, sites, monkeypatch):
+    """If the Data Platform location UUID can't be resolved, we skip sending, not send blank."""
     called_records = []
 
-    async def mock_send(site_uuid, generation_records):
+    async def mock_send(self, site_uuid, generation_records):
         called_records.append((site_uuid, generation_records))
 
-    monkeypatch.setattr("pv_site_api.main.send_generation_data_to_platform", mock_send)
+    async def mock_resolve(self, client_location_name):
+        return None
+
+    monkeypatch.setattr(DataPlatformClient, "send_generation_data_to_platform", mock_send)
+    monkeypatch.setattr(DataPlatformClient, "resolve_site_uuid", mock_resolve)
 
     site_uuid = str(sites[0].location_uuid)
     site_capacity_kw = sites[0].capacity_kw

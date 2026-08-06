@@ -575,13 +575,13 @@ websockets = ["websocket-client (>=1.3.0)"]
 
 [[package]]
 name = "dp-sdk"
-version = "0.32.0"
+version = "0.34.0"
 description = "Python client for OCF Data Platform API"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "dp_sdk-0.32.0-py3-none-any.whl", hash = "sha256:db08f2cd76cae4489e3f43f6987bcbf60bc0d7d00e701d1bcb9645f941b0026e"},
+    {file = "dp_sdk-0.34.0-py3-none-any.whl", hash = "sha256:8def8d9ac159521ffed67f5a732579164dbebaf13e0949e0869b64f109c896ac"},
 ]
 
 [package.dependencies]
@@ -591,7 +591,7 @@ protobuf = "7.34.1"
 
 [package.source]
 type = "url"
-url = "https://github.com/openclimatefix/data-platform/releases/download/v0.32.0/dp_sdk-0.32.0-py3-none-any.whl"
+url = "https://github.com/openclimatefix/data-platform/releases/download/v0.34.0/dp_sdk-0.34.0-py3-none-any.whl"
 [[package]]
 name = "executing"
 version = "2.0.1"
@@ -2118,6 +2118,25 @@ pluggy = ">=0.12,<2.0"
 testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
 [[package]]
+name = "pytest-asyncio"
+version = "0.23.8"
+description = "Pytest support for asyncio"
+category = "dev"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pytest_asyncio-0.23.8-py3-none-any.whl", hash = "sha256:50265d892689a5faefb84df80819d1ecef566eb3549cf915dfb33569359d1ce2"},
+    {file = "pytest_asyncio-0.23.8.tar.gz", hash = "sha256:759b10b33a6dc61cce40a8bd5205e302978bbbcc00e279a8b61d9a6a3c82e4d3"},
+]
+
+[package.dependencies]
+pytest = ">=7.0.0,<9"
+
+[package.extras]
+docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1.0)"]
+testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
+
+[[package]]
 name = "pytest-cov"
 version = "4.1.0"
 description = "Pytest plugin for measuring coverage."
@@ -3107,4 +3126,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "3f71252e04713521da4bce417b272eb0cca5778986236c1a0205f0d2c9339139"
+content-hash = "a43959273b663ff07099cc03a358b4a87bc862f841237fa33c780048b1012e83"

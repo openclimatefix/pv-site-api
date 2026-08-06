@@ -1,11 +1,11 @@
 [project]
 name = "pv-site-api"
-version = "1.1.7"
+version = "1.1.8"
 requires-python = ">=3.11"
 
 [tool.poetry]
 name = "pv-site-api"
-version = "1.1.7"
+version = "1.1.8"
 description = ""
 authors = ["Open Climate Fix"]
 readme = "README.md"
@@ -30,10 +30,10 @@ pvsite-datamodel = "1.2.0"
 apitally = {extras = ["fastapi"], version = "^0.24.4"}
 grpcio = "^1.50.0"
 protobuf = ">=5.26.0"
-dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.32.0/dp_sdk-0.32.0-py3-none-any.whl" }
+dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.34.0/dp_sdk-0.34.0-py3-none-any.whl" }
 
 [tool.uv.sources]
-dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.32.0/dp_sdk-0.32.0-py3-none-any.whl" }
+dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.34.0/dp_sdk-0.34.0-py3-none-any.whl" }
 
 
 [tool.poetry.group.dev.dependencies]
@@ -42,6 +42,7 @@ ruff = "^0.0.253"
 black = "^23.1.0"
 pytest = "^7.2.1"
 pytest-cov = "^4.0.0"
+pytest-asyncio = ">=0.21.0"
 testcontainers-postgres = "^0.0.1rc1"
 ipython = "^8.11.0"
 freezegun = "^1.2.2"
