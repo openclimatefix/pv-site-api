@@ -15,6 +15,12 @@ def db_session():
     yield None
 
 
+@pytest.fixture(autouse=True)
+def _stub_dataplatform_client():
+    """Override conftest's global stub — these tests exercise the real client methods."""
+    yield
+
+
 @pytest.fixture()
 def dp_client():
     """A DataPlatformClient with its stub swapped for a mock, bypassing any real channel."""
@@ -114,4 +120,138 @@ async def test_resolve_site_uuid_grpc_failure_reports_to_sentry(dp_client, monke
     res = await dp_client.resolve_site_uuid("pvoutput.org_10020")
 
     assert res is None
+    mock_capture.assert_called_once_with(grpc_error)
+
+
+def _mock_resolved_location(dp_client, location_uuid: str) -> None:
+    """Make dp_client.stub.ListLocations resolve to a single matching location."""
+    mock_location = MagicMock()
+    mock_location.location_uuid = location_uuid
+    mock_resp = MagicMock()
+    mock_resp.locations = [mock_location]
+    dp_client.stub.ListLocations.return_value = mock_resp
+
+
+@pytest.mark.asyncio
+async def test_create_location(dp_client):
+    await dp_client.create_location(
+        site_uuid="test-site-uuid",
+        client_site_name="Test Site!",
+        latitude=51.5,
+        longitude=-0.1,
+        capacity_kw=2.5,
+    )
+
+    assert dp_client.stub.CreateLocation.called
+    req = dp_client.stub.CreateLocation.call_args[0][0]
+    # Sanitized: lowercased, non-alphanumeric/underscore/pipe chars replaced with "_".
+    assert req.location_name == "test_site_"
+    assert req.metadata["client_location_name"] == "Test Site!"
+    assert req.geometry_wkt == "POINT(-0.1 51.5)"
+    # 2.5 kW -> 2500 Watts
+    assert req.effective_capacity_watts == 2500
+
+
+@pytest.mark.asyncio
+async def test_create_location_grpc_failure_reports_to_sentry(dp_client, monkeypatch):
+    """If the gRPC call raises, the error is swallowed and reported to Sentry (not propagated)."""
+    grpc_error = RuntimeError("Data Platform unavailable")
+    dp_client.stub.CreateLocation.side_effect = grpc_error
+
+    mock_capture = MagicMock()
+    monkeypatch.setattr(sentry_sdk, "capture_exception", mock_capture)
+
+    # Should not raise: failures are handled internally.
+    await dp_client.create_location(
+        site_uuid="test-site-uuid",
+        client_site_name="Test Site",
+        latitude=51.5,
+        longitude=-0.1,
+        capacity_kw=2.5,
+    )
+
+    mock_capture.assert_called_once_with(grpc_error)
+
+
+@pytest.mark.asyncio
+async def test_update_location(dp_client):
+    """No rename: current and new names match, resolution and update both use it."""
+    _mock_resolved_location(dp_client, "resolved-dp-uuid")
+
+    await dp_client.update_location(
+        site_uuid="test-site-uuid",
+        current_client_site_name="Updated Site!",
+        new_client_site_name="Updated Site!",
+        capacity_kw=3.0,
+    )
+
+    resolve_filter = set(dp_client.stub.ListLocations.call_args[0][0].location_names_filter)
+    assert resolve_filter == {"Updated Site!", "updated_site_"}
+
+    assert dp_client.stub.UpdateLocation.called
+    req = dp_client.stub.UpdateLocation.call_args[0][0]
+    assert req.location_uuid == "resolved-dp-uuid"
+    assert req.new_location_name == "updated_site_"
+    assert req.new_metadata["client_location_name"] == "Updated Site!"
+    # 3.0 kW -> 3000 Watts
+    assert req.new_effective_capacity_watts == 3000
+
+
+@pytest.mark.asyncio
+async def test_update_location_rename(dp_client):
+    """Renaming: the existing location must be resolved by its *current* name, not the new one."""
+    _mock_resolved_location(dp_client, "resolved-dp-uuid")
+
+    await dp_client.update_location(
+        site_uuid="test-site-uuid",
+        current_client_site_name="Old Name",
+        new_client_site_name="New Name",
+        capacity_kw=3.0,
+    )
+
+    resolve_filter = set(dp_client.stub.ListLocations.call_args[0][0].location_names_filter)
+    assert resolve_filter == {"Old Name", "old_name"}
+
+    req = dp_client.stub.UpdateLocation.call_args[0][0]
+    assert req.location_uuid == "resolved-dp-uuid"
+    assert req.new_location_name == "new_name"
+    assert req.new_metadata["client_location_name"] == "New Name"
+
+
+@pytest.mark.asyncio
+async def test_update_location_unresolved_uuid(dp_client):
+    """If the Data Platform location can't be resolved, we skip updating, not update blindly."""
+    mock_resp = MagicMock()
+    mock_resp.locations = []
+    dp_client.stub.ListLocations.return_value = mock_resp
+
+    await dp_client.update_location(
+        site_uuid="test-site-uuid",
+        current_client_site_name="Updated Site",
+        new_client_site_name="Updated Site",
+        capacity_kw=3.0,
+    )
+
+    assert not dp_client.stub.UpdateLocation.called
+
+
+@pytest.mark.asyncio
+async def test_update_location_grpc_failure_reports_to_sentry(dp_client, monkeypatch):
+    """If the gRPC call raises, the error is swallowed and reported to Sentry (not propagated)."""
+    _mock_resolved_location(dp_client, "resolved-dp-uuid")
+
+    grpc_error = RuntimeError("Data Platform unavailable")
+    dp_client.stub.UpdateLocation.side_effect = grpc_error
+
+    mock_capture = MagicMock()
+    monkeypatch.setattr(sentry_sdk, "capture_exception", mock_capture)
+
+    # Should not raise: failures are handled internally.
+    await dp_client.update_location(
+        site_uuid="test-site-uuid",
+        current_client_site_name="Updated Site",
+        new_client_site_name="Updated Site",
+        capacity_kw=3.0,
+    )
+
     mock_capture.assert_called_once_with(grpc_error)

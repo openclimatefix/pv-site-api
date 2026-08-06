@@ -12,8 +12,26 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from testcontainers.postgres import PostgresContainer
 
+from pv_site_api.dataplatform_client import DataPlatformClient
 from pv_site_api.main import app, auth
 from pv_site_api.session import get_session
+
+
+@pytest.fixture(autouse=True)
+def _stub_dataplatform_client(monkeypatch):
+    """Stub out all Data Platform gRPC calls by default so tests don't hit real network.
+
+    Tests that want to assert on Data Platform behavior override these with their own
+    monkeypatch.setattr(DataPlatformClient, ...) calls, which take precedence for that test.
+    """
+
+    async def _noop(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr(DataPlatformClient, "resolve_site_uuid", _noop)
+    monkeypatch.setattr(DataPlatformClient, "send_generation_data_to_platform", _noop)
+    monkeypatch.setattr(DataPlatformClient, "create_location", _noop)
+    monkeypatch.setattr(DataPlatformClient, "update_location", _noop)
 
 
 @pytest.fixture

@@ -1,6 +1,7 @@
 """Data Platform Client for forwarding generation observations to OCF Data Platform."""
 
 import os
+import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -8,6 +9,7 @@ import grpc
 import sentry_sdk
 import structlog
 from fastapi import HTTPException
+from google.protobuf.struct_pb2 import Struct
 from google.protobuf.timestamp_pb2 import Timestamp
 from ocf.dp.dp import common_pb2
 from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
@@ -20,6 +22,16 @@ def get_dataplatform_target() -> str:
     host = os.getenv("DATA_PLATFORM_HOST", "localhost")
     port = os.getenv("DATA_PLATFORM_PORT", "50051")
     return f"{host}:{port}"
+
+
+def _sanitize_location_name(name: str) -> str:
+    """
+    Convert a client-facing name into a valid Data Platform location_name.
+
+    Data Platform requires location_name to be 2-100 chars, lowercase alphanumeric,
+    underscores, and pipes only. Any other character is replaced with an underscore.
+    """
+    return re.sub(r"[^a-z0-9_|]", "_", name.lower())
 
 
 def _parse_datetime(dt_val: Any) -> datetime:
@@ -60,7 +72,7 @@ class DataPlatformClient:
         if not client_location_name:
             return None
 
-        target_names = {client_location_name, client_location_name.replace(".", "_")}
+        target_names = {client_location_name, _sanitize_location_name(client_location_name)}
 
         try:
             req = messages_pb2.ListLocationsRequest(location_names_filter=list(target_names))
@@ -133,6 +145,116 @@ class DataPlatformClient:
             logger.error(
                 f"Failed to send generation observations to Data Platform "
                 f"for site {site_uuid}: {exc}",
+                exc_info=True,
+            )
+            sentry_sdk.capture_exception(exc)
+
+    async def create_location(
+        self,
+        site_uuid: str,
+        client_site_name: str,
+        latitude: float,
+        longitude: float,
+        capacity_kw: float,
+    ) -> None:
+        """
+        Register a new PV site as a location with the OCF Data Platform via gRPC CreateLocation.
+
+        `location_name` must be lowercase alphanumeric/underscore/pipe only, so it's derived
+        from `client_site_name` by replacing any other character with an underscore (matching
+        `resolve_site_uuid`'s lookup). The original, unsanitized name is preserved in `metadata`.
+        :param site_uuid: UUID string of the newly created PV site, used only for logging
+        :param client_site_name: the site's client-facing name
+        :param latitude: site latitude
+        :param longitude: site longitude
+        :param capacity_kw: site capacity in kW
+        """
+        logger.info(f"Creating Data Platform location for site {site_uuid} ({client_site_name})")
+
+        try:
+            ts = Timestamp()
+            ts.FromDatetime(datetime.now(timezone.utc))
+
+            metadata = Struct()
+            metadata.update({"client_location_name": client_site_name})
+
+            req = messages_pb2.CreateLocationRequest(
+                location_name=_sanitize_location_name(client_site_name),
+                energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+                geometry_wkt=f"POINT({longitude} {latitude})",
+                effective_capacity_watts=round(capacity_kw * 1000.0),
+                location_type=common_pb2.LocationType.LOCATION_TYPE_SITE,
+                valid_from_utc=ts,
+                metadata=metadata,
+            )
+
+            await self.stub.CreateLocation(req)
+
+            logger.info(f"Successfully created Data Platform location for site {site_uuid}.")
+
+        except Exception as exc:
+            logger.error(
+                f"Failed to create Data Platform location for site {site_uuid}: {exc}",
+                exc_info=True,
+            )
+            sentry_sdk.capture_exception(exc)
+
+    async def update_location(
+        self,
+        site_uuid: str,
+        current_client_site_name: str,
+        new_client_site_name: str,
+        capacity_kw: float,
+    ) -> None:
+        """
+        Update an existing Data Platform location via gRPC UpdateLocation.
+
+        Data Platform assigns its own `location_uuid` at creation time (independent of this
+        app's site UUID), so the location must be resolved by name first, the same way
+        `send_generation_data_to_platform`'s caller resolves it via `resolve_site_uuid`. It's
+        resolved by `current_client_site_name` (the name as currently registered on the Data
+        Platform) rather than `new_client_site_name`, since a rename means those may differ.
+        :param site_uuid: UUID string of the PV site, used only for logging
+        :param current_client_site_name: the site's client-facing name as currently registered
+            on the Data Platform, used to resolve the location to update
+        :param new_client_site_name: the site's client-facing name to update the location to
+        :param capacity_kw: site capacity in kW
+        """
+        dp_uuid = await self.resolve_site_uuid(current_client_site_name)
+        if dp_uuid is None:
+            logger.warning(
+                f"Skipping Data Platform location update: no location found for site "
+                f"{site_uuid} (client_site_name={current_client_site_name!r})"
+            )
+            return
+
+        logger.info(
+            f"Updating Data Platform location for site {site_uuid} ({new_client_site_name})"
+        )
+
+        try:
+            ts = Timestamp()
+            ts.FromDatetime(datetime.now(timezone.utc))
+
+            new_metadata = Struct()
+            new_metadata.update({"client_location_name": new_client_site_name})
+
+            req = messages_pb2.UpdateLocationRequest(
+                location_uuid=dp_uuid,
+                energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+                new_location_name=_sanitize_location_name(new_client_site_name),
+                new_effective_capacity_watts=round(capacity_kw * 1000.0),
+                new_metadata=new_metadata,
+                valid_from_utc=ts,
+            )
+
+            await self.stub.UpdateLocation(req)
+
+            logger.info(f"Successfully updated Data Platform location for site {site_uuid}.")
+
+        except Exception as exc:
+            logger.error(
+                f"Failed to update Data Platform location for site {site_uuid}: {exc}",
                 exc_info=True,
             )
             sentry_sdk.capture_exception(exc)
