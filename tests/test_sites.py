@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from pvsite_datamodel.sqlmodels import LocationSQL
 
+from pv_site_api.dataplatform_client import DataPlatformClient
 from pv_site_api.pydantic_models import PVSiteInputMetadata, PVSites
 
 
@@ -159,14 +160,13 @@ def test_put_site_and_update(db_session, client):
 
 
 def test_post_site_with_dataplatform(db_session, client, monkeypatch):
-    """Test posting a new site when SAVE_TO_DATA_PLATFORM is true."""
-    monkeypatch.setenv("SAVE_TO_DATA_PLATFORM", "true")
+    """Test posting a new site streams the new location to the Data Platform."""
     called_records = []
 
-    async def mock_create(site_uuid, client_site_name, latitude, longitude, capacity_kw):
+    async def mock_create(self, site_uuid, client_site_name, latitude, longitude, capacity_kw):
         called_records.append((site_uuid, client_site_name, latitude, longitude, capacity_kw))
 
-    monkeypatch.setattr("pv_site_api.main.create_dataplatform_location", mock_create)
+    monkeypatch.setattr(DataPlatformClient, "create_location", mock_create)
 
     pv_site = PVSiteInputMetadata(
         client_name="test_client",
@@ -194,10 +194,12 @@ def test_post_site_with_dataplatform(db_session, client, monkeypatch):
     assert len(called_records) == 1
     assert str(called_records[0][0]) == site_uuid
     assert called_records[0][1] == "the site name"
+    assert called_records[0][2] == 50
+    assert called_records[0][3] == 0
 
 
 def test_put_site_with_dataplatform(db_session, client, monkeypatch):
-    """Test updating a site when SAVE_TO_DATA_PLATFORM is true."""
+    """Test updating a site streams the update to the Data Platform."""
     pv_site = PVSiteInputMetadata(
         client_name="test_client",
         client_site_id=1,
@@ -220,13 +222,16 @@ def test_put_site_with_dataplatform(db_session, client, monkeypatch):
     assert response.status_code == 201, response.text
     site_uuid = response.json()["site_uuid"]
 
-    monkeypatch.setenv("SAVE_TO_DATA_PLATFORM", "true")
     called_records = []
 
-    async def mock_update(site_uuid, client_site_name, latitude, longitude, capacity_kw):
-        called_records.append((site_uuid, client_site_name, latitude, longitude, capacity_kw))
+    async def mock_update(
+        self, site_uuid, current_client_site_name, new_client_site_name, capacity_kw
+    ):
+        called_records.append(
+            (site_uuid, current_client_site_name, new_client_site_name, capacity_kw)
+        )
 
-    monkeypatch.setattr("pv_site_api.main.update_dataplatform_location", mock_update)
+    monkeypatch.setattr(DataPlatformClient, "update_location", mock_update)
 
     response = client.put(f"sites/{site_uuid}", json={"orientation": 120})
     assert response.status_code == 200, response.text

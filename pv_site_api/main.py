@@ -376,11 +376,12 @@ async def post_pv_actual(
 
 # put_site_info: client can update a site
 @app.put("/sites/{site_uuid}", response_model=PVSiteMetadata, tags=["Sites"])
-def put_site_info(
+async def put_site_info(
     site_uuid: str,
     site_info: PVSiteEditMetadata,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
+    dp_client: DataPlatformClient = Depends(get_dataplatform_client),
 ) -> PVSiteMetadata:
     """
     ### This route allows a user to update site information for a single site.
@@ -406,30 +407,32 @@ def put_site_info(
     # make sure user has access to this site
     check_user_has_access_to_site(session=session, auth=auth, site_uuid=site_uuid)
 
+    # capture the current name before it's renamed, so the existing Data Platform
+    # location (registered under the current name) can still be resolved
+    current_site = get_site_by_uuid(session=session, site_uuid=site_uuid)
+    current_client_site_name = current_site.client_location_name
+
     # update site informations
     site, message = edit_site(session=session, site_uuid=site_uuid, site_info=site_info)
 
     logger.debug(message)
 
-    if is_dataplatform_enabled():
-        asyncio.run(
-            update_dataplatform_location(
-                site_uuid=site.location_uuid,
-                client_site_name=site.client_location_name,
-                latitude=site.latitude,
-                longitude=site.longitude,
-                capacity_kw=site.capacity_kw,
-            )
-        )
+    await dp_client.update_location(
+        site_uuid=site.location_uuid,
+        current_client_site_name=current_client_site_name,
+        new_client_site_name=site.client_location_name,
+        capacity_kw=site.capacity_kw,
+    )
 
     return site_to_pydantic(site)
 
 
 @app.post("/sites", status_code=201, response_model=PVSiteMetadata, tags=["Sites"])
-def post_site_info(
+async def post_site_info(
     site_info: PVSiteInputMetadata,
     session: Session = Depends(get_session),
     auth: dict = Depends(auth),
+    dp_client: DataPlatformClient = Depends(get_dataplatform_client),
 ) -> PVSiteMetadata:
     """
     ### This route allows a user to add a site.
@@ -471,16 +474,13 @@ def post_site_info(
     user.location_group.locations.append(site)
     session.commit()
 
-    if is_dataplatform_enabled():
-        asyncio.run(
-            create_dataplatform_location(
-                site_uuid=site.location_uuid,
-                client_site_name=site.client_location_name,
-                latitude=site.latitude,
-                longitude=site.longitude,
-                capacity_kw=site.capacity_kw,
-            )
-        )
+    await dp_client.create_location(
+        site_uuid=site.location_uuid,
+        client_site_name=site.client_location_name,
+        latitude=site.latitude,
+        longitude=site.longitude,
+        capacity_kw=site.capacity_kw,
+    )
 
     return site_to_pydantic(site)
 
