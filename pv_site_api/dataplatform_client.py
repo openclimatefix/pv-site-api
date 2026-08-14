@@ -156,6 +156,8 @@ class DataPlatformClient:
         latitude: float,
         longitude: float,
         capacity_kw: float,
+        tilt: Optional[float] = None,
+        orientation: Optional[float] = None,
     ) -> None:
         """
         Register a new PV site as a location with the OCF Data Platform via gRPC CreateLocation.
@@ -163,11 +165,15 @@ class DataPlatformClient:
         `location_name` must be lowercase alphanumeric/underscore/pipe only, so it's derived
         from `client_site_name` by replacing any other character with an underscore (matching
         `resolve_site_uuid`'s lookup). The original, unsanitized name is preserved in `metadata`.
+        Data Platform locations have no native tilt/orientation fields, so they're also stashed
+        in `metadata` when available.
         :param site_uuid: UUID string of the newly created PV site, used only for logging
         :param client_site_name: the site's client-facing name
         :param latitude: site latitude
         :param longitude: site longitude
         :param capacity_kw: site capacity in kW
+        :param tilt: site panel tilt in degrees, if known
+        :param orientation: site panel orientation in degrees, if known
         """
         logger.info(f"Creating Data Platform location for site {site_uuid} ({client_site_name})")
 
@@ -175,8 +181,14 @@ class DataPlatformClient:
             ts = Timestamp()
             ts.FromDatetime(datetime.now(timezone.utc))
 
+            metadata_dict: Dict[str, Any] = {"client_location_name": client_site_name}
+            if tilt is not None:
+                metadata_dict["tilt"] = tilt
+            if orientation is not None:
+                metadata_dict["orientation"] = orientation
+
             metadata = Struct()
-            metadata.update({"client_location_name": client_site_name})
+            metadata.update(metadata_dict)
 
             req = messages_pb2.CreateLocationRequest(
                 location_name=_sanitize_location_name(client_site_name),
@@ -205,6 +217,8 @@ class DataPlatformClient:
         current_client_site_name: str,
         new_client_site_name: str,
         capacity_kw: float,
+        tilt: Optional[float] = None,
+        orientation: Optional[float] = None,
     ) -> None:
         """
         Update an existing Data Platform location via gRPC UpdateLocation.
@@ -219,6 +233,8 @@ class DataPlatformClient:
             on the Data Platform, used to resolve the location to update
         :param new_client_site_name: the site's client-facing name to update the location to
         :param capacity_kw: site capacity in kW
+        :param tilt: site panel tilt in degrees, if known
+        :param orientation: site panel orientation in degrees, if known
         """
         dp_uuid = await self.resolve_site_uuid(current_client_site_name)
         if dp_uuid is None:
@@ -236,8 +252,14 @@ class DataPlatformClient:
             ts = Timestamp()
             ts.FromDatetime(datetime.now(timezone.utc))
 
+            new_metadata_dict: Dict[str, Any] = {"client_location_name": new_client_site_name}
+            if tilt is not None:
+                new_metadata_dict["tilt"] = tilt
+            if orientation is not None:
+                new_metadata_dict["orientation"] = orientation
+
             new_metadata = Struct()
-            new_metadata.update({"client_location_name": new_client_site_name})
+            new_metadata.update(new_metadata_dict)
 
             req = messages_pb2.UpdateLocationRequest(
                 location_uuid=dp_uuid,

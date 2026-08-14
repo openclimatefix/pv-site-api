@@ -422,6 +422,8 @@ async def put_site_info(
         current_client_site_name=current_client_site_name,
         new_client_site_name=site.client_location_name,
         capacity_kw=site.capacity_kw,
+        tilt=site.tilt,
+        orientation=site.orientation,
     )
 
     return site_to_pydantic(site)
@@ -480,6 +482,8 @@ async def post_site_info(
         latitude=site.latitude,
         longitude=site.longitude,
         capacity_kw=site.capacity_kw,
+        tilt=site.tilt,
+        orientation=site.orientation,
     )
 
     return site_to_pydantic(site)
