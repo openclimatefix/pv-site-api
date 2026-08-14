@@ -163,8 +163,19 @@ def test_post_site_with_dataplatform(db_session, client, monkeypatch):
     """Test posting a new site streams the new location to the Data Platform."""
     called_records = []
 
-    async def mock_create(self, site_uuid, client_site_name, latitude, longitude, capacity_kw):
-        called_records.append((site_uuid, client_site_name, latitude, longitude, capacity_kw))
+    async def mock_create(
+        self,
+        site_uuid,
+        client_site_name,
+        latitude,
+        longitude,
+        capacity_kw,
+        tilt=None,
+        orientation=None,
+    ):
+        called_records.append(
+            (site_uuid, client_site_name, latitude, longitude, capacity_kw, tilt, orientation)
+        )
 
     monkeypatch.setattr(DataPlatformClient, "create_location", mock_create)
 
@@ -196,6 +207,8 @@ def test_post_site_with_dataplatform(db_session, client, monkeypatch):
     assert called_records[0][1] == "the site name"
     assert called_records[0][2] == 50
     assert called_records[0][3] == 0
+    assert called_records[0][5] == 90
+    assert called_records[0][6] == 180
 
 
 def test_put_site_with_dataplatform(db_session, client, monkeypatch):
@@ -225,10 +238,23 @@ def test_put_site_with_dataplatform(db_session, client, monkeypatch):
     called_records = []
 
     async def mock_update(
-        self, site_uuid, current_client_site_name, new_client_site_name, capacity_kw
+        self,
+        site_uuid,
+        current_client_site_name,
+        new_client_site_name,
+        capacity_kw,
+        tilt=None,
+        orientation=None,
     ):
         called_records.append(
-            (site_uuid, current_client_site_name, new_client_site_name, capacity_kw)
+            (
+                site_uuid,
+                current_client_site_name,
+                new_client_site_name,
+                capacity_kw,
+                tilt,
+                orientation,
+            )
         )
 
     monkeypatch.setattr(DataPlatformClient, "update_location", mock_update)
@@ -237,4 +263,6 @@ def test_put_site_with_dataplatform(db_session, client, monkeypatch):
     assert response.status_code == 200, response.text
 
     assert len(called_records) == 1
+    assert called_records[0][4] == 90
+    assert called_records[0][5] == 120
     assert str(called_records[0][0]) == site_uuid
