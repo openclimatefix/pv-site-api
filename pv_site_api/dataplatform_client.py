@@ -256,6 +256,7 @@ class DataPlatformClient:
                 messages_pb2.GetLocationRequest(
                     location_uuid=dp_uuid,
                     energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+                    pivot_timestamp_utc=ts,
                 )
             )
 
