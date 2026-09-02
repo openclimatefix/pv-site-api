@@ -252,13 +252,24 @@ class DataPlatformClient:
             ts = Timestamp()
             ts.FromDatetime(datetime.now(timezone.utc))
 
+            get_resp = await self.stub.GetLocation(
+                messages_pb2.GetLocationRequest(
+                    location_uuid=dp_uuid,
+                    energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+                )
+            )
+
+            # start from the location's existing metadata so unrelated keys already
+            # stored on the Data Platform aren't wiped out by this update
+            new_metadata = Struct()
+            new_metadata.CopyFrom(get_resp.metadata)
+
             new_metadata_dict: Dict[str, Any] = {"client_location_name": new_client_site_name}
             if tilt is not None:
                 new_metadata_dict["tilt"] = tilt
             if orientation is not None:
                 new_metadata_dict["orientation"] = orientation
 
-            new_metadata = Struct()
             new_metadata.update(new_metadata_dict)
 
             req = messages_pb2.UpdateLocationRequest(
