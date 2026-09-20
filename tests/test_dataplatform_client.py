@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import sentry_sdk
+from google.protobuf.struct_pb2 import Struct
 
 from pv_site_api.dataplatform_client import DataPlatformClient, _parse_datetime
 
@@ -123,13 +124,23 @@ async def test_resolve_site_uuid_grpc_failure_reports_to_sentry(dp_client, monke
     mock_capture.assert_called_once_with(grpc_error)
 
 
-def _mock_resolved_location(dp_client, location_uuid: str) -> None:
-    """Make dp_client.stub.ListLocations resolve to a single matching location."""
+def _mock_resolved_location(
+    dp_client, location_uuid: str, existing_metadata: dict | None = None
+) -> None:
+    """Make dp_client.stub.ListLocations resolve to a single matching location, and make
+    dp_client.stub.GetLocation return that location with the given (or empty) metadata."""
     mock_location = MagicMock()
     mock_location.location_uuid = location_uuid
     mock_resp = MagicMock()
     mock_resp.locations = [mock_location]
     dp_client.stub.ListLocations.return_value = mock_resp
+
+    existing = Struct()
+    if existing_metadata:
+        existing.update(existing_metadata)
+    get_resp = MagicMock()
+    get_resp.metadata = existing
+    dp_client.stub.GetLocation.return_value = get_resp
 
 
 @pytest.mark.asyncio
@@ -216,6 +227,31 @@ async def test_update_location_rename(dp_client):
     assert req.location_uuid == "resolved-dp-uuid"
     assert req.new_location_name == "new_name"
     assert req.new_metadata["client_location_name"] == "New Name"
+
+
+@pytest.mark.asyncio
+async def test_update_location_preserves_existing_metadata(dp_client):
+    """Updating a location must not wipe out metadata keys it isn't touching."""
+    _mock_resolved_location(
+        dp_client, "resolved-dp-uuid", existing_metadata={"some_other_key": "keep-me"}
+    )
+
+    await dp_client.update_location(
+        site_uuid="test-site-uuid",
+        current_client_site_name="Updated Site!",
+        new_client_site_name="Updated Site!",
+        capacity_kw=3.0,
+        tilt=30.0,
+    )
+
+    assert dp_client.stub.GetLocation.called
+    get_req = dp_client.stub.GetLocation.call_args[0][0]
+    assert get_req.location_uuid == "resolved-dp-uuid"
+
+    req = dp_client.stub.UpdateLocation.call_args[0][0]
+    assert req.new_metadata["some_other_key"] == "keep-me"
+    assert req.new_metadata["client_location_name"] == "Updated Site!"
+    assert req.new_metadata["tilt"] == 30.0
 
 
 @pytest.mark.asyncio
