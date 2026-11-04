@@ -361,7 +361,7 @@ async def post_pv_actual(
     insert_generation_values(session, generation_values_df)
     session.commit()
 
-    dp_uuid = await dp_client.resolve_site_uuid(site.client_location_name)
+    dp_uuid = await dp_client.resolve_site_uuid(site.location_uuid, site.client_location_name)
     if dp_uuid is None:
         logger.error(
             f"Skipping Data Platform stream: no location UUID found for site "

@@ -233,7 +233,7 @@ def test_post_pv_actual_with_dataplatform(db_session, client, sites, monkeypatch
     async def mock_send(self, site_uuid, generation_records):
         called_records.append((site_uuid, generation_records))
 
-    async def mock_resolve(self, client_location_name):
+    async def mock_resolve(self, site_uuid_arg, client_location_name):
         return site_uuid
 
     monkeypatch.setattr(DataPlatformClient, "send_generation_data_to_platform", mock_send)
@@ -265,7 +265,7 @@ def test_post_pv_actual_with_dataplatform_unresolved_uuid(db_session, client, si
     async def mock_send(self, site_uuid, generation_records):
         called_records.append((site_uuid, generation_records))
 
-    async def mock_resolve(self, client_location_name):
+    async def mock_resolve(self, site_uuid_arg, client_location_name):
         return None
 
     monkeypatch.setattr(DataPlatformClient, "send_generation_data_to_platform", mock_send)
