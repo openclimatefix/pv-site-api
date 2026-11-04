@@ -63,28 +63,39 @@ class DataPlatformClient:
     async def close(self) -> None:
         await self.channel.close()
 
-    async def resolve_site_uuid(self, client_location_name: str) -> Optional[str]:
+    async def resolve_site_uuid(
+        self, site_uuid: Any, client_location_name: Optional[str]
+    ) -> Optional[str]:
         """
-        Resolve a database site's client location name to its Data Platform location UUID.
-        :param client_location_name: the site's `client_location_name` in the database
+        Resolve a site to its Data Platform location UUID by location name.
+
+        Looks for a location named with the site's UUID first, then for one named with the
+        client name.
+        :param site_uuid: the site's UUID
+        :param client_location_name: the site's `client_location_name`
         :return: the matching Data Platform location UUID, or None if no match was found
         """
-        if not client_location_name:
-            return None
-
-        target_names = {client_location_name, _sanitize_location_name(client_location_name)}
+        uuid_name = _sanitize_location_name(str(site_uuid))
+        target_names = {uuid_name}
+        if client_location_name:
+            target_names.update(
+                {client_location_name, _sanitize_location_name(client_location_name)}
+            )
 
         try:
             req = messages_pb2.ListLocationsRequest(location_names_filter=list(target_names))
             resp = await self.stub.ListLocations(req)
+
+            for location in resp.locations:
+                if location.location_name == uuid_name:
+                    return location.location_uuid
 
             if resp.locations:
                 return resp.locations[0].location_uuid
 
         except Exception as exc:
             logger.error(
-                f"Failed to resolve Data Platform location UUID for "
-                f"'{client_location_name}': {exc}",
+                f"Failed to resolve Data Platform location UUID for site {site_uuid}: {exc}",
                 exc_info=True,
             )
             sentry_sdk.capture_exception(exc)
@@ -163,11 +174,11 @@ class DataPlatformClient:
         Register a new PV site as a location with the OCF Data Platform via gRPC CreateLocation.
 
         `location_name` must be lowercase alphanumeric/underscore/pipe only, so it's derived
-        from `client_site_name` by replacing any other character with an underscore (matching
-        `resolve_site_uuid`'s lookup). The original, unsanitized name is preserved in `metadata`.
+        from `site_uuid` by replacing any other character with an underscore (matching
+        `resolve_site_uuid`'s lookup). The client-facing name is preserved in `metadata`.
         Data Platform locations have no native tilt/orientation fields, so they're also stashed
         in `metadata` when available.
-        :param site_uuid: UUID string of the newly created PV site, used only for logging
+        :param site_uuid: UUID string of the newly created PV site
         :param client_site_name: the site's client-facing name
         :param latitude: site latitude
         :param longitude: site longitude
@@ -191,7 +202,7 @@ class DataPlatformClient:
             metadata.update(metadata_dict)
 
             req = messages_pb2.CreateLocationRequest(
-                location_name=_sanitize_location_name(client_site_name),
+                location_name=_sanitize_location_name(str(site_uuid)),
                 energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
                 geometry_wkt=f"POINT({longitude} {latitude})",
                 effective_capacity_watts=round(capacity_kw * 1000.0),
@@ -226,17 +237,18 @@ class DataPlatformClient:
         Data Platform assigns its own `location_uuid` at creation time (independent of this
         app's site UUID), so the location must be resolved by name first, the same way
         `send_generation_data_to_platform`'s caller resolves it via `resolve_site_uuid`. It's
-        resolved by `current_client_site_name` (the name as currently registered on the Data
-        Platform) rather than `new_client_site_name`, since a rename means those may differ.
-        :param site_uuid: UUID string of the PV site, used only for logging
-        :param current_client_site_name: the site's client-facing name as currently registered
-            on the Data Platform, used to resolve the location to update
-        :param new_client_site_name: the site's client-facing name to update the location to
+        resolved by `current_client_site_name` rather than `new_client_site_name`, since a
+        rename means those may differ. A client rename only changes `metadata`, not
+        `location_name`.
+        :param site_uuid: UUID string of the PV site
+        :param current_client_site_name: the site's client-facing name before this update,
+            used to resolve locations that haven't been renamed to the site UUID yet
+        :param new_client_site_name: the site's client-facing name to save in `metadata`
         :param capacity_kw: site capacity in kW
         :param tilt: site panel tilt in degrees, if known
         :param orientation: site panel orientation in degrees, if known
         """
-        dp_uuid = await self.resolve_site_uuid(current_client_site_name)
+        dp_uuid = await self.resolve_site_uuid(site_uuid, current_client_site_name)
         if dp_uuid is None:
             logger.warning(
                 f"Skipping Data Platform location update: no location found for site "
@@ -276,7 +288,6 @@ class DataPlatformClient:
             req = messages_pb2.UpdateLocationRequest(
                 location_uuid=dp_uuid,
                 energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
-                new_location_name=_sanitize_location_name(new_client_site_name),
                 new_effective_capacity_watts=round(capacity_kw * 1000.0),
                 new_metadata=new_metadata,
                 valid_from_utc=ts,

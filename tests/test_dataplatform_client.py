@@ -90,8 +90,26 @@ async def test_resolve_site_uuid_match_found(dp_client):
     mock_resp.locations = [mock_location]
     dp_client.stub.ListLocations.return_value = mock_resp
 
-    res = await dp_client.resolve_site_uuid("pvoutput.org_10020")
+    res = await dp_client.resolve_site_uuid("site-uuid", "pvoutput.org_10020")
     assert res == "resolved-dp-uuid"
+
+    resolve_filter = set(dp_client.stub.ListLocations.call_args[0][0].location_names_filter)
+    assert resolve_filter == {"site_uuid", "pvoutput.org_10020", "pvoutput_org_10020"}
+
+
+@pytest.mark.asyncio
+async def test_resolve_site_uuid_prefers_uuid_name(dp_client):
+    by_client_name = MagicMock(location_uuid="by-client-name")
+    by_client_name.location_name = "pvoutput_org_10020"
+    by_uuid = MagicMock(location_uuid="by-uuid")
+    by_uuid.location_name = "site_uuid"
+
+    mock_resp = MagicMock()
+    mock_resp.locations = [by_client_name, by_uuid]
+    dp_client.stub.ListLocations.return_value = mock_resp
+
+    res = await dp_client.resolve_site_uuid("site-uuid", "pvoutput.org_10020")
+    assert res == "by-uuid"
 
 
 @pytest.mark.asyncio
@@ -100,14 +118,21 @@ async def test_resolve_site_uuid_no_match(dp_client):
     mock_resp.locations = []
     dp_client.stub.ListLocations.return_value = mock_resp
 
-    res = await dp_client.resolve_site_uuid("unknown_site")
+    res = await dp_client.resolve_site_uuid("site-uuid", "unknown_site")
     assert res is None
 
 
 @pytest.mark.asyncio
 async def test_resolve_site_uuid_empty_client_location_name(dp_client):
-    res = await dp_client.resolve_site_uuid("")
+    mock_resp = MagicMock()
+    mock_resp.locations = []
+    dp_client.stub.ListLocations.return_value = mock_resp
+
+    res = await dp_client.resolve_site_uuid("site-uuid", "")
     assert res is None
+
+    resolve_filter = set(dp_client.stub.ListLocations.call_args[0][0].location_names_filter)
+    assert resolve_filter == {"site_uuid"}
 
 
 @pytest.mark.asyncio
@@ -118,7 +143,7 @@ async def test_resolve_site_uuid_grpc_failure_reports_to_sentry(dp_client, monke
     mock_capture = MagicMock()
     monkeypatch.setattr(sentry_sdk, "capture_exception", mock_capture)
 
-    res = await dp_client.resolve_site_uuid("pvoutput.org_10020")
+    res = await dp_client.resolve_site_uuid("site-uuid", "pvoutput.org_10020")
 
     assert res is None
     mock_capture.assert_called_once_with(grpc_error)
@@ -156,7 +181,7 @@ async def test_create_location(dp_client):
     assert dp_client.stub.CreateLocation.called
     req = dp_client.stub.CreateLocation.call_args[0][0]
     # Sanitized: lowercased, non-alphanumeric/underscore/pipe chars replaced with "_".
-    assert req.location_name == "test_site_"
+    assert req.location_name == "test_site_uuid"
     assert req.metadata["client_location_name"] == "Test Site!"
     assert req.geometry_wkt == "POINT(-0.1 51.5)"
     # 2.5 kW -> 2500 Watts
@@ -197,12 +222,12 @@ async def test_update_location(dp_client):
     )
 
     resolve_filter = set(dp_client.stub.ListLocations.call_args[0][0].location_names_filter)
-    assert resolve_filter == {"Updated Site!", "updated_site_"}
+    assert resolve_filter == {"test_site_uuid", "Updated Site!", "updated_site_"}
 
     assert dp_client.stub.UpdateLocation.called
     req = dp_client.stub.UpdateLocation.call_args[0][0]
     assert req.location_uuid == "resolved-dp-uuid"
-    assert req.new_location_name == "updated_site_"
+    assert not req.HasField("new_location_name")
     assert req.new_metadata["client_location_name"] == "Updated Site!"
     # 3.0 kW -> 3000 Watts
     assert req.new_effective_capacity_watts == 3000
@@ -221,11 +246,11 @@ async def test_update_location_rename(dp_client):
     )
 
     resolve_filter = set(dp_client.stub.ListLocations.call_args[0][0].location_names_filter)
-    assert resolve_filter == {"Old Name", "old_name"}
+    assert resolve_filter == {"test_site_uuid", "Old Name", "old_name"}
 
     req = dp_client.stub.UpdateLocation.call_args[0][0]
     assert req.location_uuid == "resolved-dp-uuid"
-    assert req.new_location_name == "new_name"
+    assert not req.HasField("new_location_name")
     assert req.new_metadata["client_location_name"] == "New Name"
 
 
