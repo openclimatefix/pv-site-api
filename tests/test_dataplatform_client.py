@@ -158,6 +158,7 @@ async def test_create_location(dp_client):
     # Sanitized: lowercased, non-alphanumeric/underscore/pipe chars replaced with "_".
     assert req.location_name == "test_site_"
     assert req.metadata["client_location_name"] == "Test Site!"
+    assert req.metadata["site_database_uuid"] == "test-site-uuid"
     assert req.geometry_wkt == "POINT(-0.1 51.5)"
     # 2.5 kW -> 2500 Watts
     assert req.effective_capacity_watts == 2500

@@ -167,7 +167,8 @@ class DataPlatformClient:
         `resolve_site_uuid`'s lookup). The original, unsanitized name is preserved in `metadata`.
         Data Platform locations have no native tilt/orientation fields, so they're also stashed
         in `metadata` when available.
-        :param site_uuid: UUID string of the newly created PV site, used only for logging
+        :param site_uuid: UUID string of the newly created PV site, stored in `metadata` as
+            `site_database_uuid`
         :param client_site_name: the site's client-facing name
         :param latitude: site latitude
         :param longitude: site longitude
@@ -181,7 +182,10 @@ class DataPlatformClient:
             ts = Timestamp()
             ts.FromDatetime(datetime.now(timezone.utc))
 
-            metadata_dict: Dict[str, Any] = {"client_location_name": client_site_name}
+            metadata_dict: Dict[str, Any] = {
+                "client_location_name": client_site_name,
+                "site_database_uuid": str(site_uuid),
+            }
             if tilt is not None:
                 metadata_dict["tilt"] = tilt
             if orientation is not None:
