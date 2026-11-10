@@ -29,6 +29,8 @@ from pvsite_datamodel.write.user_and_site import (
     remove_site_from_site_group,
     set_site_to_inactive_if_not_in_site_group,
 )
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
 from sqlalchemy.orm import Session
 
 import pv_site_api
@@ -76,6 +78,18 @@ load_dotenv()
 logger = structlog.stdlib.get_logger()
 
 
+# Routes with no useful performance data: docs, assets and status checks.
+UNTRACED_PATHS = {
+    "/",
+    "/api_status",
+    "/favicon.ico",
+    "/docs",
+    "/swagger",
+    "/openapi.json",
+    "/QUARTZSOLAR_LOGO_SECONDARY_BLACK_1.png",
+}
+
+
 def traces_sampler(sampling_context):
     """
     Filter tracing for sentry logs.
@@ -84,8 +98,11 @@ def traces_sampler(sampling_context):
     along with anything in the global namespace to compute the sample rate
     or sampling decision for this transaction
     """
+    scope = sampling_context.get("asgi_scope") or {}
 
     if os.getenv("ENVIRONMENT") == "local":
+        return 0.0
+    elif scope.get("method") == "OPTIONS" or scope.get("path") in UNTRACED_PATHS:
         return 0.0
     elif "error" in sampling_context["transaction_context"]["name"]:
         # These are important - take a big sample
@@ -118,6 +135,13 @@ sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN"),
     environment=os.getenv("ENVIRONMENT", "local"),
     traces_sampler=traces_sampler,
+    # Per-middleware spans (and one per send/receive through each) were most of
+    # this project's span quota on sentry-sdk 1.x. Off by default since 2.48;
+    # set explicitly so a future default change can't bring them back.
+    integrations=[
+        StarletteIntegration(middleware_spans=False),
+        FastApiIntegration(middleware_spans=False),
+    ],
 )
 sentry_sdk.set_tag("app_name", "quartz-solar-api-site")
 sentry_sdk.set_tag("app_version", pv_site_api.__version__)
