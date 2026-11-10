@@ -7,7 +7,7 @@ name = "pv-site-api"
 dynamic = ["version"]
 readme = {file = "README.md", content-type = "text/markdown"}
 authors = [{ name = "Open Climate Fix Team", email = "info@openclimatefix.org"}]
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.12"
 dependencies = [
     "pydantic>=2.7.0,<3.0.0",
     "uvicorn[standard]>=0.20.0,<0.21.0",
