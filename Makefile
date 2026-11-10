@@ -1,12 +1,12 @@
 SRC=pv_site_api tests
 
 lint:
-	uvx ruff check $(SRC)
+	uv run ruff check $(SRC)
 	uv run black --check $(SRC)
 	uv run isort --check $(SRC)
 
 format:
-	uvx ruff check --fix $(SRC)
+	uv run ruff check --fix $(SRC)
 	uv run black $(SRC)
 	uv run isort $(SRC)
 
