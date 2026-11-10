@@ -64,3 +64,5 @@ line-length = 100
 line-length = 100
 exclude = ["notebooks"]
 
+[tool.ruff.lint]
+select = ["E", "F"]
