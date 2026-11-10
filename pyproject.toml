@@ -1,59 +1,37 @@
+[build-system]
+requires = ["setuptools>=67", "setuptools-git-versioning>=2.0,<3"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "pv-site-api"
-version = "1.1.10"
+dynamic = ["version"]
+readme = {file = "README.md", content-type = "text/markdown"}
+authors = [{ name = "Open Climate Fix Team", email = "info@openclimatefix.org"}]
 requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.7.0,<3.0.0",
+    "uvicorn[standard]>=0.20.0,<0.21.0",
+    "psycopg2-binary>=2.9.5,<3.0.0",
+    "sqlalchemy>=2.0,<3.0",
+    "fastapi==0.103.1",
+    "httpx>=0.23.3,<0.24.0",
+    "sentry-sdk>=1.16.0,<2.0.0",
+    "pvlib>=0.9.5,<0.10.0",
+    "numpy<2.0.0",
+    "structlog>=22.3.0,<23.0.0",
+    "pyjwt[crypto]>=2.6.0,<3.0.0",
+    "geopandas>=0.14.2,<0.15.0",
+    "psutil>=6.0.0,<7.0.0",
+    "pvsite-datamodel==1.2.0",
+    "apitally[fastapi]>=0.24.4,<0.25.0",
+    "grpcio>=1.50.0,<2.0.0",
+    "protobuf>=5.26.0",
+    "dp-sdk",
+]
 
-[tool.poetry]
-name = "pv-site-api"
-version = "1.1.10"
-description = ""
-authors = ["Open Climate Fix"]
-readme = "README.md"
-packages = [{include = "pv_site_api"}]
-
-[tool.poetry.dependencies]
-python = "^3.11"
-pydantic = "^2.7.0"
-uvicorn = {extras = ["standard"], version = "^0.20.0"}
-psycopg2-binary = "^2.9.5"
-sqlalchemy = "^2.0"
-fastapi = "0.103.1"
-httpx = "^0.23.3"
-sentry-sdk = "^1.16.0"
-pvlib = "^0.9.5"
-numpy = "<2.0.0"
-structlog = "^22.3.0"
-pyjwt = {extras = ["crypto"], version = "^2.6.0"}
-geopandas = "^0.14.2"
-psutil = "^6.0.0"
-pvsite-datamodel = "1.2.0"
-apitally = {extras = ["fastapi"], version = "^0.24.4"}
-grpcio = "^1.50.0"
-protobuf = ">=5.26.0"
-dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.34.0/dp_sdk-0.34.0-py3-none-any.whl" }
-
-[tool.uv.sources]
-dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.34.0/dp_sdk-0.34.0-py3-none-any.whl" }
-
-
-[tool.poetry.group.dev.dependencies]
-isort = "^5.12.0"
-ruff = "^0.0.253"
-black = "^23.1.0"
-pytest = "^7.2.1"
-pytest-cov = "^4.0.0"
-pytest-asyncio = ">=0.21.0"
-testcontainers-postgres = "^0.0.1rc1"
-ipython = "^8.11.0"
-freezegun = "^1.2.2"
-
-# uv reads dev tooling from this PEP 735 table (it does not read
-# [tool.poetry.group.dev.dependencies]); kept in sync with the poetry
-# group above so both `poetry install` and `uv sync` work.
 [dependency-groups]
 dev = [
     "isort>=5.12.0,<6",
-    "ruff>=0.0.253,<0.0.254",
     "black>=23.1.0,<24",
     "pytest>=7.2.1,<8",
     "pytest-asyncio>=0.21.0",
@@ -63,9 +41,16 @@ dev = [
     "freezegun>=1.2.2,<2",
 ]
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv.sources]
+dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.34.0/dp_sdk-0.34.0-py3-none-any.whl" }
+
+[tool.setuptools.packages.find]
+include = ["pv_site_api*"]
+
+[tool.setuptools-git-versioning]
+enabled = true
+template = "{tag}"
+dirty_template = "{tag}"
 
 [tool.isort]
 profile = "black"
@@ -76,3 +61,5 @@ line-length = 100
 
 [tool.ruff]
 line-length = 100
+exclude = ["notebooks"]
+

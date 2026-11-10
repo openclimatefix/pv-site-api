@@ -1,16 +1,16 @@
 SRC=pv_site_api tests
 
 lint:
-	poetry run ruff $(SRC)
-	poetry run black --check $(SRC)
-	poetry run isort --check $(SRC)
+	uvx ruff check $(SRC)
+	uv run black --check $(SRC)
+	uv run isort --check $(SRC)
 
 format:
-	poetry run ruff --fix $(SRC)
-	poetry run black $(SRC)
-	poetry run isort $(SRC)
+	uvx ruff check --fix $(SRC)
+	uv run black $(SRC)
+	uv run isort $(SRC)
 
 test:
-	poetry run pytest tests
+	uv run pytest tests
 
 .PHONY: lint format test

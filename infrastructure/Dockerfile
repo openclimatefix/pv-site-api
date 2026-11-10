@@ -1,24 +1,23 @@
 FROM python:3.11-slim
 
+COPY --from=ghcr.io/astral-sh/uv:0.11.29 /uv /bin/uv
 
-# Copy required files.
-COPY ./poetry.lock /app/poetry.lock
-COPY ./pyproject.toml /app/pyproject.toml
-COPY ./pv_site_api /app/pv_site_api/
-COPY ./README.md /app/README.md
+# git is needed to read the version from the tag
+RUN apt-get update -y && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
-# install requirements
-RUN apt-get clean
-RUN apt-get update -y
-
-# Upgrade `pip`
-RUN pip install -U pip
-
-# Install poetry.
-RUN pip install "poetry==1.3.2" --no-cache-dir
-
-# set working directory
 WORKDIR /app
 
-# Install python requirements.
-RUN poetry install --no-cache --without=dev
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_NO_CACHE=1 \
+    UV_LINK_MODE=copy
+
+# Install dependencies first so this layer is cached
+COPY pyproject.toml uv.lock README.md .python-version /app/
+RUN uv sync --locked --no-dev --no-install-project
+
+# Install the app
+COPY pv_site_api /app/pv_site_api/
+COPY .git /app/.git
+RUN uv sync --locked --no-dev --no-editable
+
+ENV PATH="/app/.venv/bin:$PATH"

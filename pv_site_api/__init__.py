@@ -2,10 +2,11 @@
 
 import logging
 import os
+from importlib.metadata import version
 
 import structlog
 
-__version__ = "1.1.10"
+__version__ = version("pv-site-api")
 
 # Set the loglevel
 LOGLEVEL = os.getenv("LOGLEVEL", "DEBUG").upper()

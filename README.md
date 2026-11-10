@@ -11,20 +11,20 @@ API for PV site level forecasting
 
 ## Setup and Run
 
-### [Install poetry][p]
+### [Install uv][uv]
 
 ### Install python dependencies
 
-    poetry install
+    uv sync
 
 ### Start the API using uvicorn
 
-    poetry run uvicorn pv_site_api.main:app --reload
+    uv run uvicorn pv_site_api.main:app --reload
 
 
 ## Running the tests
 
-    poetry run pytest tests
+    uv run pytest tests
 
 ## Data Platform Integration
 
@@ -83,4 +83,4 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
 
-[p]: https://python-poetry.org/docs/#installation
+[uv]: https://docs.astral.sh/uv/getting-started/installation/
