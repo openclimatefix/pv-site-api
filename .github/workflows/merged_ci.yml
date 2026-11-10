@@ -1,0 +1,12 @@
+name: Merged CI
+run-name: 'Bump tag with merge #${{ github.event.number }} "${{ github.event.pull_request.title }}"'
+
+on:
+  pull_request:
+    types: ["closed"]
+    branches: ["main"]
+
+jobs:
+  bump-tag:
+    uses: openclimatefix/.github/.github/workflows/bump_tag.yml@v2.0.1
+    secrets: inherit
