@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = "==3.11.*"
 
 [[package]]
@@ -920,7 +920,7 @@ requires-dist = [
     { name = "pvsite-datamodel", specifier = "==1.2.0" },
     { name = "pydantic", specifier = ">=2.7.0,<3.0.0" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.6.0,<3.0.0" },
-    { name = "sentry-sdk", specifier = ">=1.16.0,<2.0.0" },
+    { name = "sentry-sdk", specifier = ">=2.48.0,<3.0.0" },
     { name = "sqlalchemy", specifier = ">=2.0,<3.0" },
     { name = "structlog", specifier = ">=22.3.0,<23.0.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.20.0,<0.21.0" },
@@ -1250,15 +1250,15 @@ wheels = [
 
 [[package]]
 name = "sentry-sdk"
-version = "1.45.1"
+version = "2.74.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c8/28/02c0cd9184f9108e3c52519f9628b215077a3854240e0b17ae845e664855/sentry_sdk-1.45.1.tar.gz", hash = "sha256:a16c997c0f4e3df63c0fc5e4207ccb1ab37900433e0f72fef88315d317829a26", size = 244774, upload-time = "2024-07-26T13:48:32.375Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8e/7f/1b16ab4aee53cc5db976bac12e6df5d562aae3880965200cef812e7121d9/sentry_sdk-2.74.0.tar.gz", hash = "sha256:dd91d75aacaef636006b579ac3ddb2fdbc9dce35f00f4b353b6b1b110c6b256a", size = 1081514, upload-time = "2026-11-05T14:50:27.444Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fe/9f/105366a122efa93f0cb1914f841747d160788e4d022d0488d2d44c2ba26c/sentry_sdk-1.45.1-py2.py3-none-any.whl", hash = "sha256:608887855ccfe39032bfd03936e3a1c4f4fc99b3a4ac49ced54a4220de61c9c1", size = 267163, upload-time = "2024-07-26T13:48:29.38Z" },
+    { url = "https://files.pythonhosted.org/packages/55/b1/736d4b4b308694b0071844a533522ac06669ad61751687b94edfbf863f17/sentry_sdk-2.74.0-py3-none-any.whl", hash = "sha256:40b205af015649df3ec9986e057ce24ce85956bee3fb75efa72c93aa7036bdff", size = 549800, upload-time = "2026-11-05T14:50:25.767Z" },
 ]
 
 [[package]]
